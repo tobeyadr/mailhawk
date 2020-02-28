@@ -9,13 +9,13 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * DB Parent Class
  *
- * This class is the foundation for all DB activities in Groundhogg. With the exception of several new functions
+ * This class is the foundation for all DB activities in MailHawk. With the exception of several new functions
  * such as generate_where, generate_search and search, this class was mostly borrowed from EDD with several mods and the original copyright belongs to Pippin...
  *
  * @package     Includes
  * @subpackage  Includes/DB
- * @author      Adrian Tobey <info@groundhogg.io>
- * @copyright   Copyright (c) 2018, Groundhogg Inc.
+ * @author      Adrian Tobey <info@mailhawkwp.com>
+ * @copyright   Copyright (c) 2018, MailHawk Inc.
  * @license     https://opensource.org/licenses/GPL-3.0 GNU Public License v3
  * @since       File available since Release 0.1
  */

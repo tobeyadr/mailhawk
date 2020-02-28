@@ -1,6 +1,9 @@
 <?php
 namespace MailHawk;
 
+use MailHawk\Admin\Admin;
+use MailHawk\DB\Emails;
+
 if ( ! defined( 'ABSPATH' ) ) {exit;}
 
 /**
@@ -12,6 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) {exit;}
  * @since 2.0
  */
 class Plugin {
+
+	/**
+	 * @var Emails
+	 */
+	public $emails;
 
     /**
      * Instance.
@@ -110,7 +118,11 @@ class Plugin {
      * @access private
      */
     private function init_components() {
+		$this->emails = new Emails();
 
+		if ( is_admin() ){
+			new Admin();
+		}
     }
 
     /**

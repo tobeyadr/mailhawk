@@ -2,17 +2,146 @@
 
 namespace MailHawk\Admin;
 
+use MailHawk\Api_Helper;
+use MailHawk\Keys;
+use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\get_suggested_spf_record;
+use function MailHawk\mailhawk_is_connected;
+use function MailHawk\mailhawk_spf_set;
+
 class Admin {
+
+	protected static $oauth_url = 'https://www.mailhawkwp.com/oauth/';
 
 	public function __construct() {
 
+		// Load any scripts
+		add_action( 'admin_enqueue_scripts', [ $this, 'scripts' ] );
+
+		// Show as last option
+		add_action( 'admin_menu', [ $this, 'register' ], 99 );
+	}
+
+	public function scripts( $hook ) {
+
+		if ( $hook !== 'tools_page_mailhawk' ) {
+			return;
+		}
+
+		wp_enqueue_style( 'mailhawk-admin', MAILHAWK_ASSETS_URL . 'css/admin.css' );
+
+		if ( ! mailhawk_spf_set() && mailhawk_is_connected() ) {
+			add_action( 'admin_notices', [ $this, 'spf_missing_notice' ] );
+		}
 	}
 
 	public function register() {
+		$sub_page = add_submenu_page(
+			'tools.php',
+			'MailHawk',
+			'MailHawk',
+			'manage_options',
+			'mailhawk',
+			array( $this, 'page' )
+		);
+	}
+
+	public function page() {
+
+		$form_inputs = [
+			'client_id'    => Keys::instance()->client_id(),
+			'clint_secret' => Keys::instance()->client_secret(),
+			'public_key'   => Keys::instance()->public_key(),
+			'state'        => Keys::instance()->state(),
+			'redirect_uri' => get_admin_mailhawk_uri(),
+		];
+
+		?>
+        <div class="wrap">
+            <div class="mailhawk-connect-header">
+                <h1><img title="MailHawk Logo" alt="MailHawk Logo"
+                         src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/logo.png' ); ?>"></h1>
+            </div>
+            <div class="mailhawk-connect">
+
+				<?php if ( ! mailhawk_is_connected() ): ?>
+
+                    <p><?php _e( 'Connect to <b>MailHawk</b> and instantly solve your WordPress email delivery woes. Starts at just $14/month.', 'mailhawk' ); ?></p>
+                    <form method="post" action="<?php echo esc_url( self::$oauth_url ); ?>">
+						<?php
+
+						foreach ( $form_inputs as $input => $value ) {
+							?><input type="hidden" name="<?php esc_attr_e( $input ); ?>"
+                                     value="<?php esc_attr_e( $value ); ?>"><?php
+						}
+
+						?>
+                        <button class="button button-primary big-button" type="submit" value="connect">
+                            <span class="dashicons dashicons-email-alt"></span>
+							<?php _e( 'Connect MailHawk Now!', 'mailhawk' ); ?>
+                        </button>
+                    </form>
+
+				<?php else : ?>
+
+                    <p><?php _e( 'You are connected to MailHawk! We are ensuring the safe delivery of your email to your customers\'s inbox.', 'mailhawk' ); ?></p>
+                    <p><a href="#" class="button button-secondary"><?php _e( 'My Account', 'mailhawk' ); ?></a></p>
+
+					<?php if ( ! mailhawk_spf_set() ): ?>
+
+
+					<?php endif; ?>
+
+                    <p><b><?php _e( 'Status:', 'mailhawk' ); ?></b></p>
+                    <p><textarea name="status" id="mailhawk-status" class="code" onfocus="this.select()"
+                                 readonly><?php esc_html_e( $this->get_status() ); ?></textarea></p>
+
+				<?php endif; ?>
+            </div>
+            <div class="mailhawk-legal">
+                <!-- TODO Add Real Links -->
+                <a href="#"><?php _e( 'Privacy Policy', 'mailhawk' ); ?></a> |
+                <a href="#"><?php _e( 'Terms & Conditions', 'mailhawk' ); ?></a> |
+                <a href="#"><?php _e( 'Support', 'mailhawk' ); ?></a>
+            </div>
+        </div>
+
+		<?php
 
 	}
 
-	public function page(){
+	/**
+	 * Status to show in the status textarea
+	 *
+	 * @return string
+	 */
+	protected function get_status() {
+
+		$status = "";
+
+		$status .= sprintf( "Send Limit:     %s", 0 );
+		$status .= sprintf( "\nSend Usage:     %s", 0 );
+		$status .= sprintf( "\nConnected:      %s", mailhawk_is_connected() ? 'Yes' : 'No' );
+		$status .= sprintf( "\nSPF Set:        %s", mailhawk_spf_set() ? 'Yes' : 'No' );
+
+		return $status;
 
 	}
+
+	/**
+	 *
+	 */
+	public function spf_missing_notice() {
+		?>
+        <div class="notice notice-warning">
+            <p><?php _e( 'We noticed your SPF record is missing. This can lead to delivery issues when sending crucial email.', 'mailhawk' ); ?></p>
+            <p><b><?php _e( 'Fix Your SPF Record!', 'mailhawk' ); ?></b></p>
+            <p><?php _e( "Please ensure you include <code>include:spf.mailhawkwp.com</code> in your SPF record.", 'mailhawk' ); ?></p>
+            <p><input id="spf" type="text" class="code" value="<?php esc_attr_e( get_suggested_spf_record() ); ?>"
+                      onfocus="this.select()" readonly></p>
+            <p><a href="#" class="button button-secondary"><?php _e( 'Instructions', 'mailhawk' ); ?></a></p>
+        </div>
+		<?php
+	}
+
 }
