@@ -274,8 +274,8 @@ function get_suggested_spf_record(){
  */
 function mailhawk_is_connected() {
 
-	return true; // Todo remove this
-//	return Api_Helper::instance()->is_connected_for_mail();
+//	return true; // Todo remove this
+	return Api_Helper::instance()->is_connected_for_mail();
 }
 
 /**

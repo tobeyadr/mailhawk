@@ -196,7 +196,7 @@ class Admin {
             <img class="alignleft" height="40" style="margin: 3px 10px 0 0"
                  src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/hawk-head.png' ); ?>" alt="Hawk">
             <p>
-				<?php _e( 'Oops, looks like MailHawk is installed but not connected.', 'mailhawk' ); ?>&nbsp;
+				<?php _e( '<b>Attention:</b> It looks like MailHawk is installed but is not connected to the MailHawk service.', 'mailhawk' ); ?>&nbsp;
                 <a href="<?php echo esc_url( get_admin_mailhawk_uri() ); ?>"
                    class="button button-secondary"><?php _e( 'Connect Now!', 'mailhawk' ); ?></a>
             </p>
