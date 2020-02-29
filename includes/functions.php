@@ -259,7 +259,7 @@ function ensure_array( $array ) {
 /**
  * Get the suggest SPF record
  *
- * todo Make this a real suggested record based on the existing one.
+ * Todo Make this a real suggested record based on the existing one.
  *
  * @return string
  */
@@ -275,7 +275,7 @@ function get_suggested_spf_record(){
 function mailhawk_is_connected() {
 
 	return true; // Todo remove this
-	return Api_Helper::instance()->is_connected_for_mail();
+//	return Api_Helper::instance()->is_connected_for_mail();
 }
 
 /**
@@ -301,7 +301,7 @@ function mailhawk_spf_set() {
  *
  * @author Samui Banti - https://samiwell.eu
  *
- * @param string $hostname - The host name of the email address in format sutable for dns_get_record() function.
+ * @param string $hostname - The host name of the email address in format suitable for dns_get_record() function.
  * @param string $ip       - The IP address of the server that sends the email.
  *
  * @return bool if the server is allowed to send on the behalf of the hostname

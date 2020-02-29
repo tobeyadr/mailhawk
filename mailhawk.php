@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Plugin Name: MailHawk - WordPress Email Deliverability Solved.
+ * Plugin Name: MailHawk - WordPress Email Delivery Solved.
  * Plugin URI: https://mailhawkwp.com
  * Description: Send better email that will reach the inbox with MailHawk.
  * Version: 1.0
- * Author: Groundhogg Inc.
- * Author URI: http://groundhogg.io
+ * Author: MailHawk Inc.
+ * Author URI: http://mailhawkwp.com
  * License: GPLv3
  *
  * MailHawk is free software: you can redistribute it and/or modify
