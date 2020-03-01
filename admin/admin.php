@@ -31,9 +31,16 @@ class Admin {
 		add_filter( 'admin_footer_text', [ $this, 'admin_footer_text' ] );
 	}
 
-	public function admin_footer_text( $text ){
+	/**
+	 * Add a review request in the admin footer.
+	 *
+	 * @param $text
+	 *
+	 * @return string|string[]|null
+	 */
+	public function admin_footer_text( $text ) {
 		return preg_replace( "/<\/span>/", sprintf( __( ' | Like MailHawk? <a target="_blank" href="%s">Leave a &#x2B50;&#x2B50;&#x2B50;&#x2B50;&#x2B50; Review</a>!</span>' ), __( 'https://wordpress.org/support/plugin/mailhawk/reviews/#new-post' ) ), $text );
-    }
+	}
 
 	/**
 	 * Any relevant actions for the plugin go here.
@@ -63,6 +70,12 @@ class Admin {
 		}
 
 		wp_enqueue_style( 'mailhawk-admin', MAILHAWK_ASSETS_URL . 'css/admin.css' );
+		wp_enqueue_script( 'mailhawk-admin', MAILHAWK_ASSETS_URL . 'js/admin.js' );
+
+		wp_localize_script( 'mailhawk-admin', 'MailHawkConnect', [
+			'foo'             => 'bar',
+			'connecting_text' => '<span class="dashicons dashicons-admin-generic"></span>' . __( 'Connecting You To MailHawk...', 'mailhawk' )
+        ] );
 	}
 
 	/**
@@ -102,7 +115,7 @@ class Admin {
 
 				<?php if ( ! mailhawk_is_connected() ): ?>
 
-                    <p><?php _e( 'Connect to <b>MailHawk</b> and instantly solve your WordPress email delivery woes. Starts at just <b>$14.97</b>/m.', 'mailhawk' ); ?></p>
+                    <p><?php _e( 'Connect to <b>MailHawk</b> and instantly solve your WordPress email delivery problems. Starts at just <b>$14.97</b>/m.', 'mailhawk' ); ?></p>
                     <form method="post" action="<?php echo esc_url( self::$oauth_url ); ?>">
 						<?php
 
@@ -112,7 +125,7 @@ class Admin {
 						}
 
 						?>
-                        <button class="button button-primary big-button" type="submit" value="connect">
+                        <button id="connect" class="button button-primary big-button" type="submit" value="connect">
                             <span class="dashicons dashicons-email-alt"></span>
 							<?php _e( 'Connect MailHawk Now!', 'mailhawk' ); ?>
                         </button>
@@ -193,12 +206,15 @@ class Admin {
 
 		?>
         <div class="notice notice-warning is-dismissible">
-            <img class="alignleft" height="40" style="margin: 3px 10px 0 0"
+            <img class="alignleft" height="70" style="margin: 3px 10px 0 0"
                  src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/hawk-head.png' ); ?>" alt="Hawk">
             <p>
-				<?php _e( '<b>Attention:</b> It looks like MailHawk is installed but is not connected to the MailHawk service.', 'mailhawk' ); ?>&nbsp;
+				<?php _e( '<b>Attention:</b> It looks like MailHawk is installed but is not connected to the MailHawk service.', 'mailhawk' ); ?>
+                &nbsp;
+            </p>
+            <p>
                 <a href="<?php echo esc_url( get_admin_mailhawk_uri() ); ?>"
-                   class="button button-secondary"><?php _e( 'Connect Now!', 'mailhawk' ); ?></a>
+                   class="button button-secondary"><?php _e( 'Connect or Register Now!', 'mailhawk' ); ?></a>
             </p>
         </div>
 		<?php
