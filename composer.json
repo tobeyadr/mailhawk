@@ -1,0 +1,15 @@
+{
+  "name": "MailHawk/MailHawk",
+  "description": "WordPress email deliver solved.",
+  "minimum-stability": "stable",
+  "license": "GPLv3",
+  "authors": [
+    {
+      "name": "MailHawk Inc.",
+      "email": "info@mailhawk.io"
+    }
+  ],
+  "require": {
+    "phpunit/phpunit": "7.5.19"
+  }
+}
