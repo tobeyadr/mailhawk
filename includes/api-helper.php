@@ -5,7 +5,7 @@ namespace MailHawk;
 class Api_Helper {
 
 	protected static $license_sever_url = 'https://www.mailhawkwp.com';
-	protected static $smtp_sever_url = 'https://smtp.mailhawkwp.com';
+	protected static $smtp_sever_url = 'https://mta01.mailhawk.io';
 	protected static $validation_sever_url = 'https://validate.mailhawkwp.com';
 
 	/**
@@ -17,6 +17,11 @@ class Api_Helper {
 	 * @var string
 	 */
 	protected $public_key;
+
+	/**
+	 * @var string
+	 */
+	protected $api_key;
 
 	/**
 	 * @var Api_Helper
@@ -59,6 +64,13 @@ class Api_Helper {
 	}
 
 	/**
+	 * @param string $key
+	 */
+	public function set_api_key( $key = '' ) {
+		$this->api_key = $key;
+	}
+
+	/**
 	 * Whether the current site is connected to MailHawk
 	 *
 	 * @return bool
@@ -82,8 +94,9 @@ class Api_Helper {
 	 * @return bool
 	 */
 	public function keys_set() {
-		return $this->access_token && $this->public_key;
+		return ( $this->access_token && $this->public_key ) || $this->api_key;
 	}
+
 
 	/**
 	 * Get the account status of the connected site.
@@ -129,17 +142,19 @@ class Api_Helper {
 	 *
 	 * @return true|\WP_Error true if successful, \WP_Error otherwise
 	 */
-	public function send_raw_email( $mime_message = '' ) {
+	public function send_raw_email( $mail_from = '', $to = [], $data = '' ) {
 
 		if ( ! $this->is_connected_for_mail() ) {
 			return new \WP_Error( 'account_inactive', 'You have not connected your MailHawk account, or your account is currently inactive.' );
 		}
 
 		$args = [
-			'message' => base64_encode( $mime_message )
+			'mail_from' => $mail_from,
+			'rcpt_to'   => $to,
+			'data'      => base64_encode( $data )
 		];
 
-		$response = $this->request( self::$smtp_sever_url, $args );
+		$response = $this->request( self::$smtp_sever_url . '/api/v1/send/raw', $args );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -157,7 +172,7 @@ class Api_Helper {
 	 */
 	public function validate_email_address( $email_address ) {
 
-		if ( ! $this->is_connected_for_validation() ){
+		if ( ! $this->is_connected_for_validation() ) {
 			return new \WP_Error( 'account_inactive', 'Your account does not currently support validating emails.' );
 		} else if ( ! is_email( $email_address ) ) {
 			return new \WP_Error( 'invalid_email', 'The provided address is not a valid email address.' );
@@ -169,7 +184,7 @@ class Api_Helper {
 
 		$response = $this->request( self::$validation_sever_url, $args );
 
-		if ( is_wp_error( $response ) ){
+		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
@@ -189,13 +204,18 @@ class Api_Helper {
 	public function request( $endpoint = '', $body = '' ) {
 
 		if ( ! $this->keys_set() ) {
-			return new \WP_Error( 'no_keys', 'A <pre>public_key</pre> and <pre>token</pre> are required to make API requests.' );
+			return new \WP_Error( 'no_keys', 'A <pre>public_key</pre> and <pre>token</pre> or <pre>api_key</pre> are required to make API requests.' );
 		}
 
 		$headers = [
-			'Content-Type'             => sprintf( 'application/json; charset=%s', get_bloginfo( 'charset' ) ),
-			'X-MailHawk-Authorization' => sprintf( 'Basic %s', base64_encode( $this->public_key . ':' . $this->access_token ) ),
+			'Content-Type' => sprintf( 'application/json; charset=%s', get_bloginfo( 'charset' ) ),
 		];
+
+		if ( $this->api_key ) {
+			$headers['X-Server-API-Key'] = $this->api_key;
+		} else {
+			$headers['X-MailHawk-Authorization'] = sprintf( 'Basic %s', base64_encode( $this->public_key . ':' . $this->access_token ) );
+		}
 
 		$request = [
 			'method'      => 'POST',
@@ -213,11 +233,19 @@ class Api_Helper {
 
 		$json = json_decode( wp_remote_retrieve_body( $response ) );
 
-		if ( isset_not_empty( $json, 'error' ) ) {
-			return new \WP_Error( $json->error->code, $json->error->message );
+		$result = false;
+
+		switch ( $json->status ){
+			case 'success':
+				$result = $json->data;
+				break;
+			case 'error':
+				$result = new \WP_Error( $json->data->code, $json->data->message );
+				break;
 		}
 
-		return $json;
+
+		return $result;
 	}
 
 }

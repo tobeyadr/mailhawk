@@ -5,6 +5,8 @@
  * @package Mailhawk
  */
 
+use MailHawk\Plugin;
+
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
 
 if ( ! $_tests_dir ) {
@@ -26,7 +28,12 @@ function _manually_load_plugin() {
 	require __DIR__ . '/../../mailhawk.php';
 }
 
+function _run_activation_hook() {
+	Plugin::instance()->installer->activation_hook( false );
+}
+
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
+tests_add_filter( 'init', '_run_activation_hook' );
 
 // Start up the WP testing environment.
 require $_tests_dir . '/includes/bootstrap.php';

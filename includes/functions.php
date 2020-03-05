@@ -279,6 +279,27 @@ function mailhawk_is_connected() {
 }
 
 /**
+ * Return an actionable url
+ *
+ * @param       $action
+ * @param array $args
+ *
+ * @return string
+ */
+function action_url( $action, $args = [] ) {
+	$url_args = [
+		'page'     => get_request_var( 'page' ),
+		'tab'      => get_request_var( 'tab' ),
+		'action'   => $action,
+		'_wpnonce' => wp_create_nonce( $action )
+	];
+
+	$url_args = array_filter( array_merge( $url_args, $args ) );
+
+	return add_query_arg( urlencode_deep( $url_args ), admin_url( 'admin.php' ) );
+}
+
+/**
  * Check if the MailHawk was added to the current server SPF record.
  *
  * @return bool

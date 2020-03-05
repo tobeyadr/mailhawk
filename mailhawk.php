@@ -37,7 +37,7 @@ define( 'MAILHAWK_ASSETS_URL', MAILHAWK_URL . 'assets/' );
 
 add_action( 'plugins_loaded', 'mailhawk_load_plugin_textdomain' );
 
-define( 'MAILHAWK_TEXT_DOMAIN', 'groundhogg' );
+define( 'MAILHAWK_TEXT_DOMAIN', 'mailhawk' );
 
 if ( ! version_compare( PHP_VERSION, '5.6', '>=' ) ) {
     add_action( 'admin_notices', 'mailhawk_fail_php_version' );

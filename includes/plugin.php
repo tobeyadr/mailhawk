@@ -21,6 +21,16 @@ class Plugin {
 	 */
 	public $emails;
 
+	/**
+	 * @var Installer
+	 */
+	public $installer;
+
+	/**
+	 * @var Updater
+	 */
+	public $updater;
+
     /**
      * Instance.
      *
@@ -120,9 +130,12 @@ class Plugin {
     private function init_components() {
 		$this->emails = new Emails();
 
-		if ( is_admin() ){
-			new Admin();
-		}
+	    if ( is_admin() ){
+		    new Admin();
+	    }
+
+	    $this->installer = new Installer();
+	    $this->updater   = new Updater();
     }
 
     /**
