@@ -12,7 +12,7 @@ use function MailHawk\mailhawk_spf_set;
 
 class Admin {
 
-	protected static $oauth_url = 'https://www.mailhawkwp.com/oauth/';
+	protected static $server_url = 'http://localhost/mailhawk/';
 
 	public function __construct() {
 
@@ -75,7 +75,7 @@ class Admin {
 		wp_localize_script( 'mailhawk-admin', 'MailHawkConnect', [
 			'foo'             => 'bar',
 			'connecting_text' => '<span class="dashicons dashicons-admin-generic"></span>' . __( 'Connecting You To MailHawk...', 'mailhawk' )
-        ] );
+		] );
 	}
 
 	/**
@@ -98,11 +98,9 @@ class Admin {
 	public function page() {
 
 		$form_inputs = [
-			'client_id'    => Keys::instance()->client_id(),
-			'clint_secret' => Keys::instance()->client_secret(),
-			'public_key'   => Keys::instance()->public_key(),
-			'state'        => Keys::instance()->state(),
-			'redirect_uri' => get_admin_mailhawk_uri(),
+			'mailhawk_plugin_signup' => Keys::instance()->state(),
+			'state'                  => Keys::instance()->state(),
+			'redirect_uri'           => get_admin_mailhawk_uri(),
 		];
 
 		?>
@@ -116,7 +114,7 @@ class Admin {
 				<?php if ( ! mailhawk_is_connected() ): ?>
 
                     <p><?php _e( 'Connect to <b>MailHawk</b> and instantly solve your WordPress email delivery problems. Starts at just <b>$14.97</b>/m.', 'mailhawk' ); ?></p>
-                    <form method="post" action="<?php echo esc_url( self::$oauth_url ); ?>">
+                    <form method="post" action="<?php echo esc_url( self::$server_url ); ?>">
 						<?php
 
 						foreach ( $form_inputs as $input => $value ) {

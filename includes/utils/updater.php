@@ -31,9 +31,6 @@ abstract class Updater {
 		add_action( 'admin_init', [ $this, 'listen_for_updates' ], 9 );
 		add_action( 'admin_notices', [ $this, 'updates_notice' ] );
 
-		// Do the manual update
-		add_action( 'admin_init', [ $this, 'do_manual_updates' ], 99 );
-
 		// Save previous updates when plugin installed.
 		add_action( 'mailhawk/activated', [ $this, 'save_previous_updates_when_installed' ], 99 );
 	}

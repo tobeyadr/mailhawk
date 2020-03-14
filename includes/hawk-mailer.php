@@ -23,7 +23,12 @@ class Hawk_Mailer extends \PHPMailer {
 
 		$message = $this->getSentMIMEMessage();
 
-		$response = Api_Helper::instance()->send_raw_email( $this->From, $this->getToAddresses(), $message );
+//		var_dump( $this->all_recipients );
+
+		$recipients = array_keys( $this->all_recipients );
+
+		$response = Api_Helper::instance()->send_raw_email( $this->From, $recipients, $message );
+//		$response = false;
 
 		if ( is_wp_error( $response ) ) {
 			$exc = new \phpmailerException( $response->get_error_message(), self::STOP_CRITICAL );

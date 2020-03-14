@@ -150,7 +150,7 @@ class Api_Helper {
 
 		$args = [
 			'mail_from' => $mail_from,
-			'rcpt_to'   => $to,
+			'rcpt_to'   => array_filter( array_values( $to ) ),
 			'data'      => base64_encode( $data )
 		];
 
@@ -237,13 +237,12 @@ class Api_Helper {
 
 		switch ( $json->status ){
 			case 'success':
-				$result = $json->data;
+				$result = $json;
 				break;
 			case 'error':
 				$result = new \WP_Error( $json->data->code, $json->data->message );
 				break;
 		}
-
 
 		return $result;
 	}

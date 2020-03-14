@@ -21,7 +21,29 @@ class Test_API extends WP_UnitTestCase {
 		$subject = 'Hi!';
 		$message = 'Hello world.';
 		$headers = [
-			'From: info@mailhawk.io'
+			'From: MailHawk <info@mta01.mailhawk.io>'
+		];
+
+		add_action( 'wp_mail_failed', function ( $error ){
+			var_dump( $error );
+		} );
+
+		$result = mailhawk_mail( $to, $subject, $message, $headers );
+
+		$this->assertTrue( $result );
+
+	}
+
+	public function test_send_email_with_sender_header() {
+
+		$this->setUp();
+
+		$to = 'deloga6943@oppamail.com';
+		$subject = 'Hi!';
+		$message = 'Hello world.';
+		$headers = [
+			'From:   MailHawk <info@mailhawk.io>',
+			'Sender: MailHawk <info@mta01.mailhawk.io>'
 		];
 
 		add_action( 'wp_mail_failed', function ( $error ){
