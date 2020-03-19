@@ -2,6 +2,8 @@
 
 namespace MailHawk;
 
+use WP_Error;
+
 /**
  * The URL of the MailHawk settings page
  *
@@ -263,7 +265,7 @@ function ensure_array( $array ) {
  *
  * @return string
  */
-function get_suggested_spf_record(){
+function get_suggested_spf_record() {
 	return "v=spf1 a mx include:spf.mailhawkwp.com ~all";
 }
 
@@ -273,9 +275,19 @@ function get_suggested_spf_record(){
  * @return bool
  */
 function mailhawk_is_connected() {
-
 //	return true; // Todo remove this
-	return Api_Helper::instance()->is_connected_for_mail();
+	return get_option( 'mailhawk_is_connected' ) === 'yes';
+}
+
+/**
+ * Make mailhawk connected or not
+ *
+ * @param bool $connected
+ *
+ * @return bool
+ */
+function set_mailhawk_is_connected( $connected=true ) {
+	return update_option( 'mailhawk_is_connected', $connected ? 'yes' : 'no' );
 }
 
 /**
@@ -306,7 +318,7 @@ function action_url( $action, $args = [] ) {
  */
 function mailhawk_spf_set() {
 
-	if ( $set = get_transient( 'mailhawk_spf_set' ) ){
+	if ( $set = get_transient( 'mailhawk_spf_set' ) ) {
 		return $set === 'yes';
 	}
 
@@ -343,6 +355,32 @@ function check_spf_ip( $hostname, $ip ) {
 				}
 			}
 		}
+	}
+
+	return false;
+}
+
+/**
+ * If the JSON is your typical error response
+ *
+ * @param $json
+ *
+ * @return bool
+ */
+function is_json_error( $json ) {
+	return isset_not_empty( $json, 'code' ) && isset_not_empty( $json, 'message' ) && get_array_var( $json, 'code' ) !== 'success';
+}
+
+/**
+ * Convert JSON to a WP_Error
+ *
+ * @param $json
+ *
+ * @return bool|WP_Error
+ */
+function get_json_error( $json ) {
+	if ( is_json_error( $json ) ) {
+		return new WP_Error( get_array_var( $json, 'code' ), get_array_var( $json, 'message' ), get_array_var( $json, 'data' ) );
 	}
 
 	return false;

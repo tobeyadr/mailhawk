@@ -2,6 +2,8 @@
 
 namespace MailHawk;
 
+use MailHawk\Api\Postal\Send;
+
 if ( ! class_exists( '\PHPMailer' ) ) {
 	require_once ABSPATH . WPINC . '/class-phpmailer.php';
 	require_once ABSPATH . WPINC . '/class-smtp.php';
@@ -22,13 +24,9 @@ class Hawk_Mailer extends \PHPMailer {
 		}
 
 		$message = $this->getSentMIMEMessage();
-
-//		var_dump( $this->all_recipients );
-
 		$recipients = array_keys( $this->all_recipients );
 
-		$response = Api_Helper::instance()->send_raw_email( $this->From, $recipients, $message );
-//		$response = false;
+		$response = Send::raw( $this->From, $recipients, $message );
 
 		if ( is_wp_error( $response ) ) {
 			$exc = new \phpmailerException( $response->get_error_message(), self::STOP_CRITICAL );

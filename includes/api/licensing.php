@@ -1,0 +1,227 @@
+<?php
+
+namespace MailHawk\Api;
+
+use function MailHawk\get_json_error;
+use function MailHawk\is_json_error;
+
+class Licensing {
+
+	public static $sever_url = 'http://localhost/mailhawk';
+
+	/**
+	 * @var Licensing
+	 */
+	public static $instance;
+
+	/**
+	 * @var string
+	 */
+	protected $token;
+
+	/**
+	 * Instance.
+	 *
+	 * Ensures only one instance of the plugin class is loaded or can be loaded.
+	 *
+	 * @since  1.0.0
+	 * @access public
+	 * @static
+	 *
+	 * @return Licensing An instance of the class.
+	 */
+	public static function instance() {
+		if ( is_null( self::$instance ) ) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
+	}
+
+	final public function __clone() {
+		trigger_error( "Singleton. No cloning allowed!", E_USER_ERROR );
+	}
+
+	final public function __wakeup() {
+		trigger_error( "Singleton. No serialization allowed!", E_USER_ERROR );
+	}
+
+	/**
+	 * Licensing constructor.
+	 */
+	public function __construct() {
+		$this->token = get_option( 'mailhawk_license_server_token' );
+	}
+
+	/**
+	 * Sets the token and updates the option
+	 *
+	 * @param $token string
+	 */
+	public function set_token( $token ) {
+		$this->token = $token;
+		update_option( 'mailhawk_license_server_token', $token );
+	}
+
+	/**
+	 * Get an authorization token from MailHawk
+	 *
+	 * @param $code string
+	 *
+	 * @return bool|object
+	 */
+	public function get_token( $code ) {
+
+		$data = [
+			'code' => $code,
+		];
+
+		$response = $this->request( 'wp-json/mailhawk/token', $data );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$token = sanitize_text_field( $response->token );
+
+		// set the token so it can be instantly used to get the credentials.
+		$this->set_token( $token );
+
+		return $token;
+	}
+
+	/**
+	 * Get the credentials for the license key and postal API key
+	 *
+	 * @return object|\WP_Error
+	 */
+	public function get_license_and_credentials() {
+		return $this->request( 'wp-json/mailhawk/credentials', [], 'GET' );
+	}
+
+	/**
+	 * Activate the license for this site.
+	 *
+	 * @param $license_key
+	 *
+	 * @return bool|\WP_Error
+	 */
+	public function activate( $license_key ) {
+
+		$api_params = array(
+			'edd_action' => 'activate_license',
+			'license'    => $license_key,
+			'item_id'    => 0, // ignore
+			'url'        => home_url()
+		);
+
+		$args = [
+			'body'      => $api_params,
+			'timeout'   => 15,
+			'sslverify' => true
+		];
+
+		$response = wp_remote_post( self::$sever_url, $args );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+
+		$license_data = json_decode( $body );
+
+		if ( $license_data->success === false ) {
+			return new \WP_Error( 'error', 'Something went wrong...' );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check the license key to make sure everything is still okay!
+	 *
+	 * @param $license
+	 *
+	 * @return array|bool|\WP_Error
+	 */
+	public function check( $license ) {
+		$api_params = array(
+			'edd_action' => 'check_license',
+			'license'    => $license,
+			'item_id'    => 0, // ignore
+			'url'        => home_url()
+		);
+
+		$args = [
+			'body'      => $api_params,
+			'timeout'   => 15,
+			'sslverify' => true
+		];
+
+		$response = wp_remote_post( self::$sever_url, $args );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$license_data = json_decode( wp_remote_retrieve_body( $response ) );
+
+		if ( isset( $license_data->license ) && $license_data->license == 'invalid' ) {
+			return new \WP_Error( 'invalid_license', 'License invalid.' );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Send a request to the API
+	 *
+	 * @param string $endpoint the API endpoint
+	 * @param string $body     array the body of the request
+	 * @param string $method   the type of request
+	 *
+	 * @return \WP_Error|object json object when successful, otherwise a WP_Error
+	 */
+	public function request( $endpoint = '', $body = '', $method = 'POST' ) {
+
+		$headers = [
+			'Content-Type' => sprintf( 'application/json; charset=%s', get_bloginfo( 'charset' ) ),
+		];
+
+		if ( $this->token ) {
+			$headers['X-API-Token'] = $this->token;
+		}
+
+		$method = strtoupper( $method );
+
+		$request = [
+			'method'      => $method,
+			'headers'     => $headers,
+			'body'        => wp_json_encode( $body ),
+			'data_format' => 'body',
+			'sslverify'   => true
+		];
+
+		if ( $method === 'GET' ) {
+			unset( $request['data_format'] );
+			unset( $request['body'] );
+		}
+
+		$response = wp_remote_request( self::$sever_url . '/' . $endpoint, $request );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+		$json = json_decode( $body );
+
+		if ( is_json_error( $json ) ) {
+			return get_json_error( $json );
+		}
+
+		return $json;
+	}
+
+}

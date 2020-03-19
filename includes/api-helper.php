@@ -4,9 +4,9 @@ namespace MailHawk;
 
 class Api_Helper {
 
-	protected static $license_sever_url = 'https://www.mailhawkwp.com';
-	protected static $smtp_sever_url = 'https://mta01.mailhawk.io';
-	protected static $validation_sever_url = 'https://validate.mailhawkwp.com';
+	public static $license_sever_url = 'http://localhost/mailhawk';
+	public static $smtp_sever_url = 'https://mta01.mailhawk.io';
+	public static $validation_sever_url = 'https://validate.mailhawkwp.com';
 
 	/**
 	 * @var string
@@ -97,6 +97,27 @@ class Api_Helper {
 		return ( $this->access_token && $this->public_key ) || $this->api_key;
 	}
 
+	/**
+	 * Get an authorization token from MailHawk
+	 *
+	 * @param $code string
+	 *
+	 * @return bool|object
+	 */
+	public function get_token_and_license_key( $code ){
+
+		$data = [
+			'code' => $code,
+		];
+
+		$response = $this->request( self::$license_sever_url . '/wp-json/mailhawk/token', $data );
+
+		if ( is_wp_error( $response ) ){
+			return false;
+		}
+
+		return $response->data;
+	}
 
 	/**
 	 * Get the account status of the connected site.
@@ -203,19 +224,9 @@ class Api_Helper {
 	 */
 	public function request( $endpoint = '', $body = '' ) {
 
-		if ( ! $this->keys_set() ) {
-			return new \WP_Error( 'no_keys', 'A <pre>public_key</pre> and <pre>token</pre> or <pre>api_key</pre> are required to make API requests.' );
-		}
-
 		$headers = [
 			'Content-Type' => sprintf( 'application/json; charset=%s', get_bloginfo( 'charset' ) ),
 		];
-
-		if ( $this->api_key ) {
-			$headers['X-Server-API-Key'] = $this->api_key;
-		} else {
-			$headers['X-MailHawk-Authorization'] = sprintf( 'Basic %s', base64_encode( $this->public_key . ':' . $this->access_token ) );
-		}
 
 		$request = [
 			'method'      => 'POST',
@@ -231,18 +242,35 @@ class Api_Helper {
 			return $response;
 		}
 
-		$json = json_decode( wp_remote_retrieve_body( $response ) );
+		$body =  wp_remote_retrieve_body( $response );
+		
+		wp_die( $body );
+
+		$json = json_decode( $body );
 
 		$result = false;
 
-		switch ( $json->status ){
-			case 'success':
-				$result = $json;
-				break;
-			case 'error':
-				$result = new \WP_Error( $json->data->code, $json->data->message );
-				break;
+		// Postal
+		if ( isset_not_empty( $json, 'status' ) ){
+
+			switch ( $json->status ){
+				case 'success':
+					$result = $json;
+					break;
+				case 'error':
+					$result = new \WP_Error( $json->data->code, $json->data->message );
+					break;
+			}
+
+		// WordPress Success
+		} else if ( isset_not_empty( $json, 'success' ) ) {
+
+			$result = $json;
+
+		// WordPress error
 		}
+
+		wp_die( $result );
 
 		return $result;
 	}

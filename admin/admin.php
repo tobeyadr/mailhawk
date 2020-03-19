@@ -2,13 +2,16 @@
 
 namespace MailHawk\Admin;
 
+use MailHawk\Api\Licensing;
 use MailHawk\Api_Helper;
 use MailHawk\Keys;
 use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\get_request_var;
 use function MailHawk\get_suggested_spf_record;
 use function MailHawk\get_url_var;
 use function MailHawk\mailhawk_is_connected;
 use function MailHawk\mailhawk_spf_set;
+use function MailHawk\set_mailhawk_is_connected;
 
 class Admin {
 
@@ -28,7 +31,7 @@ class Admin {
 		// Process any actions relevant for the admin page
 		add_action( 'load-tools_page_mailhawk', [ $this, 'do_actions' ] );
 
-		add_filter( 'admin_footer_text', [ $this, 'admin_footer_text' ] );
+//		set_mailhawk_is_connected( false );
 	}
 
 	/**
@@ -43,19 +46,77 @@ class Admin {
 	}
 
 	/**
+	 * Maybe do the connection from MailHawK!
+	 */
+	protected function maybe_connect() {
+
+		// Returned from MailHawk oauth
+		if ( ! get_url_var( 'state' ) || ! get_url_var( 'code' ) ) {
+			return;
+		}
+
+		$state = sanitize_text_field( get_url_var( 'state' ) );
+		$code  = sanitize_text_field( get_url_var( 'code' ) );
+
+		$saved_state = Keys::instance()->state();
+
+		if ( $saved_state !== $state ) {
+			return;
+		}
+
+		$response = Licensing::instance()->get_token( $code );
+
+		if ( is_wp_error( $response ) ) {
+			add_action( 'admin_notices', [ $this, 'connection_failed_notice' ] );
+			return;
+		}
+
+		$credentials = Licensing::instance()->get_license_and_credentials();
+
+		if ( is_wp_error( $credentials ) ) {
+			add_action( 'admin_notices', [ $this, 'connection_failed_notice' ] );
+			return;
+		}
+
+		$mta_credential_key = sanitize_text_field( $credentials->credential_key );
+		$license_key        = sanitize_text_field( $credentials->license_key );
+
+		update_option( 'mailhawk_license_key', $license_key );
+		update_option( 'mailhawk_mta_credential_key', $mta_credential_key );
+
+		// Now we have to activate it via EDD.
+        if ( is_wp_error( Licensing::instance()->activate( $license_key ) ) ){
+	        add_action( 'admin_notices', [ $this, 'connection_failed_notice' ] );
+	        return;
+        }
+
+        // All checks passed, connect mailhawk!
+        set_mailhawk_is_connected( true );
+
+        // todo: Add daily check to licensing server
+        die( wp_safe_redirect( get_admin_mailhawk_uri() . '&is_connected=true' ) );
+	}
+
+	/**
 	 * Any relevant actions for the plugin go here.
 	 */
 	public function do_actions() {
 
 		remove_action( 'admin_notices', [ $this, 'installed_not_connected_notice' ] );
 
+		add_filter( 'admin_footer_text', [ $this, 'admin_footer_text' ] );
+
 		if ( get_url_var( 'action' ) === 'refresh_dns' && wp_verify_nonce( get_url_var( '_wpnonce' ), 'refresh_dns' ) ) {
 			delete_transient( 'mailhawk_spf_set' );
 		}
 
+		add_action( 'admin_notices', [ $this, 'connection_success_notice' ] );
+
 		if ( ! mailhawk_spf_set() && mailhawk_is_connected() ) {
 			add_action( 'admin_notices', [ $this, 'spf_missing_notice' ] );
 		}
+
+		$this->maybe_connect();
 	}
 
 	/**
@@ -98,7 +159,7 @@ class Admin {
 	public function page() {
 
 		$form_inputs = [
-			'mailhawk_plugin_signup' => Keys::instance()->state(),
+			'mailhawk_plugin_signup' => 'yes',
 			'state'                  => Keys::instance()->state(),
 			'redirect_uri'           => get_admin_mailhawk_uri(),
 		];
@@ -214,6 +275,36 @@ class Admin {
                 <a href="<?php echo esc_url( get_admin_mailhawk_uri() ); ?>"
                    class="button button-secondary"><?php _e( 'Connect or Register Now!', 'mailhawk' ); ?></a>
             </p>
+        </div>
+		<?php
+
+	}
+
+
+	/**
+	 * Show a notice when connection to the mailhawk API fails!
+	 */
+	public function connection_failed_notice() {
+
+		?>
+        <div class="notice notice-error is-dismissible">
+            <p><?php _e( 'We failed to connect you to the MailHawk service. Please try connecting again. If the problem persists, get in touch with us!', 'mailhawk' ); ?></p>
+        </div>
+		<?php
+	}
+
+	/**
+	 * Show a notice when connection to the mailhawk API fails!
+	 */
+	public function connection_success_notice() {
+
+	    if ( get_url_var( 'is_connected' ) !== 'true' ){
+	        return;
+        }
+
+		?>
+        <div class="notice notice-success is-dismissible">
+            <p><?php _e( 'You are now connected to the MailHawk service! get ready to experience superior WordPress email deliverability :)', 'mailhawk' ); ?></p>
         </div>
 		<?php
 
