@@ -239,7 +239,7 @@ class Admin {
 	 */
 	public function do_actions() {
 
-		remove_action( 'mailhawk_notices', [ $this, 'installed_not_connected_notice' ] );
+		remove_action( 'admin_notices', [ $this, 'installed_not_connected_notice' ] );
 		add_action( 'mailhawk_notices', [ $this, 'maybe_show_domain_deleted_notice' ] );
 		add_action( 'mailhawk_notices', [ $this, 'maybe_show_domain_added_notice' ] );
 		add_filter( 'admin_footer_text', [ $this, 'admin_footer_text' ] );
