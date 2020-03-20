@@ -61,11 +61,17 @@ class Webhook_Listener {
 		switch ( $event_type ):
 
 			case 'MessageBounced':
+				// Todo, Handle bounced message
 
+				break;
+			case 'MessageDeliveryFailed':
 				// Todo, handle the bounced message.
 
 				break;
+			case 'DomainDNSError':
+				// Todo, handle domain DNS error
 
+				break;
 		endswitch;
 
 		return new WP_REST_Response( [ 'success' => true ] );
