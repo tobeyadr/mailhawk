@@ -3,9 +3,12 @@
 namespace MailHawk\Admin;
 
 use MailHawk\Api\Licensing;
+use MailHawk\Api\Postal\Domains;
 use MailHawk\Api_Helper;
 use MailHawk\Keys;
+use MailHawk\Plugin;
 use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\get_post_var;
 use function MailHawk\get_request_var;
 use function MailHawk\get_suggested_spf_record;
 use function MailHawk\get_url_var;
@@ -67,34 +70,168 @@ class Admin {
 		$response = Licensing::instance()->get_token( $code );
 
 		if ( is_wp_error( $response ) ) {
-			add_action( 'admin_notices', [ $this, 'connection_failed_notice' ] );
+			add_action( 'mailhawk_notices', [ $this, 'connection_failed_notice' ] );
+
+			wp_send_json_error( [ 'where' => 'token', 'response' => $response ] );
+
 			return;
 		}
 
 		$credentials = Licensing::instance()->get_license_and_credentials();
 
 		if ( is_wp_error( $credentials ) ) {
-			add_action( 'admin_notices', [ $this, 'connection_failed_notice' ] );
+
+			add_action( 'mailhawk_notices', [ $this, 'connection_failed_notice' ] );
+
+			wp_send_json_error( [ 'where' => 'credentials', 'response' => $response ] );
+
 			return;
 		}
 
 		$mta_credential_key = sanitize_text_field( $credentials->credential_key );
 		$license_key        = sanitize_text_field( $credentials->license_key );
+		$item_id            = absint( $credentials->item_id );
 
 		update_option( 'mailhawk_license_key', $license_key );
 		update_option( 'mailhawk_mta_credential_key', $mta_credential_key );
 
+		$response = Licensing::instance()->activate( $license_key, $item_id );
+
 		// Now we have to activate it via EDD.
-        if ( is_wp_error( Licensing::instance()->activate( $license_key ) ) ){
-	        add_action( 'admin_notices', [ $this, 'connection_failed_notice' ] );
-	        return;
-        }
+		if ( is_wp_error( $response ) ) {
+			add_action( 'mailhawk_notices', [ $this, 'connection_failed_notice' ] );
 
-        // All checks passed, connect mailhawk!
-        set_mailhawk_is_connected( true );
+			wp_send_json_error( [ 'where' => 'license', 'response' => $response ] );
 
-        // todo: Add daily check to licensing server
-        die( wp_safe_redirect( get_admin_mailhawk_uri() . '&is_connected=true' ) );
+			return;
+		}
+
+		// All checks passed, connect mailhawk!
+		set_mailhawk_is_connected( true );
+
+		// todo: Add daily check to licensing server
+		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'action' => 'setup' ] ) ) );
+	}
+
+	/**
+	 * Setup any initial domains from the setup page.
+	 */
+	protected function maybe_setup_initial_domains() {
+
+		if ( ! wp_verify_nonce( get_post_var( '_mailhawk_setup_nonce' ), 'mailhawk_register_domains' ) ) {
+			return;
+		}
+
+		$emails  = map_deep( get_post_var( 'emails' ), 'sanitize_email' );
+		$domains = [];
+
+		foreach ( $emails as $email ) {
+
+			// Make sure it's a valid email
+			if ( ! is_email( $email ) ) {
+				continue;
+			}
+
+			// Get the domain portion of the email
+			$domain = substr( $email, strpos( $email, '@' ) + 1 );
+
+			// Check if we already found it
+			if ( ! in_array( $domain, $domains ) ) {
+				$domains[] = $domain;
+			}
+		}
+
+		foreach ( $domains as $domain ) {
+//		    Domains::create( $domain );
+		}
+
+		// Send to DNS
+		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'action' => 'dns' ] ) ) );
+
+	}
+
+	/**
+	 * Delete a domain from postal
+	 */
+	protected function maybe_delete_domain() {
+
+		if ( ! wp_verify_nonce( get_url_var( '_mailhawk_nonce' ), 'mailhawk_delete_domain' ) ) {
+			return;
+		}
+
+		$domain = sanitize_text_field( get_url_var( 'domain' ) );
+
+		if ( ! $domain ) {
+			return;
+		}
+
+		// Domains::delete( $domain );
+
+		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'deleted_domain' => $domain ] ) ) );
+	}
+
+	/**
+	 * Register a new domain
+	 */
+	protected function maybe_register_new_domain() {
+
+		if ( ! wp_verify_nonce( get_post_var( '_mailhawk_nonce' ), 'register_new_domain' ) ) {
+			return;
+		}
+
+		$domain = sanitize_text_field( get_post_var( 'domain' ) );
+		$domain = str_replace( 'www.', '', wp_parse_url( $domain, PHP_URL_HOST ) );
+
+		// Invalid domain
+		if ( ! $domain ) {
+			return;
+		}
+
+		$potential_email = 'wp@' . $domain;
+
+		// Can't build an email address form this domain
+		if ( ! is_email( $potential_email ) ) {
+			return;
+		}
+
+//	    Domains::create( $domain );
+
+		die( wp_safe_redirect( get_admin_mailhawk_uri( [
+			'action' => 'dns-single',
+			'domain' => $domain,
+			'added'  => 'yes',
+		] ) ) );
+	}
+
+	/**
+	 * Add emails to the blacklist or whitelist
+	 */
+	protected function maybe_manage_blacklist() {
+
+		// Add to blacklist
+		if ( wp_verify_nonce( get_post_var( '_mailhawk_nonce' ), 'add_to_blacklist' ) ) {
+			$email = sanitize_email( get_post_var( 'address' ) );
+
+			Plugin::instance()->emails->add( [
+				'email'  => $email,
+				'status' => 'blacklist'
+			] );
+
+			add_action( 'mailhawk_notices', [ $this, 'show_address_added_to_blacklist_notice' ] );
+		}
+
+		// Add to whitelist
+		if ( wp_verify_nonce( get_post_var( '_mailhawk_nonce' ), 'add_to_whitelist' ) ) {
+			$email = sanitize_email( get_post_var( 'address' ) );
+
+			Plugin::instance()->emails->add( [
+				'email'  => $email,
+				'status' => 'whitelist'
+			] );
+
+			add_action( 'mailhawk_notices', [ $this, 'show_address_added_to_whitelist_notice' ] );
+		}
+
 	}
 
 	/**
@@ -102,21 +239,17 @@ class Admin {
 	 */
 	public function do_actions() {
 
-		remove_action( 'admin_notices', [ $this, 'installed_not_connected_notice' ] );
-
+		remove_action( 'mailhawk_notices', [ $this, 'installed_not_connected_notice' ] );
+		add_action( 'mailhawk_notices', [ $this, 'maybe_show_domain_deleted_notice' ] );
+		add_action( 'mailhawk_notices', [ $this, 'maybe_show_domain_added_notice' ] );
 		add_filter( 'admin_footer_text', [ $this, 'admin_footer_text' ] );
 
-		if ( get_url_var( 'action' ) === 'refresh_dns' && wp_verify_nonce( get_url_var( '_wpnonce' ), 'refresh_dns' ) ) {
-			delete_transient( 'mailhawk_spf_set' );
-		}
-
-		add_action( 'admin_notices', [ $this, 'connection_success_notice' ] );
-
-		if ( ! mailhawk_spf_set() && mailhawk_is_connected() ) {
-			add_action( 'admin_notices', [ $this, 'spf_missing_notice' ] );
-		}
-
 		$this->maybe_connect();
+		$this->maybe_setup_initial_domains();
+		$this->maybe_delete_domain();
+		$this->maybe_register_new_domain();
+		$this->maybe_manage_blacklist();
+
 	}
 
 	/**
@@ -158,49 +291,31 @@ class Admin {
 	 */
 	public function page() {
 
-		$form_inputs = [
-			'mailhawk_plugin_signup' => 'yes',
-			'state'                  => Keys::instance()->state(),
-			'redirect_uri'           => get_admin_mailhawk_uri(),
-		];
-
 		?>
         <div class="wrap">
             <div class="mailhawk-connect-header">
                 <h1><img title="MailHawk Logo" alt="MailHawk Logo"
                          src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/logo.png' ); ?>"></h1>
+				<?php do_action( 'mailhawk_notices' ); ?>
             </div>
-            <div class="mailhawk-connect">
 
-				<?php if ( ! mailhawk_is_connected() ): ?>
+			<?php if ( get_url_var( 'action' ) == 'setup' ): ?>
+				<?php include __DIR__ . '/views/setup.php'; ?>
+			<?php elseif ( get_url_var( 'action' ) == 'dns' ): ?>
+				<?php include __DIR__ . '/views/dns.php'; ?>
+			<?php elseif ( get_url_var( 'action' ) == 'dns-single' ): ?>
+				<?php include __DIR__ . '/views/dns-single.php'; ?>
+			<?php elseif ( ! mailhawk_is_connected() ): ?>
+				<?php include __DIR__ . '/views/connect.php'; ?>
+			<?php else : ?>
+				<?php include __DIR__ . '/views/manage.php'; ?>
+			<?php endif; ?>
 
-                    <p><?php _e( 'Connect to <b>MailHawk</b> and instantly solve your WordPress email delivery problems. Starts at just <b>$14.97</b>/m.', 'mailhawk' ); ?></p>
-                    <form method="post" action="<?php echo esc_url( self::$server_url ); ?>">
-						<?php
+			<?php if ( mailhawk_is_connected() && ! get_url_var( 'action' ) ): ?>
+				<?php include __DIR__ . '/views/domains.php'; ?>
+				<?php include __DIR__ . '/views/blacklist.php'; ?>
+			<?php endif; ?>
 
-						foreach ( $form_inputs as $input => $value ) {
-							?><input type="hidden" name="<?php esc_attr_e( $input ); ?>"
-                                     value="<?php esc_attr_e( $value ); ?>"><?php
-						}
-
-						?>
-                        <button id="connect" class="button button-primary big-button" type="submit" value="connect">
-                            <span class="dashicons dashicons-email-alt"></span>
-							<?php _e( 'Connect MailHawk Now!', 'mailhawk' ); ?>
-                        </button>
-                    </form>
-
-				<?php else : ?>
-
-                    <p><?php _e( 'You are connected to MailHawk! We are ensuring the safe delivery of your email to your customers\'s inbox.', 'mailhawk' ); ?></p>
-                    <p><a href="#" class="button button-secondary"><?php _e( 'My Account', 'mailhawk' ); ?></a></p>
-
-                    <p><b><?php _e( 'Status:', 'mailhawk' ); ?></b></p>
-                    <p><textarea name="status" id="mailhawk-status" class="code" onfocus="this.select()"
-                                 readonly><?php esc_html_e( $this->get_status() ); ?></textarea></p>
-
-				<?php endif; ?>
-            </div>
             <div class="mailhawk-legal">
                 <!-- TODO Add Real Links -->
                 <a href="#"><?php _e( 'Privacy Policy', 'mailhawk' ); ?></a> |
@@ -280,7 +395,6 @@ class Admin {
 
 	}
 
-
 	/**
 	 * Show a notice when connection to the mailhawk API fails!
 	 */
@@ -298,9 +412,9 @@ class Admin {
 	 */
 	public function connection_success_notice() {
 
-	    if ( get_url_var( 'is_connected' ) !== 'true' ){
-	        return;
-        }
+		if ( get_url_var( 'is_connected' ) !== 'true' ) {
+			return;
+		}
 
 		?>
         <div class="notice notice-success is-dismissible">
@@ -309,5 +423,60 @@ class Admin {
 		<?php
 
 	}
+
+	/**
+	 * Show a notice when connection to the mailhawk API fails!
+	 */
+	public function maybe_show_domain_added_notice() {
+
+		if ( get_url_var( 'added' ) !== 'yes' || get_url_var( 'action' ) !== 'dns-single' ) {
+			return;
+		}
+
+		?>
+        <div class="notice notice-success is-dismissible">
+            <p><?php printf( __( 'Successfully registered %s.', 'mailhawk' ), "<code>" . sanitize_text_field( get_url_var( 'domain' ) ) . "</code>" ); ?></p>
+        </div>
+		<?php
+	}
+
+	/**
+	 * Show a notice when connection to the mailhawk API fails!
+	 */
+	public function maybe_show_domain_deleted_notice() {
+
+		if ( ! get_url_var( 'deleted_domain' ) ) {
+			return;
+		}
+
+		?>
+        <div class="notice notice-success is-dismissible">
+            <p><?php printf( __( 'Successfully deleted %s.', 'mailhawk' ), "<code>" . sanitize_text_field( get_url_var( 'deleted_domain' ) ) . "</code>" ); ?></p>
+        </div>
+		<?php
+	}
+
+	/**
+	 * Show a notice when an email address is added to the blacklist
+	 */
+	public function show_address_added_to_blacklist_notice() {
+		?>
+        <div class="notice notice-success is-dismissible">
+            <p><?php printf( __( 'Added %s to the blacklist.', 'mailhawk' ), "<code>" . sanitize_email( get_post_var( 'address' ) ) . "</code>" ); ?></p>
+        </div>
+		<?php
+	}
+
+	/**
+	 * Show a notice when an email address is added to the whitelist
+	 */
+	public function show_address_added_to_whitelist_notice() {
+		?>
+        <div class="notice notice-success is-dismissible">
+            <p><?php printf( __( 'Added %s to the whitelist.', 'mailhawk' ), "<code>" . sanitize_email( get_post_var( 'address' ) ) . "</code>" ); ?></p>
+        </div>
+		<?php
+	}
+
 
 }

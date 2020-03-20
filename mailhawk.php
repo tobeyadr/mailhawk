@@ -24,6 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 define( 'MAILHAWK_VERSION', '1.0' );
 define( 'MAILHAWK_PREVIOUS_STABLE_VERSION', '1.0' );
+define( 'MAILHAWK_LICENSE_SERVER_URL', 'http://localhost/mailhawk' );
 
 
 define( 'MAILHAWK__FILE__', __FILE__ );

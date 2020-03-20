@@ -1,32 +1,33 @@
-.wrap{
+.wrap {
     max-width: 500px;
     margin: auto;
     padding-top: 8%;
 }
 
-.wrap *{
+.wrap * {
     /*font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;*/
 }
 
-.mailhawk-connect-header h1{
+.mailhawk-connect-header h1 {
     text-align: center;
 }
 
-.mailhawk-connect{
+.mailhawk-connect {
     background: #FFF;
     padding: 20px 30px;
     border-radius: 5px;
     border: 1px solid #ccd0d4;
-    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+    margin-bottom: 20px;
 }
 
-#wpbody .mailhawk-connect button{
+#wpbody .mailhawk-connect button {
     display: block;
     font-weight: bold;
     /*margin: auto;*/
 }
 
-#wpbody .big-button{
+#wpbody .big-button {
     position: relative;
     font-size: 16px;
     margin: 30px auto;
@@ -34,29 +35,29 @@
     height: auto;
 }
 
-#mailhawk-status{
+#mailhawk-status {
     width: 100%;
     height: 100px;
 }
 
-#spf{
+#spf {
     width: 100%;
 }
 
-.mailhawk-connect p{
+.mailhawk-connect p {
     font-size: 14px;
 }
 
-.mailhawk-legal{
+.mailhawk-legal {
     padding: 10px;
     text-align: center;
 }
 
-.mailhawk-legal a{
+.mailhawk-legal a {
     text-decoration: none;
 }
 
-#wpbody .big-button .dashicons{
+#wpbody .big-button .dashicons {
     font-size: 24px;
     margin-right: 10px;
     margin-top: 5px;
@@ -65,21 +66,103 @@
 }
 
 @-moz-keyframes spin {
-    from { -moz-transform: rotate(0deg); }
-    to { -moz-transform: rotate(360deg); }
-}
-@-webkit-keyframes spin {
-    from { -webkit-transform: rotate(0deg); }
-    to { -webkit-transform: rotate(360deg); }
-}
-@keyframes spin {
-    from {transform:rotate(0deg);}
-    to {transform:rotate(360deg);}
+    from {
+        -moz-transform: rotate(0deg);
+    }
+    to {
+        -moz-transform: rotate(360deg);
+    }
 }
 
-.big-button.spin .dashicons{
+@-webkit-keyframes spin {
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(360deg);
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.big-button.spin .dashicons {
     animation: spin;
     animation-duration: 2s;
     animation-iteration-count: infinite;
     animation-timing-function: linear;
+}
+
+.domains .yes {
+    color: green;
+}
+
+.domains .no {
+    color: red;
+}
+
+.domains .wp-list-table th:first-child,
+.domains .wp-list-table td:first-child {
+    width: 200px;
+    vertical-align: middle;
+}
+
+.domains .wp-list-table th:nth-child(2),
+.domains .wp-list-table th:nth-child(3),
+.domains .wp-list-table td:nth-child(2),
+.domains .wp-list-table td:nth-child(3) {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.setup .email-option {
+    margin: 5px 0;
+    font-size: 16px;
+    font-weight: 300;
+}
+
+.setup .big-button {
+    margin-left: 0 !important;
+}
+
+.setup h2 {
+    margin-top: 40px;
+}
+
+.setup h3 {
+    font-size: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e5e5;
+    /*font-weight: 400;*/
+}
+
+.setup input.code {
+    width: 100%;
+    font-size: 16px;
+}
+
+.setup h2 .dashicons {
+    margin-right: 5px;
+}
+
+a.button .dashicons {
+    margin: 4px 5px 0 0;
+}
+
+.setup .button.delete {
+    /*margin-top: 10px;*/
+    color: #a00;
+    border-color: #a00;
+    background-color: rgba(255, 0, 0, 0.01);
+}
+
+.setup .button.delete:hover {
+    color: #dc3232;
+    border-color: #dc3232;
 }

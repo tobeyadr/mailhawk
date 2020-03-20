@@ -2,6 +2,7 @@
 
 namespace MailHawk\Api;
 
+use MailHawk\Plugin;
 use MailHawk\Utils\Signature_Verifier;
 use WP_REST_Response;
 use WP_REST_Server;
@@ -40,7 +41,7 @@ class Webhook_Listener {
 
 		$verified = $this->verifier->verify( $body, $signature );
 
-		if ( ! $verified ){
+		if ( ! $verified ) {
 			return new \WP_Error( 'error', 'Unable to verify request.' );
 		}
 
@@ -52,24 +53,46 @@ class Webhook_Listener {
 	 *
 	 * @param \WP_REST_Request $request
 	 *
-	 * @return WP_REST_Response
+	 * @return \WP_Error|WP_REST_Response
 	 */
 	public function process( \WP_REST_Request $request ) {
 
 		$event_type = $request->get_param( 'event' );
+		$payload    = $request->get_param( 'payload' );
 
 		switch ( $event_type ):
 
 			case 'MessageBounced':
-				// Todo, Handle bounced message
+
+				$to_address = sanitize_email( $payload->original_message->to );
+
+				// do something
+				if ( ! is_email( $to_address ) ) {
+					return new \WP_Error( 'invalid_email', 'The provided email address is invalid.' );
+				}
+
+				Plugin::instance()->emails->add( [
+					'email'  => $to_address,
+					'status' => 'bounced'
+				] );
 
 				break;
 			case 'MessageDeliveryFailed':
-				// Todo, handle the bounced message.
+
+				$to_address = sanitize_email( $payload->message->to );
+
+				// do something
+				if ( ! is_email( $to_address ) ) {
+					return new \WP_Error( 'invalid_email', 'The provided email address is invalid.' );
+				}
+
+				Plugin::instance()->emails->add( [
+					'email'  => $to_address,
+					'status' => 'failed'
+				] );
 
 				break;
 			case 'DomainDNSError':
-				// Todo, handle domain DNS error
 
 				break;
 		endswitch;

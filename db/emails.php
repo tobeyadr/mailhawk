@@ -64,6 +64,14 @@ class Emails extends DB {
 			return false;
 		}
 
+		if ( $this->exists( $args['email'], 'email' ) ) {
+			$record = $this->get_by( 'email', $args['email'] );
+			$id     = absint( $record->ID );
+			$this->update( $id, $args );
+
+			return $id;
+		}
+
 		return $this->insert( $args );
 	}
 

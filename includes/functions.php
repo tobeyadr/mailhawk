@@ -7,10 +7,32 @@ use WP_Error;
 /**
  * The URL of the MailHawk settings page
  *
+ * @param array $params
+ *
  * @return string
  */
-function get_admin_mailhawk_uri() {
-	return add_query_arg( [ 'page' => 'mailhawk' ], admin_url( 'tools.php' ) );
+function get_admin_mailhawk_uri( $params = [] ) {
+	$params = array_merge( [ 'page' => 'mailhawk' ], $params );
+	return add_query_arg( $params, admin_url( 'tools.php' ) );
+}
+
+/**
+ * Get the email address status
+ *
+ * @param $email_address
+ *
+ * @return bool
+ */
+function get_email_status( $email_address ){
+
+	$email_obj = Plugin::instance()->emails->get_by( 'email', $email_address );
+
+	// If not a valid status, return false;
+	if ( ! $email_obj ){
+		return false;
+	}
+
+	return $email_obj->status;
 }
 
 /**
@@ -26,42 +48,59 @@ function is_valid_email( $email_address ) {
 		return false;
 	}
 
-	// If we have previously validated the email address.
-	if ( Plugin::instance()->emails->exists( $email_address ) ) {
-		$email_obj = Plugin::instance()->emails->get_by( 'email', $email_address );
+	$global_email = sprintf( '*@%s', substr( $email_address, strpos( $email_address, '@' ) + 1 ) );
 
-		if ( in_array( $email_obj->status, get_valid_email_stati() ) ) {
+	// If we have previously validated the email address...
+	if ( Plugin::instance()->emails->exists( $email_address ) ) {
+
+		$status = get_email_status( $email_address );
+
+		if ( in_array( $status, get_valid_email_stati() ) ) {
 			// Email status is valid, therefore we are OKAY
 			return true;
 		}
 
 		// If not a valid status, return false;
 		return false;
-	}
 
-	// If the account supports validating email addresses.
-	if ( Api_Helper::instance()->is_connected_for_validation() ) {
-		// Do validation
+	// Check global email is available...
+	} else if ( Plugin::instance()->emails->exists( $global_email ) ){
 
-		$result = Api_Helper::instance()->validate_email_address( $email_address );
+		$status = get_email_status( $global_email );
 
-		if ( is_wp_error( $result ) ) {
-			// API failed, assume email is valid.
+		if ( in_array( $status, get_valid_email_stati() ) ) {
+			// Email status is valid, therefore we are OKAY
 			return true;
 		}
 
-		$status = $result['status'];
-
-		Plugin::instance()->emails->add( [
-			'email'  => sanitize_email( $email_address ),
-			'status' => sanitize_key( $status )
-		] );
-
-		if ( ! in_array( $status, get_valid_email_stati() ) ) {
-			return false;
-		}
+		// If not a valid status, return false;
+		return false;
 
 	}
+
+//	// If the account supports validating email addresses.
+//	if ( Api_Helper::instance()->is_connected_for_validation() ) {
+//		// Do validation
+//
+//		$result = Api_Helper::instance()->validate_email_address( $email_address );
+//
+//		if ( is_wp_error( $result ) ) {
+//			// API failed, assume email is valid.
+//			return true;
+//		}
+//
+//		$status = $result['status'];
+//
+//		Plugin::instance()->emails->add( [
+//			'email'  => sanitize_email( $email_address ),
+//			'status' => sanitize_key( $status )
+//		] );
+//
+//		if ( ! in_array( $status, get_valid_email_stati() ) ) {
+//			return false;
+//		}
+//
+//	}
 
 	return true;
 }
@@ -286,7 +325,7 @@ function mailhawk_is_connected() {
  *
  * @return bool
  */
-function set_mailhawk_is_connected( $connected=true ) {
+function set_mailhawk_is_connected( $connected = true ) {
 	return update_option( 'mailhawk_is_connected', $connected ? 'yes' : 'no' );
 }
 

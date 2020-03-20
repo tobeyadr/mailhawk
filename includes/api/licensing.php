@@ -104,14 +104,16 @@ class Licensing {
 	 *
 	 * @param $license_key
 	 *
+	 * @param $item_id
+	 *
 	 * @return bool|\WP_Error
 	 */
-	public function activate( $license_key ) {
+	public function activate( $license_key, $item_id ) {
 
 		$api_params = array(
 			'edd_action' => 'activate_license',
 			'license'    => $license_key,
-			'item_id'    => 0, // ignore
+			'item_id'    => $item_id,
 			'url'        => home_url()
 		);
 
@@ -132,7 +134,7 @@ class Licensing {
 		$license_data = json_decode( $body );
 
 		if ( $license_data->success === false ) {
-			return new \WP_Error( 'error', 'Something went wrong...' );
+			return new \WP_Error( $license_data->error, 'Something went wrong...', $license_data );
 		}
 
 		return true;
@@ -149,7 +151,7 @@ class Licensing {
 		$api_params = array(
 			'edd_action' => 'check_license',
 			'license'    => $license,
-			'item_id'    => 0, // ignore
+			'item_id'    => 1234, // ignore
 			'url'        => home_url()
 		);
 
