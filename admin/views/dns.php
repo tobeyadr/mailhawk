@@ -62,7 +62,7 @@ $domains = [
 
 	<?php endforeach; ?>
 
-	<p><a href="<?php echo esc_url( get_admin_mailhawk_uri() ); ?>">&larr; <?php _e( 'Back to WordPress Admin', 'mailhawk' ); ?></a></p>
+    <a class="button big-button button-primary" href="<?php echo esc_url( get_admin_mailhawk_uri() ); ?>"><b>&larr; <?php _e( 'Finish Setup!', 'mailhawk' ); ?></b></a>
 
 </div>
 

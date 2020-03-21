@@ -18,8 +18,6 @@ use function MailHawk\set_mailhawk_is_connected;
 
 class Admin {
 
-	protected static $server_url = 'http://localhost/mailhawk/';
-
 	public function __construct() {
 
 		// Load any scripts

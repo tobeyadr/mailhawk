@@ -78,6 +78,7 @@ function is_valid_email( $email_address ) {
 
 	}
 
+	// Todo: enable this when we have email validation in place.
 //	// If the account supports validating email addresses.
 //	if ( Api_Helper::instance()->is_connected_for_validation() ) {
 //		// Do validation
