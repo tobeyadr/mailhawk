@@ -2,7 +2,7 @@
 
 namespace MailHawk\Api\Postal;
 
-class Send extends Base {
+class Send extends Postal {
 
 	public static function raw( $mail_from = '', $to = [], $data = '' ) {
 

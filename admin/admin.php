@@ -4,12 +4,14 @@ namespace MailHawk\Admin;
 
 use MailHawk\Api\Licensing;
 use MailHawk\Api\Postal\Domains;
+use MailHawk\Api\Postal\Webhooks;
 use MailHawk\Api_Helper;
 use MailHawk\Keys;
 use MailHawk\Plugin;
 use function MailHawk\get_admin_mailhawk_uri;
 use function MailHawk\get_post_var;
 use function MailHawk\get_request_var;
+use function MailHawk\get_rest_api_webhook_listener_uri;
 use function MailHawk\get_suggested_spf_record;
 use function MailHawk\get_url_var;
 use function MailHawk\mailhawk_is_connected;
@@ -104,10 +106,12 @@ class Admin {
 			return;
 		}
 
-		// All checks passed, connect mailhawk!
+		// All checks passed, connect MailHawk!
 		set_mailhawk_is_connected( true );
 
-		// todo: Add daily check to licensing server
+		// Create the webhook listener.
+		Webhooks::create( get_bloginfo( 'name' ), get_rest_api_webhook_listener_uri(), true );
+
 		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'action' => 'setup' ] ) ) );
 	}
 
@@ -140,7 +144,7 @@ class Admin {
 		}
 
 		foreach ( $domains as $domain ) {
-//		    Domains::create( $domain );
+			Domains::create( $domain );
 		}
 
 		// Send to DNS
@@ -163,10 +167,39 @@ class Admin {
 			return;
 		}
 
-		// Domains::delete( $domain );
+		$response = Domains::delete( $domain );
+
+		if ( is_wp_error( $response ) ) {
+			wp_die( $response );
+		}
 
 		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'deleted_domain' => $domain ] ) ) );
 	}
+
+	/**
+	 * Check a domain in postal
+	 */
+	protected function maybe_check_domain() {
+
+		if ( ! wp_verify_nonce( get_url_var( '_mailhawk_nonce' ), 'mailhawk_check_domain' ) ) {
+			return;
+		}
+
+		$domain = sanitize_text_field( get_url_var( 'domain' ) );
+
+		if ( ! $domain ) {
+			return;
+		}
+
+		$response = Domains::check( $domain );
+
+		if ( is_wp_error( $response ) ) {
+			wp_die( $response );
+		}
+
+		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'domain' => $domain, 'action' => 'dns-single' ] ) ) );
+	}
+
 
 	/**
 	 * Register a new domain
@@ -192,7 +225,20 @@ class Admin {
 			return;
 		}
 
-//	    Domains::create( $domain );
+		$response = Domains::create( $domain );
+
+		if ( is_wp_error( $response ) ) {
+
+			switch ( $response->get_error_code() ) {
+				default:
+					wp_die( $response );
+					break;
+				case 'ReachedDomainLimit':
+
+
+					break;
+			}
+		}
 
 		die( wp_safe_redirect( get_admin_mailhawk_uri( [
 			'action' => 'dns-single',
@@ -233,6 +279,18 @@ class Admin {
 	}
 
 	/**
+	 * Register the webhook response.
+	 */
+	protected function maybe_register_webhook() {
+		$response = Webhooks::create( get_bloginfo( 'name' ), get_rest_api_webhook_listener_uri(), true );
+
+		if ( is_wp_error( $response ) ) {
+			wp_die( $response );
+		}
+	}
+
+
+	/**
 	 * Any relevant actions for the plugin go here.
 	 */
 	public function do_actions() {
@@ -245,8 +303,10 @@ class Admin {
 		$this->maybe_connect();
 		$this->maybe_setup_initial_domains();
 		$this->maybe_delete_domain();
+		$this->maybe_check_domain();
 		$this->maybe_register_new_domain();
 		$this->maybe_manage_blacklist();
+//		$this->maybe_register_webhook(); // Todo: Remove
 
 	}
 

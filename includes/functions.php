@@ -17,6 +17,18 @@ function get_admin_mailhawk_uri( $params = [] ) {
 }
 
 /**
+ * Get the API webhook listener URL
+ *
+ * @return string
+ */
+function get_rest_api_webhook_listener_uri() {
+	// Todo: replace dummy URL with an actual URL
+	return 'https://webhook.site/33c26b2c-f4f3-460e-a48a-7cf89a6e0f5f';
+//	return rest_url( 'mailhawk/listen' );
+}
+
+
+/**
  * Get the email address status
  *
  * @param $email_address
