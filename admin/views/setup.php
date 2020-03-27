@@ -21,7 +21,7 @@ $emails = array_unique( $emails );
     #wpcontent {margin: 0;padding: 0;}
     #adminmenumain,#wpfooter,#wpadminbar { display: none !important; }
 </style>
-<div class="mailhawk-connect setup">
+<div class="mailhawk-content-box setup">
 
     <h1><?php _e( "Let's get you set up!", 'mailhawk' ); ?></h1>
     <p><?php _e( 'We have detected the following email addresses in use, please select the ones you wish to send email from.', 'mailhawk' ); ?></p>

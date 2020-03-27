@@ -1,27 +1,37 @@
+#wpcontent{
+    padding: 0;
+}
+
+
 .wrap {
-    max-width: 500px;
-    margin: auto;
-    padding-top: 8%;
+    /*max-width: 500px;*/
+    /*margin: auto;*/
+    /*padding-top: 8%;*/
+    margin: 0;
 }
 
 .wrap * {
     /*font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;*/
 }
 
-.mailhawk-connect-header h1 {
-    text-align: center;
+.mailhawk-header h1 {
+    /*text-align: center;*/
 }
 
-.mailhawk-connect {
+.mailhawk-content-box p.description{
+    margin-top: 4px;
+}
+
+.mailhawk-content-box {
     background: #FFF;
     padding: 20px 30px;
     border-radius: 5px;
     border: 1px solid #ccd0d4;
     box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
-    margin-bottom: 20px;
+    margin: 10px 20px;
 }
 
-#wpbody .mailhawk-connect button {
+#wpbody .mailhawk-content-box button {
     display: block;
     font-weight: bold;
     /*margin: auto;*/
@@ -44,7 +54,7 @@
     width: 100%;
 }
 
-.mailhawk-connect p {
+.mailhawk-content-box p {
     font-size: 14px;
 }
 
@@ -99,26 +109,27 @@
     animation-timing-function: linear;
 }
 
+.mailhawk-table-wrap .email-sent,
 .domains .yes {
     color: green;
 }
 
+.mailhawk-table-wrap .email-failed,
 .domains .no {
     color: red;
+}
+
+.domains .wp-list-table th,
+.domains .wp-list-table td {
+    text-align: center;
+    vertical-align: middle;
 }
 
 .domains .wp-list-table th:first-child,
 .domains .wp-list-table td:first-child {
     width: 200px;
     vertical-align: middle;
-}
-
-.domains .wp-list-table th:nth-child(2),
-.domains .wp-list-table th:nth-child(3),
-.domains .wp-list-table td:nth-child(2),
-.domains .wp-list-table td:nth-child(3) {
-    text-align: center;
-    vertical-align: middle;
+    text-align: left;
 }
 
 .setup .email-option {
@@ -165,4 +176,91 @@ a.button .dashicons {
 .setup .button.delete:hover {
     color: #dc3232;
     border-color: #dc3232;
+}
+
+#mailhawk-menu{
+    width: 100%;
+    background: #FFFFFF;
+    border-width: 1px 0;
+    border-color: #e5e5e5;
+    border-style: solid;
+    margin-bottom: 20px;
+    padding-left: 20px;
+}
+
+#mailhawk-menu ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    /*background-color: #333;*/
+}
+
+#mailhawk-menu li {
+    float: left;
+    margin: 0;
+}
+
+#mailhawk-menu li a {
+    display: block;
+    font-weight: 500;
+    font-size: 14px;
+    /*color: white;*/
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+#mailhawk-menu li .dashicons{
+    margin-right: 5px;
+}
+
+#mailhawk-menu li a:hover:not(.active) {
+    background-color: #f9f9f9;
+}
+
+#mailhawk-menu li a.active{
+    background-color: #f9f9f9;
+}
+
+#wpcontent .wrap .notice{
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.mailhawk-table-wrap{
+    margin: 20px;
+}
+
+.mailhawk-table-wrap .wp-list-table{
+    border-radius: 5px;
+}
+
+.mailhawk-table-wrap #status{
+    width: 100px;
+}
+
+.mailhawk-table-wrap #sent{
+    width: 200px;
+}
+
+.mailhawk-log-left{
+    width: 399px;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.mailhawk-log-left .mailhawk-content-box{
+    height: 600px;
+    margin-right: 0;
+}
+
+.mailhawk-log-right{
+    padding-left: 400px;
+
+}
+
+.mailhawk-log-wrap{
+    position: relative;
 }

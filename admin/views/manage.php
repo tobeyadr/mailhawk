@@ -1,7 +1,7 @@
 <?php
 
 ?>
-<div class="mailhawk-connect">
+<div class="mailhawk-content-box">
 
     <p><?php _e( 'You are connected to MailHawk! We are ensuring the safe delivery of your email to your customers\'s inbox.', 'mailhawk' ); ?></p>
     <p><a href="#" class="button button-secondary"><?php _e( 'My Account', 'mailhawk' ); ?></a></p>

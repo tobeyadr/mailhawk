@@ -10,7 +10,7 @@ $form_inputs = [
 ];
 
 ?>
-<div class="mailhawk-connect">
+<div class="mailhawk-content-box">
     <p><?php _e( 'Connect to <b>MailHawk</b> and instantly solve your WordPress email delivery problems. Starts at just <b>$14.97</b>/m.', 'mailhawk' ); ?></p>
     <form method="post" action="<?php echo esc_url( trailingslashit( MAILHAWK_LICENSE_SERVER_URL ) ); ?>">
 		<?php

@@ -72,11 +72,13 @@ class Autoloader {
             $is_filename = MAILHAWK_PATH . $filename . '.php';
 
             if ( ! file_exists( $is_filename ) ){
-                $filename = wp_normalize_path( MAILHAWK_PATH . 'includes/' . $filename . '.php' );
+                $filename = MAILHAWK_PATH . 'includes/' . $filename . '.php';
             } else {
                 $filename = $is_filename;
             }
         }
+
+//        var_dump( wp_normalize_path( $filename ) );
 
         if ( is_readable( $filename ) ) {
             require $filename;

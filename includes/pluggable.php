@@ -6,7 +6,7 @@ use function MailHawk\is_valid_email;
 if ( ! function_exists( 'wp_mail' ) && get_option( 'mailhawk_is_connected' ) === 'yes' ):
 
 	function wp_mail( $to, $subject, $message, $headers = '', $attachments = array()  ){
-		mailhawk_mail( $to, $subject, $message, $headers, $attachments );
+		return mailhawk_mail( $to, $subject, $message, $headers, $attachments );
 	}
 
 endif;

@@ -16,6 +16,7 @@ use function MailHawk\get_suggested_spf_record;
 use function MailHawk\get_url_var;
 use function MailHawk\mailhawk_is_connected;
 use function MailHawk\mailhawk_spf_set;
+use function MailHawk\set_mailhawk_api_credentials;
 use function MailHawk\set_mailhawk_is_connected;
 
 class Admin {
@@ -34,7 +35,8 @@ class Admin {
 		// Process any actions relevant for the admin page
 		add_action( 'load-tools_page_mailhawk', [ $this, 'do_actions' ] );
 
-//		set_mailhawk_is_connected( false );
+		set_mailhawk_is_connected( true );
+		set_mailhawk_api_credentials( 'DFmBYzenLofn1T5MEqk7Rz8f' );
 	}
 
 	/**
@@ -93,7 +95,7 @@ class Admin {
 		$item_id            = absint( $credentials->item_id );
 
 		update_option( 'mailhawk_license_key', $license_key );
-		update_option( 'mailhawk_mta_credential_key', $mta_credential_key );
+		set_mailhawk_api_credentials( $mta_credential_key );
 
 		$response = Licensing::instance()->activate( $license_key, $item_id );
 
@@ -289,6 +291,32 @@ class Admin {
 		}
 	}
 
+	protected function maybe_send_test_email(){
+
+	    if ( ! wp_verify_nonce( get_post_var( '_mailhawk_nonce' ), 'send_test_email' ) ) {
+			return;
+		}
+
+		$to = sanitize_email( get_post_var( 'to_address' ) );
+
+	    if ( ! $to ){
+	        return;
+        }
+
+//		add_action( 'wp_mail_failed', function ( $error ){
+//		    wp_die( $error );
+//        } );
+
+		// Todo: Update email content.
+		$success = wp_mail( $to, 'MailHawk is connected!', 'Hello world!' );
+
+		if ( $success ){
+			add_action( 'mailhawk_notices', [ $this, 'show_test_successful_notice' ] );
+		} else {
+			add_action( 'mailhawk_notices', [ $this, 'show_test_not_successful_notice' ] );
+		}
+    }
+
 
 	/**
 	 * Any relevant actions for the plugin go here.
@@ -306,6 +334,7 @@ class Admin {
 		$this->maybe_check_domain();
 		$this->maybe_register_new_domain();
 		$this->maybe_manage_blacklist();
+		$this->maybe_send_test_email();
 //		$this->maybe_register_webhook(); // Todo: Remove
 
 	}
@@ -351,34 +380,45 @@ class Admin {
 
 		?>
         <div class="wrap">
-            <div class="mailhawk-connect-header">
+            <div class="mailhawk-header">
                 <h1><img title="MailHawk Logo" alt="MailHawk Logo"
                          src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/logo.png' ); ?>"></h1>
 				<?php do_action( 'mailhawk_notices' ); ?>
             </div>
 
-			<?php if ( get_url_var( 'action' ) == 'setup' ): ?>
-				<?php include __DIR__ . '/views/setup.php'; ?>
-			<?php elseif ( get_url_var( 'action' ) == 'dns' ): ?>
-				<?php include __DIR__ . '/views/dns.php'; ?>
-			<?php elseif ( get_url_var( 'action' ) == 'dns-single' ): ?>
-				<?php include __DIR__ . '/views/dns-single.php'; ?>
-			<?php elseif ( ! mailhawk_is_connected() ): ?>
-				<?php include __DIR__ . '/views/connect.php'; ?>
-			<?php else : ?>
-				<?php include __DIR__ . '/views/manage.php'; ?>
-			<?php endif; ?>
+	        <?php include __DIR__ . '/views/menu.php'; ?>
 
-			<?php if ( mailhawk_is_connected() && ! get_url_var( 'action' ) ): ?>
-				<?php include __DIR__ . '/views/domains.php'; ?>
-				<?php include __DIR__ . '/views/blacklist.php'; ?>
-			<?php endif; ?>
+            <div class="mailhawk-view-content">
 
-            <div class="mailhawk-legal">
-                <!-- TODO Add Real Links -->
-                <a href="#"><?php _e( 'Privacy Policy', 'mailhawk' ); ?></a> |
-                <a href="#"><?php _e( 'Terms & Conditions', 'mailhawk' ); ?></a> |
-                <a href="#"><?php _e( 'Support', 'mailhawk' ); ?></a>
+                <?php
+
+                $view = get_url_var( 'view', 'overview' );
+
+                switch ( $view ):
+
+                    case 'domains':
+
+                        if ( get_url_var( 'domain' ) ){
+	                        include __DIR__ . '/views/dns-single.php';
+                        } else {
+	                        include __DIR__ . '/views/domains.php';
+                        }
+
+	                    break;
+	                case 'blacklist':
+		                include __DIR__ . '/views/blacklist.php';
+		                break;
+                    case 'test':
+                        include __DIR__ . '/views/test.php';
+                        break;
+                    case 'log':
+                        include __DIR__ . '/views/log.php';
+                        break;
+
+                endswitch;
+
+                ?>
+
             </div>
         </div>
 
@@ -532,6 +572,28 @@ class Admin {
 		?>
         <div class="notice notice-success is-dismissible">
             <p><?php printf( __( 'Added %s to the whitelist.', 'mailhawk' ), "<code>" . sanitize_email( get_post_var( 'address' ) ) . "</code>" ); ?></p>
+        </div>
+		<?php
+	}
+
+	/**
+	 * Show a notice when a test email could not be delivered.
+	 */
+	public function show_test_not_successful_notice() {
+		?>
+        <div class="notice notice-error is-dismissible">
+            <p><?php printf( __( 'There was a problem sending the email to %s.', 'mailhawk' ), "<code>" . sanitize_email( get_post_var( 'to_address' ) ) . "</code>" ); ?></p>
+        </div>
+		<?php
+	}
+
+	/**
+	 * Show a notice when a test email was delivered.
+	 */
+	public function show_test_successful_notice() {
+		?>
+        <div class="notice notice-success is-dismissible">
+            <p><?php printf( __( 'We sent a test email to %s.', 'mailhawk' ), "<code>" . sanitize_email( get_post_var( 'to_address' ) ) . "</code>" ); ?></p>
         </div>
 		<?php
 	}

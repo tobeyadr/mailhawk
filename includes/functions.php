@@ -13,6 +13,7 @@ use WP_Error;
  */
 function get_admin_mailhawk_uri( $params = [] ) {
 	$params = array_merge( [ 'page' => 'mailhawk' ], $params );
+
 	return add_query_arg( $params, admin_url( 'tools.php' ) );
 }
 
@@ -35,12 +36,12 @@ function get_rest_api_webhook_listener_uri() {
  *
  * @return bool
  */
-function get_email_status( $email_address ){
+function get_email_status( $email_address ) {
 
 	$email_obj = Plugin::instance()->emails->get_by( 'email', $email_address );
 
 	// If not a valid status, return false;
-	if ( ! $email_obj ){
+	if ( ! $email_obj ) {
 		return false;
 	}
 
@@ -75,8 +76,8 @@ function is_valid_email( $email_address ) {
 		// If not a valid status, return false;
 		return false;
 
-	// Check global email is available...
-	} else if ( Plugin::instance()->emails->exists( $global_email ) ){
+		// Check global email is available...
+	} else if ( Plugin::instance()->emails->exists( $global_email ) ) {
 
 		$status = get_email_status( $global_email );
 
@@ -135,7 +136,7 @@ function get_valid_email_stati() {
  *
  * @param        $array
  * @param string $key
- * @param bool   $default
+ * @param bool $default
  *
  * @return mixed
  */
@@ -173,7 +174,7 @@ function isset_not_empty( $array, $key = '' ) {
  * Get a variable from the $_POST global
  *
  * @param string $key
- * @param bool   $default
+ * @param bool $default
  *
  * @return mixed
  */
@@ -185,7 +186,7 @@ function get_post_var( $key = '', $default = false ) {
  * Get a variable from the $_REQUEST global
  *
  * @param string $key
- * @param bool   $default
+ * @param bool $default
  *
  * @return mixed
  */
@@ -197,7 +198,7 @@ function get_request_var( $key = '', $default = false ) {
  * Get a variable from the $_GET global
  *
  * @param string $key
- * @param bool   $default
+ * @param bool $default
  *
  * @return mixed
  */
@@ -261,7 +262,7 @@ function array_to_css( $atts ) {
  *
  * @param string $name
  * @param string $val
- * @param bool   $expiry
+ * @param bool $expiry
  *
  * @return bool
  */
@@ -273,7 +274,7 @@ function set_cookie( $name = '', $val = '', $expiry = false ) {
  * Retrieve a cookie
  *
  * @param string $cookie
- * @param bool   $default
+ * @param bool $default
  *
  * @return mixed
  */
@@ -343,6 +344,26 @@ function set_mailhawk_is_connected( $connected = true ) {
 }
 
 /**
+ * Get the date/time format
+ *
+ * @return string
+ */
+function get_date_time_format() {
+	return get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
+}
+
+/**
+ * Set the mailhawk API key
+ *
+ * @param string $key
+ *
+ * @return bool
+ */
+function set_mailhawk_api_credentials( $key = '' ) {
+	return update_option( 'mailhawk_mta_credential_key', $key );
+}
+
+/**
  * Return an actionable url
  *
  * @param       $action
@@ -387,7 +408,7 @@ function mailhawk_spf_set() {
  * @author Samui Banti - https://samiwell.eu
  *
  * @param string $hostname - The host name of the email address in format suitable for dns_get_record() function.
- * @param string $ip       - The IP address of the server that sends the email.
+ * @param string $ip - The IP address of the server that sends the email.
  *
  * @return bool if the server is allowed to send on the behalf of the hostname
  */

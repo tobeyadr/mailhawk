@@ -14,7 +14,7 @@ if ( is_wp_error( $domain ) ){
 //var_dump( $domain->dkim, $domain->spf );
 
 ?>
-<div class="mailhawk-connect setup domains">
+<div class="mailhawk-content-box setup domains">
 
     <h1><?php printf( __( "Configure your DNS for <b>%s</b>!", 'mailhawk' ), esc_html( $domain->name ) ); ?></h1>
     <p>Before you can start sending email, you must configure your DNS records for <code><?php esc_html_e( $domain->name ); ?></code>.</p>
@@ -46,7 +46,7 @@ if ( is_wp_error( $domain ) ){
            readonly>
 
     <p>
-        <a href="<?php echo esc_url( get_admin_mailhawk_uri() ); ?>">&larr; <?php _e( 'Back', 'mailhawk' ); ?></a>
+        <a href="<?php echo esc_url( get_admin_mailhawk_uri( [ 'view' => 'domains' ] ) ); ?>">&larr; <?php _e( 'Back', 'mailhawk' ); ?></a>
         <a href="<?php echo wp_nonce_url( get_admin_mailhawk_uri( [ 'domain' => $domain->name ] ), 'mailhawk_delete_domain', '_mailhawk_nonce' ); ?>" class="button delete alignright"><?php _e( 'Delete', 'mailhawk' ); ?></a>
     </p>
 

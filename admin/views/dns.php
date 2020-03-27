@@ -6,6 +6,11 @@ use function MailHawk\get_admin_mailhawk_uri;
 
 $domains = Domains::query_all();
 
+// If there was an error, show no domains.
+if ( is_wp_error( $domains ) || empty( $domains ) ){
+	$domains = [];
+}
+
 ?>
 <style>
     #wpcontent {
@@ -17,7 +22,7 @@ $domains = Domains::query_all();
         display: none !important;
     }
 </style>
-<div class="mailhawk-connect setup">
+<div class="mailhawk-content-box setup">
 
     <h1><?php _e( "Configure your DNS!", 'mailhawk' ); ?></h1>
     <p><?php _e( 'Before you can start sending email, you must configure your DNS records for the emails you just registered.', 'mailhawk' ); ?></p>

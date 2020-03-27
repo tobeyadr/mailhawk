@@ -21,28 +21,6 @@ class Emails extends DB {
 		return 'email_address';
 	}
 
-	public function create_table() {
-
-		global $wpdb;
-
-		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-
-		$sql = "CREATE TABLE " . $this->table_name . " (
-		ID bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-		email varchar(50) NOT NULL,
-		status varchar(20) NOT NULL,
-		last_checked datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
-		PRIMARY KEY (ID),
-		UNIQUE KEY email (email),
-		KEY status (status),
-		KEY last_checked (last_checked)
-		) {$this->get_charset_collate()};";
-
-		dbDelta( $sql );
-
-		update_option( $this->table_name . '_db_version', $this->version );
-	}
-
 	/**
 	 * Add a activity
 	 *
@@ -115,5 +93,27 @@ class Emails extends DB {
 			'status'       => 'valid',
 			'last_checked' => current_time( 'mysql' ),
 		);
+	}
+
+	public function create_table() {
+
+		global $wpdb;
+
+		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+
+		$sql = "CREATE TABLE " . $this->table_name . " (
+		ID bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+		email varchar(50) NOT NULL,
+		status varchar(20) NOT NULL,
+		last_checked datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+		PRIMARY KEY (ID),
+		UNIQUE KEY email (email),
+		KEY status (status),
+		KEY last_checked (last_checked)
+		) {$this->get_charset_collate()};";
+
+		dbDelta( $sql );
+
+		update_option( $this->table_name . '_db_version', $this->version );
 	}
 }
