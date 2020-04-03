@@ -30,8 +30,14 @@ $menu_items = [
 	[
 		'view' => 'test',
 		'text' => __( 'Test' ),
-		'icon' => 'admin-generic',
+		'icon' => 'admin-tools',
+	],
+	[
+		'view' => 'settings',
+		'text' => __( 'Settings' ),
+		'icon' => 'admin-settings',
 	]
+
 ];
 
 ?>

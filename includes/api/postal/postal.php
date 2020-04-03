@@ -3,6 +3,7 @@
 namespace MailHawk\Api\Postal;
 
 use function MailHawk\isset_not_empty;
+use function MailHawk\set_mailhawk_is_suspended;
 
 class Postal {
 
@@ -96,6 +97,11 @@ class Postal {
 					$result = new \WP_Error( $json->data->code, $json->data->message );
 					break;
 			}
+		}
+
+		// Automatically suspend
+		if ( is_wp_error( $result ) && 'ServerSuspended' == $result->get_error_code() ){
+			set_mailhawk_is_suspended( true );
 		}
 
 		return $result;

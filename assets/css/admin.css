@@ -1,4 +1,4 @@
-#wpcontent{
+#wpcontent {
     padding: 0;
 }
 
@@ -18,7 +18,7 @@
     /*text-align: center;*/
 }
 
-.mailhawk-content-box p.description{
+.mailhawk-content-box p.description {
     margin-top: 4px;
 }
 
@@ -29,6 +29,24 @@
     border: 1px solid #ccd0d4;
     box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
     margin: 10px 20px;
+}
+
+.mailhawk-content-box.third {
+    width: calc(33.33% - 30px);
+    display: inline-block;
+    box-sizing: border-box;
+}
+
+.mailhawk-content-box.report {
+    padding: 5px 20px 5px 20px;
+}
+
+.mailhawk-content-box.third {
+    margin-right: 0;
+}
+
+.mailhawk-content-box.third:last-child {
+    margin-right: 0;
 }
 
 #wpbody .mailhawk-content-box button {
@@ -178,8 +196,7 @@ a.button .dashicons {
     border-color: #dc3232;
 }
 
-#mailhawk-menu{
-    width: 100%;
+#mailhawk-menu {
     background: #FFFFFF;
     border-width: 1px 0;
     border-color: #e5e5e5;
@@ -211,7 +228,7 @@ a.button .dashicons {
     text-decoration: none;
 }
 
-#mailhawk-menu li .dashicons{
+#mailhawk-menu li .dashicons {
     margin-right: 5px;
 }
 
@@ -219,48 +236,169 @@ a.button .dashicons {
     background-color: #f9f9f9;
 }
 
-#mailhawk-menu li a.active{
+#mailhawk-menu li a.active {
     background-color: #f9f9f9;
 }
 
-#wpcontent .wrap .notice{
+#wpcontent .wrap .notice {
     margin-left: 20px;
     margin-right: 20px;
 }
 
-.mailhawk-table-wrap{
+.mailhawk-table-wrap {
     margin: 20px;
 }
 
-.mailhawk-table-wrap .wp-list-table{
+.mailhawk-table-wrap .wp-list-table {
     border-radius: 5px;
 }
 
-.mailhawk-table-wrap #status{
+.mailhawk-table-wrap #status {
     width: 100px;
 }
 
-.mailhawk-table-wrap #sent{
+.mailhawk-table-wrap #sent {
     width: 200px;
 }
 
-.mailhawk-log-left{
+.mailhawk-log-left {
     width: 399px;
     position: absolute;
     top: 0;
     left: 0;
 }
 
-.mailhawk-log-left .mailhawk-content-box{
+.mailhawk-log-left .mailhawk-content-box {
     height: 600px;
     margin-right: 0;
 }
 
-.mailhawk-log-right{
+.mailhawk-log-right {
     padding-left: 400px;
-
 }
 
-.mailhawk-log-wrap{
+.mailhawk-log-wrap {
     position: relative;
+}
+
+.mailhawk-log-wrap #content iframe {
+    width: 100%;
+}
+
+#mailhawk-overlay {
+    background: #000;
+    opacity: 0.7;
+    filter: alpha(opacity=70);
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100050;
+    display: none;
+}
+
+#mailhawk-modal {
+    position: absolute;
+    z-index: 100050;
+    width: 700px;
+    top: 50px;
+    left: calc(50% - 350px);
+}
+
+.mailhawk-content-box,
+.mailhawk-log-preview {
+    position: relative;
+}
+
+.mailhawk-log-preview .close {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    cursor: pointer;
+}
+
+.mailhawk-log-preview .close:hover {
+    color: #aa0000;
+}
+
+.mailhawk-log-preview .close .dashicons {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+}
+
+.mailhawk-log-preview iframe {
+    width: 100%;
+}
+
+.mailhawk-log-preview #subject {
+    font-size: 22px;
+    margin-bottom: 22px;
+}
+
+.mailhawk-log-preview #headers textarea,
+.mailhawk-log-preview #raw textarea {
+    width: 100%;
+}
+
+.mailhawk-content-box.report h2{
+    margin-bottom: 0;
+}
+
+.report .big-number{
+    font-size: 40px;
+    line-height: 1.3em;
+    display: inline-block;
+}
+
+.report .comparison{
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    text-align: right;
+}
+
+.report .comparison .percentage{
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.report .comparison .percentage.red{
+    color: #DA3328;
+}
+
+.report .comparison .percentage.green{
+    color: #2ba123;
+}
+
+.report .comparison .vs{
+    color: #8a8a8a;
+}
+
+.progress-bar-wrap{
+    background: rgba(104,164,218,0.20);
+    height: 30px;
+    border-radius: 5px;
+    width: 100%;
+    border: 2px solid #68A4DA;
+    margin: 10px 0;
+}
+
+.progress-bar-wrap .progress-bar{
+    background: #68A4DA;
+    height: 30px;
+}
+
+.mailhawk-log-preview .mailhawk-error{
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid;
+    border-radius: 5px;
+}
+
+.mailhawk-log-preview .mailhawk-error{
+    color: #a94442;
+    background-color: #f2dede;
+    border-color: #ebccd1;
 }

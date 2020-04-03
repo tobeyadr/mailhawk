@@ -7,7 +7,7 @@ use function MailHawk\is_json_error;
 
 class Licensing {
 
-	public static $sever_url = 'http://localhost/mailhawk';
+	public static $sever_url = 'https://mailhawk.io';
 
 	/**
 	 * @var Licensing
@@ -95,85 +95,8 @@ class Licensing {
 	 *
 	 * @return object|\WP_Error
 	 */
-	public function get_license_and_credentials() {
+	public function get_credentials() {
 		return $this->request( 'wp-json/mailhawk/credentials', [], 'GET' );
-	}
-
-	/**
-	 * Activate the license for this site.
-	 *
-	 * @param $license_key
-	 *
-	 * @param $item_id
-	 *
-	 * @return bool|\WP_Error
-	 */
-	public function activate( $license_key, $item_id ) {
-
-		$api_params = array(
-			'edd_action' => 'activate_license',
-			'license'    => $license_key,
-			'item_id'    => $item_id,
-			'url'        => home_url()
-		);
-
-		$args = [
-			'body'      => $api_params,
-			'timeout'   => 15,
-			'sslverify' => true
-		];
-
-		$response = wp_remote_post( self::$sever_url, $args );
-
-		if ( is_wp_error( $response ) ) {
-			return $response;
-		}
-
-		$body = wp_remote_retrieve_body( $response );
-
-		$license_data = json_decode( $body );
-
-		if ( $license_data->success === false ) {
-			return new \WP_Error( $license_data->error, 'Something went wrong...', $license_data );
-		}
-
-		return true;
-	}
-
-	/**
-	 * Check the license key to make sure everything is still okay!
-	 *
-	 * @param $license
-	 *
-	 * @return array|bool|\WP_Error
-	 */
-	public function check( $license ) {
-		$api_params = array(
-			'edd_action' => 'check_license',
-			'license'    => $license,
-			'item_id'    => 1234, // ignore
-			'url'        => home_url()
-		);
-
-		$args = [
-			'body'      => $api_params,
-			'timeout'   => 15,
-			'sslverify' => true
-		];
-
-		$response = wp_remote_post( self::$sever_url, $args );
-
-		if ( is_wp_error( $response ) ) {
-			return $response;
-		}
-
-		$license_data = json_decode( wp_remote_retrieve_body( $response ) );
-
-		if ( isset( $license_data->license ) && $license_data->license == 'invalid' ) {
-			return new \WP_Error( 'invalid_license', 'License invalid.' );
-		}
-
-		return true;
 	}
 
 	/**

@@ -5,7 +5,7 @@ namespace MailHawk\Admin;
 use MailHawk\Api\Licensing;
 use MailHawk\Api\Postal\Domains;
 use MailHawk\Api\Postal\Webhooks;
-use MailHawk\Api_Helper;
+use MailHawk\Classes\Email_Log_Item;
 use MailHawk\Keys;
 use MailHawk\Plugin;
 use function MailHawk\get_admin_mailhawk_uri;
@@ -15,10 +15,22 @@ use function MailHawk\get_rest_api_webhook_listener_uri;
 use function MailHawk\get_suggested_spf_record;
 use function MailHawk\get_url_var;
 use function MailHawk\mailhawk_is_connected;
+use function MailHawk\mailhawk_is_suspended;
 use function MailHawk\mailhawk_spf_set;
 use function MailHawk\set_mailhawk_api_credentials;
 use function MailHawk\set_mailhawk_is_connected;
+use function MailHawk\set_mailhawk_is_suspended;
 
+/**
+ * Class Admin
+ * @package MailHawk\Admin
+ *
+ * @todo resend/retry failed emails.
+ * @todo automatically delete logs
+ * @todo use email filters from settings somewhere
+ * @todo unsuspend account when renewed
+ * @todo set actual webhook URI
+ */
 class Admin {
 
 	public function __construct() {
@@ -31,12 +43,16 @@ class Admin {
 
 		// Add notice to go to admin page.
 		add_action( 'admin_notices', [ $this, 'installed_not_connected_notice' ] );
+		add_action( 'admin_notices', [ $this, 'account_suspended_notice' ] );
 
 		// Process any actions relevant for the admin page
 		add_action( 'load-tools_page_mailhawk', [ $this, 'do_actions' ] );
 
-		set_mailhawk_is_connected( true );
-		set_mailhawk_api_credentials( 'DFmBYzenLofn1T5MEqk7Rz8f' );
+		add_action( 'wp_ajax_mailhawk_preview_email', [ $this, 'ajax_load_preview_content' ] );
+
+//		set_mailhawk_is_connected( false );
+//		set_mailhawk_is_suspended( false );
+//		set_mailhawk_api_credentials( '' );
 	}
 
 	/**
@@ -79,7 +95,7 @@ class Admin {
 			return;
 		}
 
-		$credentials = Licensing::instance()->get_license_and_credentials();
+		$credentials = Licensing::instance()->get_credentials();
 
 		if ( is_wp_error( $credentials ) ) {
 
@@ -91,13 +107,8 @@ class Admin {
 		}
 
 		$mta_credential_key = sanitize_text_field( $credentials->credential_key );
-		$license_key        = sanitize_text_field( $credentials->license_key );
-		$item_id            = absint( $credentials->item_id );
 
-		update_option( 'mailhawk_license_key', $license_key );
 		set_mailhawk_api_credentials( $mta_credential_key );
-
-		$response = Licensing::instance()->activate( $license_key, $item_id );
 
 		// Now we have to activate it via EDD.
 		if ( is_wp_error( $response ) ) {
@@ -110,6 +121,7 @@ class Admin {
 
 		// All checks passed, connect MailHawk!
 		set_mailhawk_is_connected( true );
+		set_mailhawk_is_suspended( false );
 
 		// Create the webhook listener.
 		Webhooks::create( get_bloginfo( 'name' ), get_rest_api_webhook_listener_uri(), true );
@@ -202,7 +214,6 @@ class Admin {
 		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'domain' => $domain, 'action' => 'dns-single' ] ) ) );
 	}
 
-
 	/**
 	 * Register a new domain
 	 */
@@ -291,31 +302,105 @@ class Admin {
 		}
 	}
 
-	protected function maybe_send_test_email(){
+	protected function maybe_send_test_email() {
 
-	    if ( ! wp_verify_nonce( get_post_var( '_mailhawk_nonce' ), 'send_test_email' ) ) {
+		if ( ! wp_verify_nonce( get_post_var( '_mailhawk_nonce' ), 'send_test_email' ) ) {
 			return;
 		}
 
-		$to = sanitize_email( get_post_var( 'to_address' ) );
+		$to      = sanitize_email( get_post_var( 'to_address' ) );
+		$subject = sanitize_text_field( get_post_var( 'subject' ) );
+		$body    = sanitize_textarea_field( get_post_var( 'content' ) );
 
-	    if ( ! $to ){
-	        return;
-        }
+		if ( ! $to ) {
+			return;
+		}
 
-//		add_action( 'wp_mail_failed', function ( $error ){
-//		    wp_die( $error );
-//        } );
+		$success = wp_mail( $to, $subject, $body );
 
-		// Todo: Update email content.
-		$success = wp_mail( $to, 'MailHawk is connected!', 'Hello world!' );
-
-		if ( $success ){
+		if ( $success ) {
 			add_action( 'mailhawk_notices', [ $this, 'show_test_successful_notice' ] );
 		} else {
 			add_action( 'mailhawk_notices', [ $this, 'show_test_not_successful_notice' ] );
 		}
-    }
+	}
+
+	/**
+	 * Output the email content.
+	 */
+	protected function maybe_preview_email() {
+
+		if ( ! wp_verify_nonce( get_url_var( '_mailhawk_nonce' ), 'preview_email' ) ) {
+			return;
+		}
+
+		$preview_id = absint( get_url_var( 'preview' ) );
+
+		$log_item = new Email_Log_Item( $preview_id );
+
+		if ( ! $log_item->exists() ) {
+			wp_die( 'Invalid log item ID.' );
+		}
+
+		if ( preg_match( '/<html[^>]*>/', $log_item->content ) ) {
+			echo $log_item->content;
+		} else {
+			echo wpautop( esc_html( $log_item->content ) );
+		}
+
+		die();
+	}
+
+	/**
+	 * Return the preview content
+	 */
+	public function ajax_load_preview_content() {
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error();
+		}
+
+		ob_start();
+
+		include __DIR__ . '/views/log-preview.php';
+
+		$content = ob_get_clean();
+
+		wp_send_json_success( [ 'content' => $content ] );
+	}
+
+	/**
+	 * Maybe save the mailhawk settings.
+	 */
+	protected function maybe_save_settings() {
+		if ( ! wp_verify_nonce( get_post_var( '_mailhawk_nonce' ), 'save_settings' ) ) {
+			return;
+		}
+
+		// From Name
+		$from_name = sanitize_text_field( get_post_var( 'default_from_name' ) );
+
+		if ( $from_name ) {
+			update_option( 'mailhawk_default_from_name', $from_name );
+		}
+
+		// Email Address
+		$from_email = sanitize_text_field( get_post_var( 'default_from_email_address' ) );
+
+		if ( is_email( $from_email ) ) {
+			update_option( 'mailhawk_default_from_email_address', $from_email );
+		}
+
+		// Retention Days
+		$log_retention = absint( get_post_var( 'log_retention_in_days' ) );
+
+		if ( $log_retention > 0 ) {
+			update_option( 'mailhawk_log_retention_in_days', $log_retention );
+		}
+
+		add_action( 'mailhawk_notices', [ $this, 'show_settings_saved_notice' ] );
+
+	}
 
 
 	/**
@@ -324,6 +409,7 @@ class Admin {
 	public function do_actions() {
 
 		remove_action( 'admin_notices', [ $this, 'installed_not_connected_notice' ] );
+		remove_action( 'admin_notices', [ $this, 'account_suspended_notice' ] );
 		add_action( 'mailhawk_notices', [ $this, 'maybe_show_domain_deleted_notice' ] );
 		add_action( 'mailhawk_notices', [ $this, 'maybe_show_domain_added_notice' ] );
 		add_filter( 'admin_footer_text', [ $this, 'admin_footer_text' ] );
@@ -335,6 +421,8 @@ class Admin {
 		$this->maybe_register_new_domain();
 		$this->maybe_manage_blacklist();
 		$this->maybe_send_test_email();
+		$this->maybe_preview_email();
+		$this->maybe_save_settings();
 //		$this->maybe_register_webhook(); // Todo: Remove
 
 	}
@@ -350,11 +438,13 @@ class Admin {
 			return;
 		}
 
+		wp_register_script( 'chart-js', MAILHAWK_ASSETS_URL . 'lib/chart/Chart.bundle.min.js' );
+
 		wp_enqueue_style( 'mailhawk-admin', MAILHAWK_ASSETS_URL . 'css/admin.css' );
-		wp_enqueue_script( 'mailhawk-admin', MAILHAWK_ASSETS_URL . 'js/admin.js' );
+		wp_enqueue_script( 'mailhawk-admin', MAILHAWK_ASSETS_URL . 'js/admin.js', [ 'jquery' ], null, true );
+		wp_enqueue_script( 'mailhawk-full-frame', MAILHAWK_ASSETS_URL . 'js/fullframe.js', [ 'jquery' ], null, true );
 
 		wp_localize_script( 'mailhawk-admin', 'MailHawkConnect', [
-			'foo'             => 'bar',
 			'connecting_text' => '<span class="dashicons dashicons-admin-generic"></span>' . __( 'Connecting You To MailHawk...', 'mailhawk' )
 		] );
 	}
@@ -378,6 +468,22 @@ class Admin {
 	 */
 	public function page() {
 
+//	    var_dump( mailhawk_is_suspended() );
+
+		if ( ! mailhawk_is_connected() ) {
+			include __DIR__ . '/views/connect.php';
+			return;
+		} elseif ( mailhawk_is_suspended() ){
+			include __DIR__ . '/views/suspended.php';
+            return;
+        } elseif ( get_url_var( 'action' ) === 'setup' ){
+			include __DIR__ . '/views/setup.php';
+			return;
+        } elseif ( get_url_var( 'action' ) === 'dns' ){
+			include __DIR__ . '/views/dns.php';
+			return;
+		}
+
 		?>
         <div class="wrap">
             <div class="mailhawk-header">
@@ -386,38 +492,35 @@ class Admin {
 				<?php do_action( 'mailhawk_notices' ); ?>
             </div>
 
-	        <?php include __DIR__ . '/views/menu.php'; ?>
+			<?php include __DIR__ . '/views/menu.php'; ?>
 
             <div class="mailhawk-view-content">
 
-                <?php
+				<?php
 
-                $view = get_url_var( 'view', 'overview' );
+				$view = get_url_var( 'view', 'overview' );
 
-                switch ( $view ):
+				switch ( $view ):
 
-                    case 'domains':
+					case 'domains':
 
-                        if ( get_url_var( 'domain' ) ){
-	                        include __DIR__ . '/views/dns-single.php';
-                        } else {
-	                        include __DIR__ . '/views/domains.php';
-                        }
+						if ( get_url_var( 'domain' ) ) {
+							include __DIR__ . '/views/dns-single.php';
+						} else {
+							include __DIR__ . '/views/domains.php';
+						}
 
-	                    break;
-	                case 'blacklist':
-		                include __DIR__ . '/views/blacklist.php';
-		                break;
-                    case 'test':
-                        include __DIR__ . '/views/test.php';
-                        break;
-                    case 'log':
-                        include __DIR__ . '/views/log.php';
-                        break;
+						break;
+					default:
+						if ( file_exists( __DIR__ . '/views/' . $view . '.php' ) ) {
+							include __DIR__ . '/views/' . $view . '.php';
+						}
+						break;
 
-                endswitch;
 
-                ?>
+				endswitch;
+
+				?>
 
             </div>
         </div>
@@ -482,11 +585,36 @@ class Admin {
                  src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/hawk-head.png' ); ?>" alt="Hawk">
             <p>
 				<?php _e( '<b>Attention:</b> It looks like MailHawk is installed but is not connected to the MailHawk service.', 'mailhawk' ); ?>
-                &nbsp;
             </p>
             <p>
                 <a href="<?php echo esc_url( get_admin_mailhawk_uri() ); ?>"
                    class="button button-secondary"><?php _e( 'Connect or Register Now!', 'mailhawk' ); ?></a>
+            </p>
+        </div>
+		<?php
+
+	}
+
+
+	/**
+	 * Show a sitewide notice that MailHawk was suspended
+	 */
+	public function account_suspended_notice() {
+
+		if ( ! mailhawk_is_suspended() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		?>
+        <div class="notice notice-warning is-dismissible">
+            <img class="alignleft" height="70" style="margin: 3px 10px 0 0"
+                 src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/hawk-head.png' ); ?>" alt="Hawk">
+            <p>
+				<?php _e( '<b>Attention:</b> It looks like your account has been suspended. To continue sending email you must reactivate your account.', 'mailhawk' ); ?>
+            </p>
+            <p>
+                <a href="<?php echo esc_url( get_admin_mailhawk_uri() ); ?>"
+                   class="button button-secondary"><?php _e( 'Reactivate Now!', 'mailhawk' ); ?></a>
             </p>
         </div>
 		<?php
@@ -598,5 +726,14 @@ class Admin {
 		<?php
 	}
 
-
+	/**
+	 * Show a notice when settings are saved!
+	 */
+	public function show_settings_saved_notice() {
+		?>
+        <div class="notice notice-success is-dismissible">
+            <p><?php _e( 'Settings saved!', 'mailhawk' ); ?></p>
+        </div>
+		<?php
+	}
 }

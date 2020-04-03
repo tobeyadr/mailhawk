@@ -86,9 +86,37 @@ class Email_Log_Table extends WP_List_Table {
 	 */
 	protected function get_views() {
 
-		$views = [];
+		$views = [
+			[
+				'id'    => 'all',
+				'name'  => __( 'All' ),
+				'query' => [],
+			],
+			[
+				'id'    => 'sent',
+				'name'  => __( 'Sent', 'mailhawk' ),
+				'query' => [ 'status' => 'sent' ],
+			],
+			[
+				'id'    => 'failed',
+				'name'  => __( 'Failed', 'mailhawk' ),
+				'query' => [ 'status' => 'failed' ],
+			]
+		];
 
-		return apply_filters( 'mailhawk/log/views', $views );
+		$v = [];
+
+		foreach ( $views as $view ) {
+
+			$count  = Plugin::instance()->log->count( $view['query'] );
+			$params = array_merge( [ 'view' => 'log', 'subview' => $view['id'] ], $view['query'] );
+			$class  = get_url_var( 'subview' ) === $view['id'] ? 'current' : '';
+
+			$v[] = sprintf( "<a class=\"%s\" href=\"%s\">%s <span class=\"count\">(%s)</span></a>", $class, get_admin_mailhawk_uri( $params ), $view[ 'name' ], $count );
+
+		}
+
+		return apply_filters( 'mailhawk/log/views', $v );
 	}
 
 	/**
@@ -113,15 +141,21 @@ class Email_Log_Table extends WP_List_Table {
 		switch ( $email->status ) {
 
 			case 'sent':
-				$actions['resend'] = "<a href='" . wp_nonce_url( get_admin_mailhawk_uri( [ 'view' => 'log' ] ), 'resend_email' ) . "'>" . __( 'Resend' ) . "</a>";
+				$actions['resend']   = "<a href='" . wp_nonce_url( get_admin_mailhawk_uri( [ 'view' => 'log' ] ), 'resend_email', '_mailhawk_nonce' ) . "'>" . __( 'Resend', 'mailhawk' ) . "</a>";
+				$actions['mpreview'] = "<a data-log-id=\"" . $email->get_id() . "\" href='" . esc_url( get_admin_mailhawk_uri( [
+						'view'    => 'log',
+						'preview' => $email->get_id()
+					] ) ) . "'>" . __( 'Preview' ) . "</a>";
 				break;
 			case 'failed':
-				$actions['retry'] = "<a href='" . wp_nonce_url( get_admin_mailhawk_uri( [ 'view' => 'log' ] ), 'retry_email' ) . "'>" . __( 'Retry' ) . "</a>";
+				$actions['retry']    = "<a href='" . wp_nonce_url( get_admin_mailhawk_uri( [ 'view' => 'log' ] ), 'retry_email', '_mailhawk_nonce' ) . "'>" . __( 'Retry', 'mailhawk' ) . "</a>";
+				$actions['mpreview'] = "<a data-log-id=\"" . $email->get_id() . "\" href='" . esc_url( get_admin_mailhawk_uri( [
+						'view'    => 'log',
+						'preview' => $email->get_id()
+					] ) ) . "'>" . __( 'Details', 'mailhawk' ) . "</a>";
 				break;
 
 		}
-
-		$actions['mpreview'] = "<a href='" . esc_url( get_admin_mailhawk_uri( [ 'view' => 'log', 'preview' => $email->get_id() ] ) ) . "'>" . __( 'Preview' ) . "</a>";
 
 		return $this->row_actions( apply_filters( 'mailhawk/log/row_actions', $actions, $email, $column_name ) );
 	}
@@ -137,9 +171,9 @@ class Email_Log_Table extends WP_List_Table {
 
 		$links = [];
 
-		foreach ( $email->recipients as $recipient ){
+		foreach ( $email->recipients as $recipient ) {
 
-			if ( ! is_email( $recipient ) ){
+			if ( ! is_email( $recipient ) ) {
 				continue;
 			}
 
@@ -147,7 +181,7 @@ class Email_Log_Table extends WP_List_Table {
 
 		}
 
-		return implode( ',', $links );
+		return implode( ', ', $links );
 	}
 
 	/**
@@ -299,8 +333,14 @@ class Email_Log_Table extends WP_List_Table {
 		$order    = get_url_var( 'order', 'DESC' );
 		$orderby  = get_url_var( 'orderby', 'ID' );
 
+		$where = [];
+
+		if ( $status = sanitize_text_field( get_url_var( 'status' ) ) ){
+			$where[] = [ 'col' => 'status', 'compare' => '=', 'val' => $status ];
+		}
+
 		$args = array(
-			'where'   => [],
+			'where'   => $where,
 			'search'  => $search,
 			'limit'   => $per_page,
 			'offset'  => $offset,

@@ -344,6 +344,26 @@ function set_mailhawk_is_connected( $connected = true ) {
 }
 
 /**
+ * Wrapper for API connection check.
+ *
+ * @return bool
+ */
+function mailhawk_is_suspended() {
+	return get_transient( 'mailhawk_is_suspended' ) === 'yes';
+}
+
+/**
+ * Make mailhawk connected or not
+ *
+ * @param bool $suspened
+ *
+ * @return bool
+ */
+function set_mailhawk_is_suspended( $suspened = true ) {
+	return set_transient( 'mailhawk_is_suspended', $suspened ? 'yes' : 'no', DAY_IN_SECONDS );
+}
+
+/**
  * Get the date/time format
  *
  * @return string
@@ -457,4 +477,40 @@ function get_json_error( $json ) {
 	}
 
 	return false;
+}
+
+/**
+ * Build a default site email address.
+ *
+ * @param $url
+ * @param string $prefix
+ *
+ * @return bool|string
+ */
+function build_site_email( $url, $prefix = 'wp' ) {
+
+	$domain = str_replace( 'www.', '', wp_parse_url( $url, PHP_URL_HOST ) );
+
+	// Invalid domain
+	if ( ! $domain ) {
+		return false;
+	}
+
+	$potential_email = $prefix . '@' . $domain;
+
+	// Can't build an email address form this domain
+	if ( ! is_email( $potential_email ) ) {
+		return false;
+	}
+
+	return $potential_email;
+}
+
+/**
+ * The number of days to retain log entries
+ *
+ * @return int
+ */
+function get_log_retention_days(){
+	return absint( get_option( 'mailhawk_log_retention_in_days', 14 ) );
 }

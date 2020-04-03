@@ -55,7 +55,7 @@ class Hawk_Mailer extends \PHPMailer {
 			if ( $this->exceptions ) {
 
 				$log_data['status']        = 'failed';
-				$log_data['error']         = $msg_id->get_error_code();
+				$log_data['error_code']    = $msg_id->get_error_code();
 				$log_data['error_message'] = $msg_id->get_error_message();
 
 				Plugin::instance()->log->add( $log_data );
@@ -67,7 +67,7 @@ class Hawk_Mailer extends \PHPMailer {
 		}
 
 		$log_data['status'] = 'sent';
-		$log_data['msg_id'] = is_string( $msg_id ) ?: '';
+		$log_data['msg_id'] = is_string( $msg_id ) ? $msg_id: '';
 
 		Plugin::instance()->log->add( $log_data );
 
