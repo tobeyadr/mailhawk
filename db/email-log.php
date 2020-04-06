@@ -147,6 +147,7 @@ class Email_Log extends DB {
 			'status'        => '%s',
 			'error_code'    => '%s',
 			'error_message' => '%s',
+			'retries'       => '%d',
 			'date_sent'     => '%s',
 		);
 	}
@@ -170,6 +171,7 @@ class Email_Log extends DB {
 			'status'        => 'sent',
 			'error_code'    => '',
 			'error_message' => '',
+			'retries'       => 0,
 			'date_sent'     => current_time( 'mysql' ),
 		);
 	}
@@ -190,8 +192,9 @@ class Email_Log extends DB {
 		content longtext NOT NULL,
 		raw longtext NOT NULL,
 		status varchar(20) NOT NULL,
-		error_code varchar(20) NOT NULL,
+		error_code varchar(30) NOT NULL,
 		error_message text NOT NULL,
+		retries bigint(20) unsigned NOT NULL,
 		date_sent datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
 		PRIMARY KEY (ID),
 		KEY status (status),

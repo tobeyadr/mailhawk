@@ -8,6 +8,7 @@ use function MailHawk\is_json_error;
 class Licensing {
 
 	public static $sever_url = 'https://mailhawk.io';
+//	public static $sever_url = 'http://localhost/mailhawk';
 
 	/**
 	 * @var Licensing

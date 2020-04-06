@@ -3,6 +3,7 @@
 namespace MailHawk;
 
 use MailHawk\Admin\Admin;
+use MailHawk\Api\Webhook_Listener;
 use MailHawk\DB\Email_Log;
 use MailHawk\DB\Emails;
 
@@ -139,6 +140,7 @@ class Plugin {
 	private function init_components() {
 		$this->emails = new Emails();
 		$this->log    = new Email_Log();
+		new Cron_Events();
 
 		if ( is_admin() ) {
 			new Admin();
@@ -146,6 +148,11 @@ class Plugin {
 
 		$this->installer = new Installer();
 		$this->updater   = new Updater();
+
+		// Init Rest API
+		add_action( 'rest_api_init', function (){
+			new Webhook_Listener();
+		} );
 	}
 
 	/**

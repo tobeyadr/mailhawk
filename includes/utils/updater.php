@@ -29,7 +29,7 @@ abstract class Updater {
 
 		// Show updates are required
 		add_action( 'admin_init', [ $this, 'listen_for_updates' ], 9 );
-		add_action( 'admin_notices', [ $this, 'updates_notice' ] );
+		add_action( 'admin_init', [ $this, 'updates_notice' ], 11 );
 
 		// Save previous updates when plugin installed.
 		add_action( 'mailhawk/activated', [ $this, 'save_previous_updates_when_installed' ], 99 );
@@ -257,7 +257,7 @@ abstract class Updater {
 	    ?>
         <div class="notice notice-warning">
             <p><?php _e( 'MailHawk database upgrade is required! Please consider backing up your site before upgrading.', 'mailhawk' ); ?></p>
-            <p><a href="<?php echo esc_url( $action_url ); ?>"><?php _e( 'Upgrade database now!', 'mailhawk' ); ?></a></p>
+            <p><a class="button button-secondary" href="<?php echo esc_url( $action_url ); ?>"><?php _e( 'Upgrade database now!', 'mailhawk' ); ?></a></p>
         </div>
         <?php
     }

@@ -8,6 +8,7 @@ use WP_List_Table;
 use wpdb;
 use function MailHawk\get_admin_mailhawk_uri;
 use function MailHawk\get_date_time_format;
+use function MailHawk\get_email_status_pretty_name;
 use function MailHawk\get_url_var;
 
 // Exit if accessed directly
@@ -112,7 +113,7 @@ class Email_Log_Table extends WP_List_Table {
 			$params = array_merge( [ 'view' => 'log', 'subview' => $view['id'] ], $view['query'] );
 			$class  = get_url_var( 'subview' ) === $view['id'] ? 'current' : '';
 
-			$v[] = sprintf( "<a class=\"%s\" href=\"%s\">%s <span class=\"count\">(%s)</span></a>", $class, get_admin_mailhawk_uri( $params ), $view[ 'name' ], $count );
+			$v[] = sprintf( "<a class=\"%s\" href=\"%s\">%s <span class=\"count\">(%s)</span></a>", $class, get_admin_mailhawk_uri( $params ), $view['name'], $count );
 
 		}
 
@@ -141,14 +142,23 @@ class Email_Log_Table extends WP_List_Table {
 		switch ( $email->status ) {
 
 			case 'sent':
-				$actions['resend']   = "<a href='" . wp_nonce_url( get_admin_mailhawk_uri( [ 'view' => 'log' ] ), 'resend_email', '_mailhawk_nonce' ) . "'>" . __( 'Resend', 'mailhawk' ) . "</a>";
+			case 'delivered':
+				$actions['resend']   = "<a href='" . wp_nonce_url( get_admin_mailhawk_uri( [
+						'view' => 'log',
+						'id'   => $email->get_id()
+					] ), 'retry_email', '_mailhawk_nonce' ) . "'>" . __( 'Resend', 'mailhawk' ) . "</a>";
 				$actions['mpreview'] = "<a data-log-id=\"" . $email->get_id() . "\" href='" . esc_url( get_admin_mailhawk_uri( [
 						'view'    => 'log',
 						'preview' => $email->get_id()
 					] ) ) . "'>" . __( 'Preview' ) . "</a>";
 				break;
 			case 'failed':
-				$actions['retry']    = "<a href='" . wp_nonce_url( get_admin_mailhawk_uri( [ 'view' => 'log' ] ), 'retry_email', '_mailhawk_nonce' ) . "'>" . __( 'Retry', 'mailhawk' ) . "</a>";
+			case 'bounced':
+			case 'softfail':
+				$actions['retry']    = "<a href='" . wp_nonce_url( get_admin_mailhawk_uri( [
+						'view' => 'log',
+						'id'   => $email->get_id()
+					] ), 'retry_email', '_mailhawk_nonce' ) . "'>" . __( 'Retry', 'mailhawk' ) . "</a>";
 				$actions['mpreview'] = "<a data-log-id=\"" . $email->get_id() . "\" href='" . esc_url( get_admin_mailhawk_uri( [
 						'view'    => 'log',
 						'preview' => $email->get_id()
@@ -221,16 +231,19 @@ class Email_Log_Table extends WP_List_Table {
 		switch ( $email->status ):
 
 			case 'sent':
+			case 'delivered':
 
 				?>
-                <span class="email-sent"><?php _e( 'Sent' ); ?></span>
+                <span class="email-sent"><?php echo get_email_status_pretty_name( $email->status ); ?></span>
 				<?php
 
 				break;
 			case 'failed':
+			case 'bounced':
+			case 'softfail':
 
 				?>
-                <span class="email-failed"><?php _e( 'Failed' ); ?></span>
+                <span class="email-failed"><?php echo get_email_status_pretty_name( $email->status ); ?></span>
 				<?php
 
 				break;
@@ -335,7 +348,7 @@ class Email_Log_Table extends WP_List_Table {
 
 		$where = [];
 
-		if ( $status = sanitize_text_field( get_url_var( 'status' ) ) ){
+		if ( $status = sanitize_text_field( get_url_var( 'status' ) ) ) {
 			$where[] = [ 'col' => 'status', 'compare' => '=', 'val' => $status ];
 		}
 

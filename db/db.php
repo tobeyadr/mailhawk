@@ -365,13 +365,16 @@ abstract class DB {
         return $this->insert( $args );
     }
 
-    /**
-     * Insert a new row
-     *
-     * @access  public
-     * @since   2.1
-     * @return  int
-     */
+	/**
+	 * Insert a new row
+	 *
+	 * @access  public
+	 *
+	 * @param $data
+	 *
+	 * @return  int
+	 * @since   2.1
+	 */
     public function insert( $data ) {
         global $wpdb;
 
@@ -396,6 +399,7 @@ abstract class DB {
         $data = apply_filters( '/db/pre_insert/' . $this->get_object_type(), $data, $column_formats );
 
         $wpdb->insert( $this->table_name, $data, $column_formats );
+
         $wpdb_insert_id = $wpdb->insert_id;
 
         if ( $wpdb_insert_id ) {
@@ -407,13 +411,18 @@ abstract class DB {
         return $wpdb_insert_id;
     }
 
-    /**
-     * Update a row
-     *
-     * @access  public
-     * @since   2.1
-     * @return  bool
-     */
+	/**
+	 * Update a row
+	 *
+	 * @access  public
+	 *
+	 * @param int $row_id
+	 * @param array $data
+	 * @param array $where
+	 *
+	 * @return  bool
+	 * @since   2.1
+	 */
     public function update( $row_id = 0, $data = [], $where = [] ) {
 
         global $wpdb;

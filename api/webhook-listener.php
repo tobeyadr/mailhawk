@@ -2,6 +2,7 @@
 
 namespace MailHawk\Api;
 
+use MailHawk\Classes\Email_Log_Item;
 use MailHawk\Plugin;
 use MailHawk\Utils\Signature_Verifier;
 use WP_REST_Response;
@@ -62,34 +63,89 @@ class Webhook_Listener {
 
 		switch ( $event_type ):
 
+			case 'MessageSent':
+				// Get the message ID
+				$msg_id = sanitize_text_field( $payload['message']['message_id'] );
+
+				// If the message was sent from this site, update the status to sent
+				if ( Plugin::instance()->log->exists( [ 'msg_id' => $msg_id ] ) ) {
+
+					$log = [
+						'status'        => 'delivered',
+						'error_code'    => '',
+						'error_message' => '',
+					];
+
+					Plugin::instance()->log->update( null, $log, [ 'msg_id' => $msg_id ] );
+				}
+
+				break;
 			case 'MessageBounced':
 
-				$to_address = sanitize_email( $payload->original_message->to );
+				// Get the original recipient address
+				$to_address = sanitize_email( $payload['original_message']['to'] );
 
 				// do something
 				if ( ! is_email( $to_address ) ) {
 					return new \WP_Error( 'invalid_email', 'The provided email address is invalid.' );
 				}
 
+				// Add email address to blacklist
 				Plugin::instance()->emails->add( [
 					'email'  => $to_address,
 					'status' => 'bounced'
 				] );
 
+				// Get the message ID
+				$msg_id = sanitize_text_field( $payload['original_message']['message_id'] );
+
+				// If the message was sent from this site, update the status to bounced
+				if ( Plugin::instance()->log->exists( [ 'msg_id' => $msg_id ] ) ) {
+
+					$log = [
+						'status'        => 'bounced',
+						'error_code'    => 'bounced',
+						'error_message' => __( 'This email could not be delivered and bounced back.', 'mailhawk' )
+					];
+
+					Plugin::instance()->log->update( null, $log, [ 'msg_id' => $msg_id ] );
+				}
+
 				break;
 			case 'MessageDeliveryFailed':
 
-				$to_address = sanitize_email( $payload->message->to );
+				// Get the message ID
+				$msg_id = sanitize_text_field( $payload['message']['message_id'] );
 
-				// do something
-				if ( ! is_email( $to_address ) ) {
-					return new \WP_Error( 'invalid_email', 'The provided email address is invalid.' );
+				// If the message was sent from this site, update the status to failed
+				if ( Plugin::instance()->log->exists( [ 'msg_id' => $msg_id ] ) ) {
+
+					$log = [
+						'status'        => 'failed',
+						'error_code'    => 'MessageDeliveryFailed',
+						'error_message' => __( 'This email could not be delivered.', 'mailhawk' )
+					];
+
+					Plugin::instance()->log->update( null, $log, [ 'msg_id' => $msg_id ] );
 				}
 
-				Plugin::instance()->emails->add( [
-					'email'  => $to_address,
-					'status' => 'failed'
-				] );
+				break;
+			case 'MessageDelayed':
+
+				// Get the message ID
+				$msg_id = sanitize_text_field( $payload['message']['message_id'] );
+
+				// If the message was sent from this site, update the status to failed
+				if ( Plugin::instance()->log->exists( [ 'msg_id' => $msg_id ] ) ) {
+
+					$log = [
+						'status'        => strtolower( sanitize_text_field( $payload[ 'status' ] ) ),
+						'error_code'    => 'MessageDelayed',
+						'error_message' => sanitize_text_field( $payload[ 'details' ] )
+					];
+
+					Plugin::instance()->log->update( null, $log, [ 'msg_id' => $msg_id ] );
+				}
 
 				break;
 			case 'DomainDNSError':

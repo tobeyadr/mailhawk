@@ -25,14 +25,13 @@ $log_item = new Email_Log_Item( $log_item_id );
 
                 <div class="mailhawk-error">
                     <div class="error-explanation">
-	                    <?php _e( 'There was a problem sending this email...', 'mailhawk' ); ?>
+						<?php _e( 'There was a problem sending this email:', 'mailhawk' ); ?>
                     </div>
-                    <span class="error-code">
-                        <?php echo $log_item->error_code; ?>:
-                    </span>
-                    <span class="error-message">
-                        <?php echo $log_item->error_message; ?>
-                    </span>
+                    <div class="mailhawk-error-details">
+                        <span class="mailhawk-error-code"><?php echo $log_item->error_code; ?>:</span>
+                        <span class="mailhawk-error-message"><?php echo $log_item->error_message; ?></span>
+                    </div>
+
                 </div>
 
 			<?php endif; ?>

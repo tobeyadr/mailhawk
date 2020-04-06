@@ -9,6 +9,7 @@ use MailHawk\Classes\Email_Log_Item;
 use MailHawk\Keys;
 use MailHawk\Plugin;
 use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\get_array_var;
 use function MailHawk\get_post_var;
 use function MailHawk\get_request_var;
 use function MailHawk\get_rest_api_webhook_listener_uri;
@@ -24,12 +25,6 @@ use function MailHawk\set_mailhawk_is_suspended;
 /**
  * Class Admin
  * @package MailHawk\Admin
- *
- * @todo resend/retry failed emails.
- * @todo automatically delete logs
- * @todo use email filters from settings somewhere
- * @todo unsuspend account when renewed
- * @todo set actual webhook URI
  */
 class Admin {
 
@@ -90,7 +85,7 @@ class Admin {
 		if ( is_wp_error( $response ) ) {
 			add_action( 'mailhawk_notices', [ $this, 'connection_failed_notice' ] );
 
-			wp_send_json_error( [ 'where' => 'token', 'response' => $response ] );
+			wp_send_json_error( [ 'where' => 'token', 'response' => $response, 'code' => $code ] );
 
 			return;
 		}
@@ -187,7 +182,7 @@ class Admin {
 			wp_die( $response );
 		}
 
-		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'deleted_domain' => $domain ] ) ) );
+		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'deleted_domain' => $domain, 'view' => 'domains' ] ) ) );
 	}
 
 	/**
@@ -211,7 +206,7 @@ class Admin {
 			wp_die( $response );
 		}
 
-		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'domain' => $domain, 'action' => 'dns-single' ] ) ) );
+		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'domain' => $domain, 'view' => 'domains' ] ) ) );
 	}
 
 	/**
@@ -254,7 +249,7 @@ class Admin {
 		}
 
 		die( wp_safe_redirect( get_admin_mailhawk_uri( [
-			'action' => 'dns-single',
+			'view'   => 'domains',
 			'domain' => $domain,
 			'added'  => 'yes',
 		] ) ) );
@@ -302,6 +297,14 @@ class Admin {
 		}
 	}
 
+	/**
+	 * @var array
+	 */
+	protected $test_data = [];
+
+	/**
+	 * Send a test email
+	 */
 	protected function maybe_send_test_email() {
 
 		if ( ! wp_verify_nonce( get_post_var( '_mailhawk_nonce' ), 'send_test_email' ) ) {
@@ -312,16 +315,49 @@ class Admin {
 		$subject = sanitize_text_field( get_post_var( 'subject' ) );
 		$body    = sanitize_textarea_field( get_post_var( 'content' ) );
 
+		$this->test_data['to']      = $to;
+		$this->test_data['subject'] = $subject;
+		$this->test_data['body']    = $body;
+
 		if ( ! $to ) {
 			return;
 		}
+
+		add_action( 'wp_mail_failed', [ $this, 'maybe_email_failed' ] );
 
 		$success = wp_mail( $to, $subject, $body );
 
 		if ( $success ) {
 			add_action( 'mailhawk_notices', [ $this, 'show_test_successful_notice' ] );
-		} else {
+		}
+	}
+
+	/**
+	 * @var \WP_Error
+	 */
+	protected $send_error;
+
+	/**
+	 * If error happens log notice...
+	 *
+	 * @param $error \WP_Error
+	 */
+	public function maybe_email_failed( $error ) {
+		if ( is_wp_error( $error ) ) {
+			$this->send_error = $error;
 			add_action( 'mailhawk_notices', [ $this, 'show_test_not_successful_notice' ] );
+		}
+	}
+
+	/**
+	 * If error happens log notice...
+	 *
+	 * @param $error \WP_Error
+	 */
+	public function maybe_resend_failed( $error ) {
+		if ( is_wp_error( $error ) ) {
+			$this->send_error = $error;
+			add_action( 'mailhawk_notices', [ $this, 'show_retry_email_not_successful_notice' ] );
 		}
 	}
 
@@ -379,29 +415,60 @@ class Admin {
 
 		// From Name
 		$from_name = sanitize_text_field( get_post_var( 'default_from_name' ) );
-
 		if ( $from_name ) {
 			update_option( 'mailhawk_default_from_name', $from_name );
 		}
 
 		// Email Address
 		$from_email = sanitize_text_field( get_post_var( 'default_from_email_address' ) );
-
 		if ( is_email( $from_email ) ) {
 			update_option( 'mailhawk_default_from_email_address', $from_email );
 		}
 
 		// Retention Days
 		$log_retention = absint( get_post_var( 'log_retention_in_days' ) );
-
 		if ( $log_retention > 0 ) {
 			update_option( 'mailhawk_log_retention_in_days', $log_retention );
+		}
+
+		// Enable failed email retries
+		$enable_retries = absint( get_post_var( 'retry_failed_emails' ) );
+        update_option( 'mailhawk_retry_failed_emails', $enable_retries );
+
+		// Number of retries
+		$number_of_retries = absint( get_post_var( 'number_of_retries' ) );
+		if ( $number_of_retries > 0 ) {
+			update_option( 'mailhawk_failed_email_retries', $number_of_retries );
 		}
 
 		add_action( 'mailhawk_notices', [ $this, 'show_settings_saved_notice' ] );
 
 	}
 
+	/**
+	 * Maybe resend an email if viewing the log and resending the email!
+	 *
+	 * @return void
+	 */
+	protected function maybe_resend_email() {
+		if ( ! wp_verify_nonce( get_url_var( '_mailhawk_nonce' ), 'retry_email' ) ) {
+			return;
+		}
+
+		$item_id = absint( get_url_var( 'id' ) );
+
+		$log_item = new Email_Log_Item( $item_id );
+
+		add_action( 'wp_mail_failed', [ $this, 'maybe_resend_failed' ] );
+
+		if ( ! $log_item->exists() ) {
+			return;
+		} else if ( ! $log_item->retry() ) {
+			return;
+		}
+
+		add_action( 'mailhawk_notices', [ $this, 'show_email_retry_success_notice' ] );
+	}
 
 	/**
 	 * Any relevant actions for the plugin go here.
@@ -423,6 +490,7 @@ class Admin {
 		$this->maybe_send_test_email();
 		$this->maybe_preview_email();
 		$this->maybe_save_settings();
+		$this->maybe_resend_email();
 //		$this->maybe_register_webhook(); // Todo: Remove
 
 	}
@@ -472,15 +540,19 @@ class Admin {
 
 		if ( ! mailhawk_is_connected() ) {
 			include __DIR__ . '/views/connect.php';
+
 			return;
-		} elseif ( mailhawk_is_suspended() ){
+		} elseif ( mailhawk_is_suspended() ) {
 			include __DIR__ . '/views/suspended.php';
-            return;
-        } elseif ( get_url_var( 'action' ) === 'setup' ){
-			include __DIR__ . '/views/setup.php';
+
 			return;
-        } elseif ( get_url_var( 'action' ) === 'dns' ){
+		} elseif ( get_url_var( 'action' ) === 'setup' ) {
+			include __DIR__ . '/views/setup.php';
+
+			return;
+		} elseif ( get_url_var( 'action' ) === 'dns' ) {
 			include __DIR__ . '/views/dns.php';
+
 			return;
 		}
 
@@ -655,7 +727,7 @@ class Admin {
 	 */
 	public function maybe_show_domain_added_notice() {
 
-		if ( get_url_var( 'added' ) !== 'yes' || get_url_var( 'action' ) !== 'dns-single' ) {
+		if ( get_url_var( 'added' ) !== 'yes' || get_url_var( 'view' ) !== 'domains' ) {
 			return;
 		}
 
@@ -710,7 +782,8 @@ class Admin {
 	public function show_test_not_successful_notice() {
 		?>
         <div class="notice notice-error is-dismissible">
-            <p><?php printf( __( 'There was a problem sending the email to %s.', 'mailhawk' ), "<code>" . sanitize_email( get_post_var( 'to_address' ) ) . "</code>" ); ?></p>
+            <p><?php printf( __( 'There was a problem sending the email to %s.', 'mailhawk' ), "<code>" . get_array_var( $this->test_data, 'to' ) . "</code>", "<code>" . $this->send_error->get_error_message() . "</code>" ); ?></p>
+            <p><?php echo "<code>" . $this->send_error->get_error_message() . "</code>"; ?></p>
         </div>
 		<?php
 	}
@@ -721,7 +794,7 @@ class Admin {
 	public function show_test_successful_notice() {
 		?>
         <div class="notice notice-success is-dismissible">
-            <p><?php printf( __( 'We sent a test email to %s.', 'mailhawk' ), "<code>" . sanitize_email( get_post_var( 'to_address' ) ) . "</code>" ); ?></p>
+            <p><?php printf( __( 'We sent a test email to %s.', 'mailhawk' ), "<code>" . get_array_var( $this->test_data, 'to' ) . "</code>" ); ?></p>
         </div>
 		<?php
 	}
@@ -733,6 +806,29 @@ class Admin {
 		?>
         <div class="notice notice-success is-dismissible">
             <p><?php _e( 'Settings saved!', 'mailhawk' ); ?></p>
+        </div>
+		<?php
+	}
+
+	/**
+	 * Notice if email retry succeeded
+	 */
+	public function show_email_retry_success_notice() {
+		?>
+        <div class="notice notice-success is-dismissible">
+            <p><?php _e( 'Email resent!', 'mailhawk' ); ?></p>
+        </div>
+		<?php
+	}
+
+	/**
+	 * Show a notice when a test email could not be delivered.
+	 */
+	public function show_retry_email_not_successful_notice() {
+		?>
+        <div class="notice notice-error is-dismissible">
+            <p><?php _e( 'There was a problem re-sending the email.', 'mailhawk' ); ?></p>
+            <p><?php echo "<code>" . $this->send_error->get_error_message() . "</code>"; ?></p>
         </div>
 		<?php
 	}

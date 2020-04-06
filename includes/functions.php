@@ -24,8 +24,8 @@ function get_admin_mailhawk_uri( $params = [] ) {
  */
 function get_rest_api_webhook_listener_uri() {
 	// Todo: replace dummy URL with an actual URL
-	return 'https://webhook.site/33c26b2c-f4f3-460e-a48a-7cf89a6e0f5f';
-//	return rest_url( 'mailhawk/listen' );
+//	return 'https://webhook.site/33c26b2c-f4f3-460e-a48a-7cf89a6e0f5f';
+	return rest_url( 'mailhawk/listen' );
 }
 
 
@@ -511,6 +511,96 @@ function build_site_email( $url, $prefix = 'wp' ) {
  *
  * @return int
  */
-function get_log_retention_days(){
+function get_log_retention_days() {
 	return absint( get_option( 'mailhawk_log_retention_in_days', 14 ) );
+}
+
+/**
+ * The number of days to retain log entries
+ *
+ * @return int
+ */
+function get_email_retry_attempts() {
+	return absint( get_option( 'mailhawk_failed_email_retries', 3 ) );
+}
+
+/**
+ * Override the default from email
+ *
+ * @param $original_email_address
+ *
+ * @return mixed
+ */
+function sender_email( $original_email_address ) {
+
+	// Might not be set.
+	if ( ! isset_not_empty( $_SERVER, 'SERVER_NAME' ) ) {
+		return $original_email_address;
+	}
+
+	// Get the site domain and get rid of www.
+	$sitename = strtolower( $_SERVER['SERVER_NAME'] );
+
+	if ( substr( $sitename, 0, 4 ) == 'www.' ) {
+		$sitename = substr( $sitename, 4 );
+	}
+
+	$from_email = 'wordpress@' . $sitename;
+
+	if ( $original_email_address === $from_email ) {
+		$new_email_address = get_option( 'mailhawk_default_from_email_address' );
+
+		if ( ! empty( $new_email_address ) ) {
+			$original_email_address = $new_email_address;
+		}
+	}
+
+	return $original_email_address;
+}
+
+/**
+ * Override the default from name
+ *
+ * @param $original_email_from
+ *
+ * @return mixed
+ */
+function sender_name( $original_email_from ) {
+
+	if ( $original_email_from === 'WordPress' ) {
+		$new_email_from = get_option( 'mailhawk_default_from_name' );
+
+		if ( ! empty( $new_email_from ) ) {
+			$original_email_from = $new_email_from;
+		}
+	}
+
+	return $original_email_from;
+}
+
+// Hooking up our functions to WordPress filters, these go first to override other plugins doing stuff.
+add_filter( 'wp_mail_from', __NAMESPACE__ . '\sender_email', 9 );
+add_filter( 'wp_mail_from_name', __NAMESPACE__ . '\sender_name', 9 );
+
+/**
+ * Get's the display name of a status
+ *
+ * @param $status string
+ *
+ * @return mixed
+ */
+function get_email_status_pretty_name( $status ) {
+
+	$status = strtolower( $status );
+
+	$stati = [
+		'sent'      => __( 'Sent', 'mailhawk' ),
+		'failed'    => __( 'Failed', 'mailhawk' ),
+		'delivered' => __( 'Delivered', 'mailhawk' ),
+		'bounced'   => __( 'Bounced', 'mailhawk' ),
+		'softfail'  => __( 'Soft Fail', 'mailhawk' ),
+	];
+
+	return get_array_var( $stati, $status );
+
 }

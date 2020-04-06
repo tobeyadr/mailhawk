@@ -402,3 +402,8 @@ a.button .dashicons {
     background-color: #f2dede;
     border-color: #ebccd1;
 }
+
+.mailhawk-error-details{
+    font-family: monospace;
+    margin-top: 10px;
+}

@@ -1,6 +1,7 @@
 <?php
 
 use function MailHawk\build_site_email;
+use function MailHawk\get_email_retry_attempts;
 use function MailHawk\get_log_retention_days;
 
 ?>
@@ -11,9 +12,9 @@ use function MailHawk\get_log_retention_days;
 
     <div class="mailhawk-content-box settings">
 
-	    <h2><?php _e( 'Defaults', 'mailhawk' ); ?></h2>
+        <h2><?php _e( 'Defaults', 'mailhawk' ); ?></h2>
 
-	    <table class="form-table">
+        <table class="form-table">
 
             <tbody>
             <tr>
@@ -44,29 +45,50 @@ use function MailHawk\get_log_retention_days;
 
     </div>
 
-	<div class="mailhawk-content-box settings">
+    <div class="mailhawk-content-box settings">
 
-		<h3><?php _e( 'Email Log', 'mailhawk' ); ?></h3>
+        <h3><?php _e( 'Email Log', 'mailhawk' ); ?></h3>
 
-		<table class="form-table">
+        <table class="form-table">
 
-			<tbody>
-			<tr>
-				<th><?php _e( 'Log retention', 'mailhawk' ); ?></th>
-				<td>
-					<input type="number" name="log_retention_in_days"
-					       value="<?php echo get_log_retention_days(); ?>">
-					<p class="description">
+            <tbody>
+            <tr>
+                <th><?php _e( 'Log retention', 'mailhawk' ); ?></th>
+                <td>
+                    <input type="number" name="log_retention_in_days"
+                           value="<?php echo get_log_retention_days(); ?>">
+                    <p class="description">
 						<?php printf( __( 'The number of days to retain log entries for. Log entries older than <code>%s</code> days will be automatically deleted.', 'mailhawk' ), get_log_retention_days() ); ?>
-					</p>
-				</td>
-			</tr>
-			</tbody>
-		</table>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th><?php _e( 'Retry failed emails?', 'mailhawk' ); ?></th>
+                <td>
+                    <label><input type="checkbox" name="retry_failed_emails"
+                                  value="1" <?php checked( 1, get_option( 'mailhawk_retry_failed_emails' ) ); ?>> <?php _e( 'Enable', 'mailhawk' ); ?>
+                    </label>
+                    <p class="description">
+						<?php printf( __( 'When enabled MailHawk will attempt to resend any failed emails.', 'mailhawk' ), get_log_retention_days() ); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+	            <th><?php _e( 'Number of retries', 'mailhawk' ); ?></th>
+	            <td>
+		            <input type="number" name="number_of_retries"
+		                   value="<?php echo get_email_retry_attempts(); ?>">
+		            <p class="description">
+			            <?php printf( __( 'How many times a failed email is automatically retried before failing permanently. Emails will be retried <code>%s</code> times.', 'mailhawk' ), get_email_retry_attempts() ); ?>
+		            </p>
+	            </td>
+            </tr>
+            </tbody>
+        </table>
 
 		<?php submit_button(); ?>
 
-	</div>
+    </div>
 
 </form>
 
