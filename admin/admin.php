@@ -47,7 +47,7 @@ class Admin {
 
 //		set_mailhawk_is_connected( false );
 //		set_mailhawk_is_suspended( false );
-//		set_mailhawk_api_credentials( '' );
+//		set_mailhawk_api_credentials( 'Q6blmt0fEim8GO5BwfY5Dmuo' );
 	}
 
 	/**

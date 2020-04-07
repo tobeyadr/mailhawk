@@ -1,7 +1,22 @@
 <?php
 
+use MailHawk\Api\Postal\Reporting;
 use MailHawk\Keys;
 use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\set_mailhawk_is_suspended;
+
+$form_inputs = [
+	'mailhawk_plugin_reactivate' => 'yes',
+	'state'                      => Keys::instance()->state(),
+	'redirect_uri'               => get_admin_mailhawk_uri(),
+];
+
+$limits = Reporting::limits();
+
+if ( ! is_wp_error( $limits ) ){
+    set_mailhawk_is_suspended( false );
+	wp_die( "<script>location.reload();</script>" );
+}
 
 ?>
 <style>
@@ -38,10 +53,20 @@ use function MailHawk\get_admin_mailhawk_uri;
         </ul>
         <p><?php _e( 'To continue using MailHawk you must reactivate you account.', 'mailhawk' ); ?></p>
         <div style="text-align: center">
-            <a id="connect" class="button button-primary big-button" href="https://mailhawk.io/account/subscriptions/">
-                <span class="dashicons dashicons-email-alt"></span>
-				<?php _e( 'Reactivate My Account Now!', 'mailhawk' ); ?>
-            </a>
+            <form method="post" action="<?php echo esc_url( trailingslashit( MAILHAWK_LICENSE_SERVER_URL ) ); ?>">
+				<?php
+
+				foreach ( $form_inputs as $input => $value ) {
+					?><input type="hidden" name="<?php esc_attr_e( $input ); ?>"
+                             value="<?php esc_attr_e( $value ); ?>"><?php
+				}
+
+				?>
+                <button id="connect" class="button button-primary big-button" type="submit" value="connect">
+                    <span class="dashicons dashicons-email-alt"></span>
+					<?php _e( 'Reactivate My Account Now!', 'mailhawk' ); ?>
+                </button>
+            </form>
         </div>
     </div>
 </div>

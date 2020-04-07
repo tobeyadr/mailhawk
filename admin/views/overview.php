@@ -2,6 +2,7 @@
 
 use MailHawk\Api\Postal\Reporting;
 use function MailHawk\get_date_time_format;
+use function MailHawk\mailhawk_is_suspended;
 
 wp_enqueue_script( 'chart-js' );
 
@@ -9,6 +10,17 @@ $days = 14;
 
 $data   = Reporting::query( $days, 'daily' );
 $limits = Reporting::limits();
+
+if ( is_wp_error( $limits ) || is_wp_error( $data ) ){
+
+    $error = is_wp_error( $limits ) ? $limits : $data;
+
+    if ( mailhawk_is_suspended() ){
+	    wp_die( "<script>location.reload();</script>" );
+    }
+
+    wp_die( $error );
+}
 
 /** @var array $limits */
 $monthly_send_limit = $limits[ array_search( 'monthly_send_limit', wp_list_pluck( $limits, 'type' ) ) ];
