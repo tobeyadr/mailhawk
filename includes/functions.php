@@ -319,7 +319,7 @@ function ensure_array( $array ) {
  * @return string
  */
 function get_suggested_spf_record() {
-	return "v=spf1 a mx include:spf.mailhawkwp.com ~all";
+	return "v=spf1 a mx include:spf.mailhawk.io ~all";
 }
 
 /**
@@ -415,7 +415,7 @@ function mailhawk_spf_set() {
 		return $set === 'yes';
 	}
 
-	$set = check_spf_ip( wp_parse_url( site_url(), PHP_URL_HOST ), 'spf.mailhawkwp.com' ) ? 'yes' : 'no';
+	$set = check_spf_ip( wp_parse_url( site_url(), PHP_URL_HOST ), 'spf.mailhawk.io' ) ? 'yes' : 'no';
 
 	set_transient( 'mailhawk_spf_set', $set, HOUR_IN_SECONDS );
 

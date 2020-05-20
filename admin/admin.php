@@ -44,10 +44,6 @@ class Admin {
 		add_action( 'load-tools_page_mailhawk', [ $this, 'do_actions' ] );
 
 		add_action( 'wp_ajax_mailhawk_preview_email', [ $this, 'ajax_load_preview_content' ] );
-
-//		set_mailhawk_is_connected( false );
-//		set_mailhawk_is_suspended( false );
-//		set_mailhawk_api_credentials( 'Q6blmt0fEim8GO5BwfY5Dmuo' );
 	}
 
 	/**
@@ -630,7 +626,7 @@ class Admin {
         <div class="notice notice-warning">
             <p><?php _e( 'We noticed your SPF record is missing. This can lead to delivery issues when sending crucial email.', 'mailhawk' ); ?></p>
             <p><b><?php _e( 'Fix Your SPF Record!', 'mailhawk' ); ?></b></p>
-            <p><?php _e( "Please ensure you add <code>include:spf.mailhawkwp.com</code> to your SPF record.", 'mailhawk' ); ?></p>
+            <p><?php _e( "Please ensure you add <code>include:spf.mailhawk.io</code> to your SPF record.", 'mailhawk' ); ?></p>
             <p><input id="spf" type="text" class="code" value="<?php esc_attr_e( get_suggested_spf_record() ); ?>"
                       onfocus="this.select()" readonly></p>
             <p>

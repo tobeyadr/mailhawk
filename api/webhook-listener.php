@@ -111,6 +111,14 @@ class Webhook_Listener {
 					Plugin::instance()->log->update( null, $log, [ 'msg_id' => $msg_id ] );
 				}
 
+				/**
+				 * Message bounced
+				 *
+				 * @param $to_address string email recipient
+				 * @param $msg_id string the msg_id of the email
+				 */
+				do_action( 'mailhawk/bounced', $to_address, $msg_id );
+
 				break;
 			case 'MessageDeliveryFailed':
 
@@ -139,9 +147,9 @@ class Webhook_Listener {
 				if ( Plugin::instance()->log->exists( [ 'msg_id' => $msg_id ] ) ) {
 
 					$log = [
-						'status'        => strtolower( sanitize_text_field( $payload[ 'status' ] ) ),
+						'status'        => strtolower( sanitize_text_field( $payload['status'] ) ),
 						'error_code'    => 'MessageDelayed',
-						'error_message' => sanitize_text_field( $payload[ 'details' ] )
+						'error_message' => sanitize_text_field( $payload['details'] )
 					];
 
 					Plugin::instance()->log->update( null, $log, [ 'msg_id' => $msg_id ] );

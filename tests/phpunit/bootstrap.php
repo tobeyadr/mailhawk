@@ -2,7 +2,7 @@
 /**
  * PHPUnit bootstrap file
  *
- * @package Mailhawk
+ * @package MailHawk
  */
 
 use MailHawk\Plugin;

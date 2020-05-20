@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  *
  * @package     Includes
  * @subpackage  Includes/DB
- * @author      Adrian Tobey <info@mailhawkwp.com>
+ * @author      Adrian Tobey <info@mailhawk.io>
  * @copyright   Copyright (c) 2018, MailHawk Inc.
  * @license     https://opensource.org/licenses/GPL-3.0 GNU Public License v3
  * @since       File available since Release 0.1
