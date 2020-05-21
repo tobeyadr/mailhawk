@@ -1,15 +1,29 @@
 <?php
 
 use MailHawk\Hawk_Mailer;
+use function MailHawk\get_admin_mailhawk_uri;
 use function MailHawk\is_valid_email;
 
 if ( ! function_exists( 'wp_mail' ) && get_option( 'mailhawk_is_connected' ) === 'yes' ):
 
-	function wp_mail( $to, $subject, $message, $headers = '', $attachments = array()  ){
+	function wp_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
 		return mailhawk_mail( $to, $subject, $message, $headers, $attachments );
 	}
-
+elseif ( function_exists( 'wp_mail' ) && get_option( 'mailhawk_is_connected' ) === 'yes' ) :
+	add_action( 'admin_notices', 'mailhawk_wp_mail_already_defined' );
 endif;
+
+function mailhawk_wp_mail_already_defined() {
+	?>
+	<div class="notice notice-warning is-dismissible">
+		<img class="alignleft" height="70" style="margin: 3px 10px 0 0"
+		     src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/hawk-head.png' ); ?>" alt="Hawk">
+		<p>
+			<?php _e( '<b>Attention:</b> It looks like another plugin is overwriting the <code>wp_mail</code> function. Please disable it to allow MailHawk to work properly.', 'mailhawk' ); ?>
+		</p>
+	</div>
+	<?php
+}
 
 /**
  * Sends an email, similar to PHP's mail function.
@@ -25,16 +39,16 @@ endif;
  * The default charset is based on the charset used on the blog. The charset can
  * be set using the {@see 'wp_mail_charset'} filter.
  *
- * @since 1.2.1
- *
- * @param string|array $to          Array or comma-separated list of email addresses to send message.
- * @param string       $subject     Email subject
- * @param string       $message     Message contents
- * @param string|array $headers     Optional. Additional headers.
+ * @param string|array $to Array or comma-separated list of email addresses to send message.
+ * @param string $subject Email subject
+ * @param string $message Message contents
+ * @param string|array $headers Optional. Additional headers.
  * @param string|array $attachments Optional. Files to attach.
  *
  * @return bool Whether the email contents were sent successfully.
- * @global Hawk_Mailer   $phpmailer
+ * @since 1.2.1
+ *
+ * @global Hawk_Mailer $phpmailer
  *
  */
 function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
@@ -43,10 +57,11 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	/**
 	 * Filters the wp_mail() arguments.
 	 *
-	 * @since 2.2.0
-	 *
 	 * @param array $args A compacted array of wp_mail() arguments, including the "to" email,
 	 *                    subject, message, headers, and attachments values.
+	 *
+	 * @since 2.2.0
+	 *
 	 */
 	$atts = apply_filters( 'wp_mail', compact( 'to', 'subject', 'message', 'headers', 'attachments' ) );
 
@@ -211,18 +226,20 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	/**
 	 * Filters the email address to send from.
 	 *
+	 * @param string $from_email Email address to send from.
+	 *
 	 * @since 2.2.0
 	 *
-	 * @param string $from_email Email address to send from.
 	 */
 	$from_email = apply_filters( 'wp_mail_from', $from_email );
 
 	/**
 	 * Filters the name to associate with the "from" email address.
 	 *
+	 * @param string $from_name Name associated with the "from" email address.
+	 *
 	 * @since 2.3.0
 	 *
-	 * @param string $from_name Name associated with the "from" email address.
 	 */
 	$from_name = apply_filters( 'wp_mail_from_name', $from_name );
 
@@ -264,6 +281,7 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 
 				if ( ! is_valid_email( $address ) ) {
 					do_action( 'wp_mail_failed', new WP_Error( 'wp_mail_failed', sprintf( 'MailHawk marked %s as an invalid email address. If you wish to allow this recipient to receive email please whitelist their address.', $address ) ) );
+
 					return false;
 				}
 
@@ -299,9 +317,10 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	/**
 	 * Filters the wp_mail() content type.
 	 *
+	 * @param string $content_type Default wp_mail() content type.
+	 *
 	 * @since 2.3.0
 	 *
-	 * @param string $content_type Default wp_mail() content type.
 	 */
 	$content_type = apply_filters( 'wp_mail_content_type', $content_type );
 
@@ -322,9 +341,10 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	/**
 	 * Filters the default wp_mail() charset.
 	 *
+	 * @param string $charset Default email charset.
+	 *
 	 * @since 2.3.0
 	 *
-	 * @param string $charset Default email charset.
 	 */
 	$phpmailer->CharSet = apply_filters( 'wp_mail_charset', $charset );
 
@@ -352,12 +372,18 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 		}
 	}
 
+	// Set the sender header to mail hawk for better deliverability
+//    if ( ! $phpmailer->Sender ){
+//	    $phpmailer->Sender = 'info@mailhawk.io';
+//    }
+
 	/**
 	 * Fires after PHPMailer is initialized.
 	 *
+	 * @param PHPMailer $phpmailer The PHPMailer instance (passed by reference).
+	 *
 	 * @since 2.2.0
 	 *
-	 * @param PHPMailer $phpmailer The PHPMailer instance (passed by reference).
 	 */
 	do_action_ref_array( 'phpmailer_init', array( &$phpmailer ) );
 
@@ -372,10 +398,11 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 		/**
 		 * Fires after a phpmailerException is caught.
 		 *
-		 * @since 4.4.0
-		 *
 		 * @param WP_Error $error A WP_Error object with the phpmailerException message, and an array
 		 *                        containing the mail recipient, subject, message, headers, and attachments.
+		 *
+		 * @since 4.4.0
+		 *
 		 */
 		do_action( 'wp_mail_failed', new WP_Error( 'wp_mail_failed', $e->getMessage(), $mail_error_data ) );
 

@@ -140,6 +140,7 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
         </div>
     </div>
 </div>
+<div class="wp-clearfix"></div>
 <div class="mailhawk-content-box report usage">
     <h2><?php _e( 'Usage', 'mailhawk' ); ?></h2>
 

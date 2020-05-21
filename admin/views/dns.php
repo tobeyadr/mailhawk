@@ -52,7 +52,7 @@ if ( is_wp_error( $domains ) || empty( $domains ) ) {
             <h3><?php _e( 'SPF Record' ); ?></h3>
 
 			<?php $short_spf = preg_match( "/include:[^ ]+/", $domain->spf->spf_record, $matches ); ?>
-            <p class="description"><?php printf( __( 'You need to add a TXT record at the apex/root of your doman (@) with the following content. If you already send mail from another service, you may just need to add <code>%s</code> to your existing record.', 'mailhawk' ), $matches[0] ); ?></p>
+            <p class="description"><?php printf( __( 'You need to add a TXT record at the apex/root of your domain (@) with the following content. If you already send mail from another service, you may just need to add <code>%s</code> to your existing record.', 'mailhawk' ), $matches[0] ); ?></p>
             <input class="code" onfocus="this.select()" type="text"
                    value="<?php esc_attr_e( $domain->spf->spf_record ); ?>"
                    readonly>
@@ -64,8 +64,10 @@ if ( is_wp_error( $domains ) || empty( $domains ) ) {
 
 		<?php endforeach; ?>
 
+        <?php $finish_url = apply_filters( 'mailhawk/finish_url', get_admin_mailhawk_uri() ); ?>
+
         <a class="button big-button button-primary"
-           href="<?php echo esc_url( get_admin_mailhawk_uri() ); ?>"><b>&larr; <?php _e( 'Finish Setup!', 'mailhawk' ); ?></b></a>
+           href="<?php echo esc_url( $finish_url ); ?>"><b>&larr; <?php _e( 'Finish Setup!', 'mailhawk' ); ?></b></a>
 
     </div>
 </div>

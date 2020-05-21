@@ -128,7 +128,12 @@ class Admin {
 			return;
 		}
 
+		// remotely deactivate this site
+        Licensing::$instance->deactivate();
+
+		// Set local is connected to false
 		set_mailhawk_is_connected( false );
+
 		die( wp_safe_redirect( get_admin_mailhawk_uri() ) );
 	}
 

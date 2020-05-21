@@ -32,9 +32,10 @@
 }
 
 .mailhawk-content-box.third {
-    width: calc(33.33% - 30px);
+    width: calc(33.333333% - 27px);
     display: inline-block;
     box-sizing: border-box;
+    float: left;
 }
 
 .mailhawk-content-box.report {
