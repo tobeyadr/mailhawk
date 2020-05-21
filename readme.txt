@@ -56,7 +56,7 @@ Yes, you can connect multiple sites to one account without paying extra!
 
 == Changelog ==
 
-= 1.0 =
+= 1.0.1 =
 * Initial release
 
 
