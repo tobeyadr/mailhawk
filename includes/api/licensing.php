@@ -100,6 +100,10 @@ class Licensing {
 		return $this->request( 'wp-json/mailhawk/credentials', [], 'GET' );
 	}
 
+	public function deactivate(){
+		return $this->request( 'wp-json/mailhawk/deactivate', [], 'POST' );
+	}
+
 	/**
 	 * Send a request to the API
 	 *

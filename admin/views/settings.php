@@ -90,5 +90,27 @@ use function MailHawk\get_log_retention_days;
 
     </div>
 
+    <div class="mailhawk-content-box settings danger">
+
+        <h3><?php _e( 'Danger Zone', 'mailhawk' ); ?></h3>
+
+        <table class="form-table">
+            <tbody>
+            <tr>
+                <th><?php _e( 'Disconnect', 'mailhawk' ); ?></th>
+                <td>
+
+                    <?php $url = \MailHawk\action_url( 'disconnect_mailhawk' ); ?>
+                    <a class="button" href="<?php echo esc_attr( $url ); ?>"><?php _e( 'Disconnect MailHawk', 'mailhawk' ) ?></a>
+                    <p class="description">
+						<?php _e( "Do this if you no longer want this site connected to MailHawk. You will be able to reconnect later to the same account or a different account.", 'mailhawk' ); ?>
+                    </p>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+
 </form>
 

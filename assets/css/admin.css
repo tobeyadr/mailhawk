@@ -397,6 +397,19 @@ a.button .dashicons {
     border-radius: 5px;
 }
 
+.mailhawk-content-box.danger{
+    border-color: #eb9a9d;
+    background-color: #f2dede;
+}
+
+.mailhawk-content-box.danger *{
+    color: #572422;
+}
+
+.mailhawk-content-box.danger .button{
+    border-color: #a94442;
+}
+
 .mailhawk-log-preview .mailhawk-error{
     color: #a94442;
     background-color: #f2dede;

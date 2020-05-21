@@ -121,6 +121,18 @@ class Admin {
 	}
 
 	/**
+	 * Disconnect mailhawk
+	 */
+	protected function maybe_disconnect(){
+		if ( ! wp_verify_nonce( get_url_var( '_wpnonce' ), 'disconnect_mailhawk' ) ) {
+			return;
+		}
+
+		set_mailhawk_is_connected( false );
+		die( wp_safe_redirect( get_admin_mailhawk_uri() ) );
+	}
+
+	/**
 	 * Setup any initial domains from the setup page.
 	 */
 	protected function maybe_setup_initial_domains() {
@@ -478,6 +490,7 @@ class Admin {
 		add_filter( 'admin_footer_text', [ $this, 'admin_footer_text' ] );
 
 		$this->maybe_connect();
+		$this->maybe_disconnect();
 		$this->maybe_setup_initial_domains();
 		$this->maybe_delete_domain();
 		$this->maybe_check_domain();
