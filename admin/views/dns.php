@@ -42,8 +42,8 @@ if ( is_wp_error( $domains ) || empty( $domains ) ) {
 
         <h1><?php _e( "Configure your DNS!", 'mailhawk' ); ?></h1>
         <p><?php _e( 'Before you can start sending email, you must configure your DNS records for the emails you just registered.', 'mailhawk' ); ?></p>
-        <p><a class="button button-secondary" href="#"><span
-                        class="dashicons dashicons-video-alt3"></span><?php _e( 'Video Tutorial', 'mailhawk' ); ?></a>
+        <p><a class="button button-secondary" href="https://mailhawk.io/configure-dns/" target="_blank"><span
+                        class="dashicons dashicons-text-page"></span><?php _e( 'Instructions', 'mailhawk' ); ?></a></p>
         </p>
 		<?php foreach ( $domains as $domain ): ?>
 

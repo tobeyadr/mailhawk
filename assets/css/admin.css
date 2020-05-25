@@ -411,6 +411,12 @@ a.button .dashicons {
     border-color: #a94442;
 }
 
+.mailhawk-content-box.danger .button.button-primary{
+    border-color: #a94442;
+    background: #aa0000;
+    color: white;
+}
+
 .mailhawk-log-preview .mailhawk-error{
     color: #a94442;
     background-color: #f2dede;

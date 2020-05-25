@@ -107,8 +107,21 @@ use function MailHawk\get_log_retention_days;
                     </p>
                 </td>
             </tr>
+            <tr>
+                <th><?php _e( 'Delete all data when uninstalling?', 'mailhawk' ); ?></th>
+                <td>
+                    <label><input type="checkbox" name="delete_all_data"
+                                  value="1" <?php checked( 1, get_option( 'mailhawk_delete_all_data' ) ); ?>> <?php _e( 'Enable', 'mailhawk' ); ?>
+                    </label>
+                    <p class="description">
+			            <?php _e( 'If you uninstall MailHawk would you like to delete all associated data?', 'mailhawk' ); ?>
+                    </p>
+                </td>
+            </tr>
             </tbody>
         </table>
+
+	    <?php submit_button(); ?>
     </div>
 
 

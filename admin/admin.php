@@ -129,7 +129,7 @@ class Admin {
 		}
 
 		// remotely deactivate this site
-        Licensing::$instance->deactivate();
+        Licensing::instance()->deactivate();
 
 		// Set local is connected to false
 		set_mailhawk_is_connected( false );
@@ -338,7 +338,9 @@ class Admin {
 
 		add_action( 'wp_mail_failed', [ $this, 'maybe_email_failed' ] );
 
-		$success = wp_mail( $to, $subject, $body );
+		$success = wp_mail( $to, $subject, $body, [
+            'sender' => 'app@mailhawk.io'
+        ] );
 
 		if ( $success ) {
 			add_action( 'mailhawk_notices', [ $this, 'show_test_successful_notice' ] );
@@ -453,6 +455,10 @@ class Admin {
 		if ( $number_of_retries > 0 ) {
 			update_option( 'mailhawk_failed_email_retries', $number_of_retries );
 		}
+
+		// Enable failed email retries
+		$delete_all_data = absint( get_post_var( 'delete_all_data' ) );
+		update_option( 'mailhawk_delete_all_data', $delete_all_data );
 
 		add_action( 'mailhawk_notices', [ $this, 'show_settings_saved_notice' ] );
 

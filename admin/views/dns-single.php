@@ -18,8 +18,8 @@ if ( is_wp_error( $domain ) ){
 
     <h1><?php printf( __( "Configure your DNS for <b>%s</b>!", 'mailhawk' ), esc_html( $domain->name ) ); ?></h1>
     <p>Before you can start sending email, you must configure your DNS records for <code><?php esc_html_e( $domain->name ); ?></code>.</p>
-    <p><a class="button button-secondary" href="#"><span
-                    class="dashicons dashicons-video-alt3"></span><?php _e( 'Video Tutorial', 'mailhawk' ); ?></a></p>
+    <p><a class="button button-secondary" href="https://mailhawk.io/configure-dns/" target="_blank"><span
+                    class="dashicons dashicons-text-page"></span><?php _e( 'Instructions', 'mailhawk' ); ?></a></p>
 
     <h3><?php _e( 'Status' ); ?></h3>
     <p>
