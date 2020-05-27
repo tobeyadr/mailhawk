@@ -4,12 +4,16 @@ use MailHawk\Hawk_Mailer;
 use function MailHawk\get_admin_mailhawk_uri;
 use function MailHawk\is_valid_email;
 
-if ( ! function_exists( 'wp_mail' ) && get_option( 'mailhawk_is_connected' ) === 'yes' ):
+function mailhawk_is_connected(){
+	return get_option( 'mailhawk_is_connected' ) === 'yes';
+}
+
+if ( ! function_exists( 'wp_mail' ) && mailhawk_is_connected() ):
 
 	function wp_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
 		return mailhawk_mail( $to, $subject, $message, $headers, $attachments );
 	}
-elseif ( function_exists( 'wp_mail' ) && get_option( 'mailhawk_is_connected' ) === 'yes' ) :
+elseif ( function_exists( 'wp_mail' ) && mailhawk_is_connected() ) :
 	add_action( 'admin_notices', 'mailhawk_wp_mail_already_defined' );
 endif;
 

@@ -3,13 +3,9 @@
 namespace MailHawk;
 
 use MailHawk\Api\Postal\Send;
+use MailHawk\PHPMailer\PHPMailer;
 
-if ( ! class_exists( '\PHPMailer' ) ) {
-	require_once ABSPATH . WPINC . '/class-phpmailer.php';
-	require_once ABSPATH . WPINC . '/class-smtp.php';
-}
-
-class Hawk_Mailer extends \PHPMailer {
+class Hawk_Mailer extends PHPMailer {
 
 	public function clearAltBody(){
 		$this->AltBody = '';
@@ -39,10 +35,6 @@ class Hawk_Mailer extends \PHPMailer {
 	 * @return bool|int
 	 */
 	public static function add_log( $log_data = [] ) {
-
-//		var_dump( self::$log_item_id, $log_data );
-//		die();
-
 		if ( ! self::$log_item_id ) {
 			return Plugin::instance()->log->add( $log_data );
 		} else {

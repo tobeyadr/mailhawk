@@ -12,6 +12,7 @@
   "require": {
     "phpunit/phpunit": "7.5.19",
     "ext-json": "*",
-    "ext-openssl": "*"
+    "ext-openssl": "*",
+    "phpmailer/phpmailer": "v6.1.5"
   }
 }
