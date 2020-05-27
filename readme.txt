@@ -58,6 +58,7 @@ Yes, you can connect multiple sites to one account without paying extra!
 
 = 1.0.3 (2020-05-27) =
 * ADDED Automatically generate plain-text version of email if `content-type` is `text/html`
+* TWEAKED Use our own version oh PHPMailer to avoid potential conflicts with other plugins
 
 = 1.0.2 (2020-05-25) =
 * ADDED uninstall file
