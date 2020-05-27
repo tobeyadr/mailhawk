@@ -55,6 +55,10 @@ Yes, you can connect multiple sites to one account without paying extra!
 
 
 == Changelog ==
+
+= 1.0.3 (2020-05-27) =
+* ADDED Automatically generate plain-text version of email if `content-type` is `text/html`
+
 = 1.0.2 (2020-05-25) =
 * ADDED uninstall file
 * ADDED DNS instructions

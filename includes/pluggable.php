@@ -48,7 +48,7 @@ function mailhawk_wp_mail_already_defined() {
  * @return bool Whether the email contents were sent successfully.
  * @since 1.2.1
  *
- * @global Hawk_Mailer $phpmailer
+ * @global Hawk_Mailer $hawkmailer
  *
  */
 function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
@@ -93,11 +93,11 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 		$attachments = explode( "\n", str_replace( "\r\n", "\n", $attachments ) );
 	}
 
-	global $phpmailer;
+	global $hawkmailer;
 
 	// (Re)create it, if it's gone missing
-	if ( ! ( $phpmailer instanceof Hawk_Mailer ) ) {
-		$phpmailer = new Hawk_Mailer( true );
+	if ( ! ( $hawkmailer instanceof Hawk_Mailer ) ) {
+		$hawkmailer = new Hawk_Mailer( true );
 	}
 
 	// Headers
@@ -195,10 +195,11 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	}
 
 	// Empty out the values that may be set
-	$phpmailer->clearAllRecipients();
-	$phpmailer->clearAttachments();
-	$phpmailer->clearCustomHeaders();
-	$phpmailer->clearReplyTos();
+	$hawkmailer->clearAllRecipients();
+	$hawkmailer->clearAttachments();
+	$hawkmailer->clearCustomHeaders();
+	$hawkmailer->clearReplyTos();
+	$hawkmailer->clearAltBody();
 
 	// From email and name
 	// If we don't have a name from the input headers
@@ -244,7 +245,7 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	$from_name = apply_filters( 'wp_mail_from_name', $from_name );
 
 	try {
-		$phpmailer->setFrom( $from_email, $from_name, false );
+		$hawkmailer->setFrom( $from_email, $from_name, false );
 	} catch ( phpmailerException $e ) {
 		$mail_error_data                             = compact( 'to', 'subject', 'message', 'headers', 'attachments' );
 		$mail_error_data['phpmailer_exception_code'] = $e->getCode();
@@ -256,8 +257,8 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	}
 
 	// Set mail's subject and body
-	$phpmailer->Subject = $subject;
-	$phpmailer->Body    = $message;
+	$hawkmailer->Subject = $subject;
+	$hawkmailer->Body    = $message;
 
 	// Set destination addresses, using appropriate methods for handling addresses
 	$address_headers = compact( 'to', 'cc', 'bcc', 'reply_to' );
@@ -287,16 +288,16 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 
 				switch ( $address_header ) {
 					case 'to':
-						$phpmailer->addAddress( $address, $recipient_name );
+						$hawkmailer->addAddress( $address, $recipient_name );
 						break;
 					case 'cc':
-						$phpmailer->addCc( $address, $recipient_name );
+						$hawkmailer->addCc( $address, $recipient_name );
 						break;
 					case 'bcc':
-						$phpmailer->addBcc( $address, $recipient_name );
+						$hawkmailer->addBcc( $address, $recipient_name );
 						break;
 					case 'reply_to':
-						$phpmailer->addReplyTo( $address, $recipient_name );
+						$hawkmailer->addReplyTo( $address, $recipient_name );
 						break;
 				}
 			} catch ( phpmailerException $e ) {
@@ -306,12 +307,14 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	}
 
 	// Set to use PHP's mail()
-	$phpmailer->isMail();
+	$hawkmailer->isMail();
 
 	// Set Content-Type and charset
 	// If we don't have a content-type from the input headers
-	if ( ! isset( $content_type ) ) {
-		$content_type = 'text/plain';
+	// Set Content-Type and charset
+	// If we don't have a content-type from the input headers
+	if ( ! isset( $content_type ) || empty( $content_type ) ) {
+		$content_type = contains_html( $message ) ? 'text/html' : 'text/plain';
 	}
 
 	/**
@@ -324,11 +327,11 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	 */
 	$content_type = apply_filters( 'wp_mail_content_type', $content_type );
 
-	$phpmailer->ContentType = $content_type;
+	$hawkmailer->ContentType = $content_type;
 
 	// Set whether it's plaintext, depending on $content_type
 	if ( 'text/html' == $content_type ) {
-		$phpmailer->isHTML( true );
+		$hawkmailer->isHTML( true );
 	}
 
 	// If we don't have a charset from the input headers
@@ -346,50 +349,50 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	 * @since 2.3.0
 	 *
 	 */
-	$phpmailer->CharSet = apply_filters( 'wp_mail_charset', $charset );
+	$hawkmailer->CharSet = apply_filters( 'wp_mail_charset', $charset );
 
 	// Set custom headers.
 	if ( ! empty( $headers ) ) {
 		foreach ( (array) $headers as $name => $content ) {
 			// Only add custom headers not added automatically by PHPMailer.
 			if ( ! in_array( $name, array( 'MIME-Version', 'X-Mailer' ) ) ) {
-				$phpmailer->addCustomHeader( sprintf( '%1$s: %2$s', $name, $content ) );
+				$hawkmailer->addCustomHeader( sprintf( '%1$s: %2$s', $name, $content ) );
 			}
 		}
 
 		if ( false !== stripos( $content_type, 'multipart' ) && ! empty( $boundary ) ) {
-			$phpmailer->addCustomHeader( sprintf( "Content-Type: %s;\n\t boundary=\"%s\"", $content_type, $boundary ) );
+			$hawkmailer->addCustomHeader( sprintf( "Content-Type: %s;\n\t boundary=\"%s\"", $content_type, $boundary ) );
 		}
 	}
 
 	if ( ! empty( $attachments ) ) {
 		foreach ( $attachments as $attachment ) {
 			try {
-				$phpmailer->addAttachment( $attachment );
+				$hawkmailer->addAttachment( $attachment );
 			} catch ( phpmailerException $e ) {
 				continue;
 			}
 		}
 	}
-
-	// Set the sender header to mail hawk for better deliverability
-//    if ( ! $phpmailer->Sender ){
-//	    $phpmailer->Sender = 'info@mailhawk.io';
-//    }
-
+	
 	/**
 	 * Fires after PHPMailer is initialized.
 	 *
-	 * @param PHPMailer $phpmailer The PHPMailer instance (passed by reference).
+	 * @param PHPMailer $hawkmailer The PHPMailer instance (passed by reference).
 	 *
 	 * @since 2.2.0
 	 *
 	 */
-	do_action_ref_array( 'phpmailer_init', array( &$phpmailer ) );
+	do_action_ref_array( 'phpmailer_init', array( &$hawkmailer ) );
+	
+	// Set the AltBody if not set and the email is HTML based...
+	if ( $hawkmailer->ContentType === 'text/html' && empty( $hawkmailer->AltBody )){
+	    $hawkmailer->AltBody = wp_strip_all_tags( $hawkmailer->Body );
+    }
 
 	// Send!
 	try {
-		return $phpmailer->send();
+		return $hawkmailer->send();
 	} catch ( phpmailerException $e ) {
 
 		$mail_error_data                             = compact( 'to', 'subject', 'message', 'headers', 'attachments' );
@@ -408,4 +411,16 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 
 		return false;
 	}
+}
+
+/**
+ * If the stripped version of the text is different from the passed text
+ * then the text contains HTML.
+ *
+ * @param string $text
+ *
+ * @return bool
+ */
+function contains_html( $text='' ){
+	return wp_strip_all_tags( $text ) != $text;
 }

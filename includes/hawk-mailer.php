@@ -11,6 +11,10 @@ if ( ! class_exists( '\PHPMailer' ) ) {
 
 class Hawk_Mailer extends \PHPMailer {
 
+	public function clearAltBody(){
+		$this->AltBody = '';
+	}
+
 	/**
 	 * A log item ID, can be sent if retrying an email.
 	 *
