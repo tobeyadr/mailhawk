@@ -48,7 +48,7 @@ function mailhawk_wp_mail_already_defined() {
  * @return bool Whether the email contents were sent successfully.
  * @since 1.2.1
  *
- * @global Hawk_Mailer $hawkmailer
+ * @global Hawk_Mailer $phpmailer
  *
  */
 function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
@@ -93,11 +93,11 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 		$attachments = explode( "\n", str_replace( "\r\n", "\n", $attachments ) );
 	}
 
-	global $hawkmailer;
+	global $phpmailer;
 
 	// (Re)create it, if it's gone missing
-	if ( ! ( $hawkmailer instanceof Hawk_Mailer ) ) {
-		$hawkmailer = new Hawk_Mailer( true );
+	if ( ! ( $phpmailer instanceof Hawk_Mailer ) ) {
+		$phpmailer = new Hawk_Mailer( true );
 	}
 
 	// Headers
@@ -195,11 +195,11 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	}
 
 	// Empty out the values that may be set
-	$hawkmailer->clearAllRecipients();
-	$hawkmailer->clearAttachments();
-	$hawkmailer->clearCustomHeaders();
-	$hawkmailer->clearReplyTos();
-	$hawkmailer->clearAltBody();
+	$phpmailer->clearAllRecipients();
+	$phpmailer->clearAttachments();
+	$phpmailer->clearCustomHeaders();
+	$phpmailer->clearReplyTos();
+	$phpmailer->clearAltBody();
 
 	// From email and name
 	// If we don't have a name from the input headers
@@ -245,7 +245,7 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	$from_name = apply_filters( 'wp_mail_from_name', $from_name );
 
 	try {
-		$hawkmailer->setFrom( $from_email, $from_name, false );
+		$phpmailer->setFrom( $from_email, $from_name, false );
 	} catch ( phpmailerException $e ) {
 		$mail_error_data                             = compact( 'to', 'subject', 'message', 'headers', 'attachments' );
 		$mail_error_data['phpmailer_exception_code'] = $e->getCode();
@@ -257,8 +257,8 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	}
 
 	// Set mail's subject and body
-	$hawkmailer->Subject = $subject;
-	$hawkmailer->Body    = $message;
+	$phpmailer->Subject = $subject;
+	$phpmailer->Body    = $message;
 
 	// Set destination addresses, using appropriate methods for handling addresses
 	$address_headers = compact( 'to', 'cc', 'bcc', 'reply_to' );
@@ -288,16 +288,16 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 
 				switch ( $address_header ) {
 					case 'to':
-						$hawkmailer->addAddress( $address, $recipient_name );
+						$phpmailer->addAddress( $address, $recipient_name );
 						break;
 					case 'cc':
-						$hawkmailer->addCc( $address, $recipient_name );
+						$phpmailer->addCc( $address, $recipient_name );
 						break;
 					case 'bcc':
-						$hawkmailer->addBcc( $address, $recipient_name );
+						$phpmailer->addBcc( $address, $recipient_name );
 						break;
 					case 'reply_to':
-						$hawkmailer->addReplyTo( $address, $recipient_name );
+						$phpmailer->addReplyTo( $address, $recipient_name );
 						break;
 				}
 			} catch ( phpmailerException $e ) {
@@ -307,7 +307,7 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	}
 
 	// Set to use PHP's mail()
-	$hawkmailer->isMail();
+	$phpmailer->isMail();
 
 	// Set Content-Type and charset
 	// If we don't have a content-type from the input headers
@@ -327,11 +327,11 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	 */
 	$content_type = apply_filters( 'wp_mail_content_type', $content_type );
 
-	$hawkmailer->ContentType = $content_type;
+	$phpmailer->ContentType = $content_type;
 
 	// Set whether it's plaintext, depending on $content_type
 	if ( 'text/html' == $content_type ) {
-		$hawkmailer->isHTML( true );
+		$phpmailer->isHTML( true );
 	}
 
 	// If we don't have a charset from the input headers
@@ -349,26 +349,26 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	 * @since 2.3.0
 	 *
 	 */
-	$hawkmailer->CharSet = apply_filters( 'wp_mail_charset', $charset );
+	$phpmailer->CharSet = apply_filters( 'wp_mail_charset', $charset );
 
 	// Set custom headers.
 	if ( ! empty( $headers ) ) {
 		foreach ( (array) $headers as $name => $content ) {
 			// Only add custom headers not added automatically by PHPMailer.
 			if ( ! in_array( $name, array( 'MIME-Version', 'X-Mailer' ) ) ) {
-				$hawkmailer->addCustomHeader( sprintf( '%1$s: %2$s', $name, $content ) );
+				$phpmailer->addCustomHeader( sprintf( '%1$s: %2$s', $name, $content ) );
 			}
 		}
 
 		if ( false !== stripos( $content_type, 'multipart' ) && ! empty( $boundary ) ) {
-			$hawkmailer->addCustomHeader( sprintf( "Content-Type: %s;\n\t boundary=\"%s\"", $content_type, $boundary ) );
+			$phpmailer->addCustomHeader( sprintf( "Content-Type: %s;\n\t boundary=\"%s\"", $content_type, $boundary ) );
 		}
 	}
 
 	if ( ! empty( $attachments ) ) {
 		foreach ( $attachments as $attachment ) {
 			try {
-				$hawkmailer->addAttachment( $attachment );
+				$phpmailer->addAttachment( $attachment );
 			} catch ( phpmailerException $e ) {
 				continue;
 			}
@@ -378,21 +378,21 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	/**
 	 * Fires after PHPMailer is initialized.
 	 *
-	 * @param PHPMailer $hawkmailer The PHPMailer instance (passed by reference).
+	 * @param PHPMailer $phpmailer The PHPMailer instance (passed by reference).
 	 *
 	 * @since 2.2.0
 	 *
 	 */
-	do_action_ref_array( 'phpmailer_init', array( &$hawkmailer ) );
+	do_action_ref_array( 'phpmailer_init', array( &$phpmailer ) );
 	
 	// Set the AltBody if not set and the email is HTML based...
-	if ( $hawkmailer->ContentType === 'text/html' && empty( $hawkmailer->AltBody )){
-	    $hawkmailer->AltBody = wp_strip_all_tags( $hawkmailer->Body );
+	if ( $phpmailer->ContentType === 'text/html' && empty( $phpmailer->AltBody )){
+	    $phpmailer->AltBody = wp_strip_all_tags( $phpmailer->Body );
     }
 
 	// Send!
 	try {
-		return $hawkmailer->send();
+		return $phpmailer->send();
 	} catch ( phpmailerException $e ) {
 
 		$mail_error_data                             = compact( 'to', 'subject', 'message', 'headers', 'attachments' );
