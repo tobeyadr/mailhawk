@@ -1,8 +1,8 @@
 <?php
 
-// Todo get domains from API
 use MailHawk\Api\Postal\Domains;
 use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\get_url_var;
 
 $domains = Domains::query_all();
 
@@ -11,10 +11,26 @@ if ( is_wp_error( $domains ) || empty( $domains ) ){
     $domains = [];
 }
 
+if ( get_url_var( 'notice' ) === 'instructions' ):
+	?>
+
+	<div class="notice notice-info">
+		<h2><b><?php _e( 'Next Steps...', 'mailhawk' ); ?></b></h2>
+		<p><?php _e( 'Great! Your next step is to configure your DNS so we can verify <code>SPF</code> and <code>DKIM</code>.', 'mailhawk' ); ?></p>
+		<p><?php _e( 'This is important because it will improve your email deliverability.', 'mailhawk' ); ?></p>
+		<p><?php _e( "If you've never managed your DNS records before, please read this article:", 'mailhawk' ); ?>
+			<a href="https://mailhawk.io/configure-dns/"
+			   target="_blank"><?php _e( 'Learn how to configure your DNS', 'mailhawk' ); ?></a>
+		</p>
+		<p><?php _e( "If you know what you're doing, click <b>Configure</b> on any of the domains listed below to view the appropriate DNS records to edit.", 'mailhawk' ); ?></p>
+	</div>
+	<?php
+endif;
+
 ?>
 <div class="mailhawk-content-box domains">
-    <p><b><?php _e( 'Your Domains:', 'mailhawk' ); ?></b></p>
-
+    <h2><b><?php _e( 'Your Domains:', 'mailhawk' ); ?></b></h2>
+    <p><?php _e( 'These are the domains which you have registered with MailHawk. You can improve your email deliverability by verifying <code>SPF</code> and <code>DKIM</code> for each domain.', 'mailhawk' ); ?></p>
     <table class="wp-list-table widefat fixed striped">
         <thead>
         <tr>
@@ -40,7 +56,12 @@ if ( is_wp_error( $domains ) || empty( $domains ) ){
         <?php endif; ?>
         </tbody>
     </table>
-	<p class="description"><?php _e( 'These are the domains which you have registered with MailHawk. You can only send emails from domains you have registered and verified.', 'mailhawk' ); ?></p>
+    <div class="not-sure-dns">
+        <p>
+            <span class="dashicons dashicons-sos"></span> <?php _e( "Don't know how to configure DNS records?", 'mailhawk' ) ?>
+            <a href="https://mailhawk.io/configure-dns/"
+               target="_blank"><?php _e( 'Learn how to configure your DNS', 'mailhawk' ); ?></a></p>
+    </div>
 
 	<p><b><?php _e( 'Register New Domain:', 'mailhawk' ); ?></b></p>
 	<form method="post">

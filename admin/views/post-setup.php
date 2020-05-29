@@ -53,7 +53,7 @@ use function MailHawk\get_admin_mailhawk_uri;
         <p><?php _e( 'Congratulations! MailHawk is now connected to your site. Below are some next steps that will help you improve deliverability and keep you up to date on product news.', 'mailhawk' ); ?></p>
 
         <div class="next-step">
-            <a href="<?php echo esc_url( get_admin_mailhawk_uri( [ 'view' => 'domains' ] ) ); ?>" target="_blank"
+            <a href="<?php echo esc_url( get_admin_mailhawk_uri( [ 'view' => 'domains', 'notice' => 'instructions' ] ) ); ?>" target="_blank"
                class="button big-button"><?php _e( 'Configure Now!' ); ?></a>
             <h2><?php _e( 'Configure your DNS!', 'mailhawk' ); ?></h2>
             <p><?php _e( 'Improve your email deliverability by configuring <code>SPF</code> and <code>DKIM</code> for the domains you registered.', 'mailhawk' ); ?></p>

@@ -56,6 +56,9 @@ Yes, you can connect multiple sites to one account without paying extra!
 
 == Changelog ==
 
+= 1.0.5 (2020-05-29) =
+* ADDED Additional notice on domains page explaining DNS.
+
 = 1.0.4 (2020-05-29) =
 * ADDED Support for WaaS and Multisite.
 * ADDED Promotion for Groundhogg during guided setup.
