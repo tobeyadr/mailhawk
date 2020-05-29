@@ -1,5 +1,7 @@
 <?php
 
+use function MailHawk\build_site_email;
+
 $emails = [];
 
 // The admin email
@@ -46,11 +48,19 @@ $emails = array_unique( $emails );
     <div class="mailhawk-content-box setup">
 
         <h1><?php _e( "Let's get you set up!", 'mailhawk' ); ?></h1>
-        <p><?php _e( 'We have detected the following email addresses in use, please select the ones you wish to send email from.', 'mailhawk' ); ?></p>
 
         <form method="post">
 
-			<?php wp_nonce_field( 'mailhawk_register_domains', '_mailhawk_setup_nonce' ); ?>
+	        <?php wp_nonce_field( 'mailhawk_register_domains', '_mailhawk_setup_nonce' ); ?>
+
+            <p><?php _e( 'Please enter the default <code>From name</code> you wish to appear on your emails.', 'mailhawk' ); ?></p>
+            <input type="text" name="default_from_name" class="regular-text"
+                   value="<?php esc_attr_e( get_option( 'mailhawk_default_from_name', get_bloginfo( 'name' ) ) ); ?>">
+            <p><?php _e( 'Please enter the default <code>From email address</code> you wish to send email from.', 'mailhawk' ); ?></p>
+            <input type="email" name="default_from_email_address" class="regular-text"
+                   value="<?php esc_attr_e( get_option( 'mailhawk_default_from_email_address', build_site_email( 'wordpress' ) ) ); ?>">
+
+            <p><?php _e( 'We have detected the following email addresses in use, please select the ones you wish to send email from.', 'mailhawk' ); ?></p>
 
 			<?php foreach ( $emails as $email ): ?>
 

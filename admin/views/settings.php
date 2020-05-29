@@ -1,8 +1,16 @@
 <?php
 
+use MailHawk\Api\Postal\Domains;
 use function MailHawk\build_site_email;
+use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\get_authenticated_sender_domain;
+use function MailHawk\get_authenticated_sender_inbox;
 use function MailHawk\get_email_retry_attempts;
 use function MailHawk\get_log_retention_days;
+
+if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+	require_once ABSPATH . '/wp-admin/includes/plugin.php';
+}
 
 ?>
 
@@ -29,7 +37,8 @@ use function MailHawk\get_log_retention_days;
             </tr>
             <tr>
                 <th><?php _e( 'Default from email address', 'mailhawk' ); ?></th>
-                <td><input type="email" name="default_from_email_address" class="regular-text"
+                <td>
+                    <input type="email" name="default_from_email_address" class="regular-text"
                            value="<?php esc_attr_e( get_option( 'mailhawk_default_from_email_address', build_site_email( 'wordpress' ) ) ); ?>">
                     <p class="description">
 						<?php _e( 'Override the default wp_mail from email. Only has an effect if the from email is not specified in the email headers.', 'mailhawk' ); ?>
@@ -74,14 +83,14 @@ use function MailHawk\get_log_retention_days;
                 </td>
             </tr>
             <tr>
-	            <th><?php _e( 'Number of retries', 'mailhawk' ); ?></th>
-	            <td>
-		            <input type="number" name="number_of_retries"
-		                   value="<?php echo get_email_retry_attempts(); ?>">
-		            <p class="description">
-			            <?php printf( __( 'How many times a failed email is automatically retried before failing permanently. Emails will be retried <code>%s</code> times.', 'mailhawk' ), get_email_retry_attempts() ); ?>
-		            </p>
-	            </td>
+                <th><?php _e( 'Number of retries', 'mailhawk' ); ?></th>
+                <td>
+                    <input type="number" name="number_of_retries"
+                           value="<?php echo get_email_retry_attempts(); ?>">
+                    <p class="description">
+						<?php printf( __( 'How many times a failed email is automatically retried before failing permanently. Emails will be retried <code>%s</code> times.', 'mailhawk' ), get_email_retry_attempts() ); ?>
+                    </p>
+                </td>
             </tr>
             </tbody>
         </table>
@@ -89,6 +98,47 @@ use function MailHawk\get_log_retention_days;
 		<?php submit_button(); ?>
 
     </div>
+
+	<?php if ( is_multisite() && is_main_site() ): ?>
+        <div class="mailhawk-content-box settings">
+
+            <h3><?php _e( 'Multisite Settings', 'mailhawk' ); ?></h3>
+
+			<?php if ( ! is_plugin_active_for_network( 'mailhawk/mailhawk.php' ) ): ?>
+                <div class="notice notice-warning">
+                    <p><?php _e( "To use MailHawk for all subsites, you must network activate it!", 'mailhawk' ); ?></p>
+                </div>
+			<?php endif; ?>
+
+            <table class="form-table">
+
+                <tbody>
+                <tr>
+                    <th><?php _e( 'Network Sender Domain', 'mailhawk' ); ?></th>
+                    <td>
+
+						<?php $domains = Domains::get_verified(); ?>
+						<?php if ( ! $domains ): ?>
+                            <p><a href="<?php echo esc_url( get_admin_mailhawk_uri( [ 'view' => 'domains' ] ) ); ?>">You must verify a domain first.</a></p>
+						<?php else: ?>
+                            <select name="sender_domain" class="regular-text">
+								<?php foreach ( $domains as $domain ): ?>
+                                    <option value="<?php esc_attr_e( $domain->name ); ?>" <?php selected( get_authenticated_sender_domain(), $domain->name ); ?>><?php esc_attr_e( $domain->name ); ?></option>
+								<?php endforeach; ?>
+                            </select>
+						<?php endif; ?>
+                        <p class="description">
+							<?php printf( __( "When sub sites send email using their own domain, it will show as sent <code>via %s</code>.", 'mailhawk' ), get_authenticated_sender_domain() ); ?>
+                        </p>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+			<?php submit_button(); ?>
+
+        </div>
+	<?php endif; ?>
 
     <div class="mailhawk-content-box settings danger">
 
@@ -100,10 +150,11 @@ use function MailHawk\get_log_retention_days;
                 <th><?php _e( 'Disconnect', 'mailhawk' ); ?></th>
                 <td>
 
-                    <?php $url = \MailHawk\action_url( 'disconnect_mailhawk' ); ?>
-                    <a class="button" href="<?php echo esc_attr( $url ); ?>"><?php _e( 'Disconnect MailHawk', 'mailhawk' ) ?></a>
+					<?php $url = \MailHawk\action_url( 'disconnect_mailhawk' ); ?>
+                    <a class="button"
+                       href="<?php echo esc_attr( $url ); ?>"><?php _e( 'Disconnect MailHawk', 'mailhawk' ) ?></a>
                     <p class="description">
-						<?php _e( "Do this if you no longer want this site connected to MailHawk. You will be able to reconnect later to the same account or a different account.", 'mailhawk' ); ?>
+						<?php _e( "Do this if you no longer want this site connected to MailHawk. You will be able to reconnect later to the same account or a different account. <b>This will not cancel your subscription.</b>", 'mailhawk' ); ?>
                     </p>
                 </td>
             </tr>
@@ -114,14 +165,14 @@ use function MailHawk\get_log_retention_days;
                                   value="1" <?php checked( 1, get_option( 'mailhawk_delete_all_data' ) ); ?>> <?php _e( 'Enable', 'mailhawk' ); ?>
                     </label>
                     <p class="description">
-			            <?php _e( 'If you uninstall MailHawk would you like to delete all associated data?', 'mailhawk' ); ?>
+						<?php _e( 'If you uninstall MailHawk would you like to delete all associated data?', 'mailhawk' ); ?>
                     </p>
                 </td>
             </tr>
             </tbody>
         </table>
 
-	    <?php submit_button(); ?>
+		<?php submit_button(); ?>
     </div>
 
 

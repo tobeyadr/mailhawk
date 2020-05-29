@@ -144,6 +144,7 @@ class Plugin {
 
 		if ( is_admin() ) {
 			new Admin();
+			Groundhogg::instance();
 		}
 
 		$this->installer = new Installer();
@@ -194,6 +195,7 @@ class Plugin {
 	 * Include any files that must be loaded right away
 	 */
 	protected function load_immediate() {
+		require dirname( __FILE__ ) . '/multisite.php';
 		require dirname( __FILE__ ) . '/pluggable.php';
 	}
 

@@ -15,9 +15,10 @@ use function MailHawk\get_request_var;
 use function MailHawk\get_rest_api_webhook_listener_uri;
 use function MailHawk\get_suggested_spf_record;
 use function MailHawk\get_url_var;
+use function MailHawk\is_mailhawk_network_active;
 use function MailHawk\mailhawk_is_connected;
 use function MailHawk\mailhawk_is_suspended;
-use function MailHawk\mailhawk_spf_set;
+use function MailHawk\mailhawk_spf_is_set;
 use function MailHawk\set_mailhawk_api_credentials;
 use function MailHawk\set_mailhawk_is_connected;
 use function MailHawk\set_mailhawk_is_suspended;
@@ -29,6 +30,11 @@ use function MailHawk\set_mailhawk_is_suspended;
 class Admin {
 
 	public function __construct() {
+
+	    // Do not show on subsites...
+	    if ( ! is_mailhawk_network_active() || ! is_main_site() ){
+	        return;
+        }
 
 		// Load any scripts
 		add_action( 'admin_enqueue_scripts', [ $this, 'scripts' ] );
@@ -146,8 +152,23 @@ class Admin {
 			return;
 		}
 
-		$emails  = map_deep( get_post_var( 'emails' ), 'sanitize_email' );
+		// From Name
+		$from_name = sanitize_text_field( get_post_var( 'default_from_name' ) );
+		if ( $from_name ) {
+			update_option( 'mailhawk_default_from_name', $from_name );
+		}
+
+		// Email Address
+		$from_email = sanitize_text_field( get_post_var( 'default_from_email_address' ) );
+		if ( is_email( $from_email ) ) {
+			update_option( 'mailhawk_default_from_email_address', $from_email );
+		}
+
+		$emails  = map_deep( get_post_var( 'emails', [] ), 'sanitize_email' );
 		$domains = [];
+
+		// Add the deafult from email to the list of emails to check...
+		$emails[] = $from_email;
 
 		foreach ( $emails as $email ) {
 
@@ -170,7 +191,7 @@ class Admin {
 		}
 
 		// Send to DNS
-		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'action' => 'dns' ] ) ) );
+		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'action' => 'post_setup' ] ) ) );
 
 	}
 
@@ -219,7 +240,7 @@ class Admin {
 			wp_die( $response );
 		}
 
-		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'domain' => $domain, 'view' => 'domains' ] ) ) );
+		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'domain' => $domain, 'view' => 'domains', 'action' => 'is_verified' ] ) ) );
 	}
 
 	/**
@@ -460,6 +481,10 @@ class Admin {
 		$delete_all_data = absint( get_post_var( 'delete_all_data' ) );
 		update_option( 'mailhawk_delete_all_data', $delete_all_data );
 
+		if ( is_multisite() && is_main_site() ){
+		    update_option( 'mailhawk_ms_sender_domain', sanitize_text_field( get_post_var( 'sender_domain' ) ) );
+        }
+
 		add_action( 'mailhawk_notices', [ $this, 'show_settings_saved_notice' ] );
 
 	}
@@ -556,8 +581,6 @@ class Admin {
 	 */
 	public function page() {
 
-//	    var_dump( mailhawk_is_suspended() );
-
 		if ( ! mailhawk_is_connected() ) {
 			include __DIR__ . '/views/connect.php';
 
@@ -570,8 +593,8 @@ class Admin {
 			include __DIR__ . '/views/setup.php';
 
 			return;
-		} elseif ( get_url_var( 'action' ) === 'dns' ) {
-			include __DIR__ . '/views/dns.php';
+		} elseif ( get_url_var( 'action' ) === 'post_setup' ) {
+			include __DIR__ . '/views/post-setup.php';
 
 			return;
 		}
@@ -633,7 +656,7 @@ class Admin {
 		$status .= sprintf( "Send Limit:     %s\n", 0 ); // Todo actually show limit
 		$status .= sprintf( "Send Usage:     %s (%s%%)\n", 0, 0 ); // Todo show actual usage
 		$status .= sprintf( "Connected:      %s\n", mailhawk_is_connected() ? 'Yes' : 'No' );
-		$status .= sprintf( "SPF Set:        %s", mailhawk_spf_set() ? 'Yes' : 'No' );
+		$status .= sprintf( "SPF Set:        %s", mailhawk_spf_is_set() ? 'Yes' : 'No' );
 
 		return $status;
 
@@ -849,6 +872,28 @@ class Admin {
         <div class="notice notice-error is-dismissible">
             <p><?php _e( 'There was a problem re-sending the email.', 'mailhawk' ); ?></p>
             <p><?php echo "<code>" . $this->send_error->get_error_message() . "</code>"; ?></p>
+        </div>
+		<?php
+	}
+
+	/**
+	 * Notice if domain verified
+	 */
+	public function show_domain_verified_notice() {
+		?>
+        <div class="notice notice-success is-dismissible">
+            <p><?php _e( 'Your domain has been verified successfully!', 'mailhawk' ); ?></p>
+        </div>
+		<?php
+	}
+
+	/**
+	 * Notice if domain unverified
+	 */
+	public function show_domain_unverified_notice() {
+		?>
+        <div class="notice notice-error is-dismissible">
+            <p><?php _e( "We were unable to verify your domain. It can take up to 24 hours for records to propogate, so check again in an hour or so.", 'mailhawk' ); ?></p>
         </div>
 		<?php
 	}

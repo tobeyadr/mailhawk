@@ -128,13 +128,29 @@
     animation-timing-function: linear;
 }
 
-.mailhawk-table-wrap .email-sent,
-.domains .yes {
+.mailhawk-table-wrap .email-sent {
     color: green;
 }
 
-.mailhawk-table-wrap .email-failed,
-.domains .no {
+.tag {
+    padding: 5px 12px;
+    display: inline-block;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.domains .tag.yes {
+    color: #FFFFFF;
+    background: #2ba123;
+}
+
+.domains .tag.no {
+    color: #FFFFFF;
+    background: #d2120c;
+    font-weight: normal;
+}
+
+.mailhawk-table-wrap .email-failed {
     color: red;
 }
 
@@ -343,42 +359,42 @@ a.button .dashicons {
     width: 100%;
 }
 
-.mailhawk-content-box.report h2{
+.mailhawk-content-box.report h2 {
     margin-bottom: 0;
 }
 
-.report .big-number{
+.report .big-number {
     font-size: 40px;
     line-height: 1.3em;
     display: inline-block;
 }
 
-.report .comparison{
+.report .comparison {
     position: absolute;
     right: 10px;
     bottom: 10px;
     text-align: right;
 }
 
-.report .comparison .percentage{
+.report .comparison .percentage {
     font-weight: 600;
     font-size: 18px;
 }
 
-.report .comparison .percentage.red{
+.report .comparison .percentage.red {
     color: #DA3328;
 }
 
-.report .comparison .percentage.green{
+.report .comparison .percentage.green {
     color: #2ba123;
 }
 
-.report .comparison .vs{
+.report .comparison .vs {
     color: #8a8a8a;
 }
 
-.progress-bar-wrap{
-    background: rgba(104,164,218,0.20);
+.progress-bar-wrap {
+    background: rgba(104, 164, 218, 0.20);
     height: 30px;
     border-radius: 5px;
     width: 100%;
@@ -386,44 +402,74 @@ a.button .dashicons {
     margin: 10px 0;
 }
 
-.progress-bar-wrap .progress-bar{
+.progress-bar-wrap .progress-bar {
     background: #68A4DA;
     height: 30px;
 }
 
-.mailhawk-log-preview .mailhawk-error{
+.mailhawk-log-preview .mailhawk-error {
     padding: 15px;
     margin-bottom: 20px;
     border: 1px solid;
     border-radius: 5px;
 }
 
-.mailhawk-content-box.danger{
+.mailhawk-content-box.danger {
     border-color: #eb9a9d;
     background-color: #f2dede;
 }
 
-.mailhawk-content-box.danger *{
+.mailhawk-content-box.danger * {
     color: #572422;
 }
 
-.mailhawk-content-box.danger .button{
+.mailhawk-content-box.danger .button {
     border-color: #a94442;
 }
 
-.mailhawk-content-box.danger .button.button-primary{
+.mailhawk-content-box.danger .button.button-primary {
     border-color: #a94442;
     background: #aa0000;
     color: white;
 }
 
-.mailhawk-log-preview .mailhawk-error{
+.mailhawk-log-preview .mailhawk-error {
     color: #a94442;
     background-color: #f2dede;
     border-color: #ebccd1;
 }
 
-.mailhawk-error-details{
+.mailhawk-error-details {
     font-family: monospace;
     margin-top: 10px;
+}
+
+th.ttl,
+th.status,
+th.type {
+    width: 100px !important;
+}
+
+th.value {
+    width: 300px;
+}
+
+.dns-list th{
+    font-weight: bold;
+}
+
+#wpbody .domain-single .verify-button{
+    float: right;
+    margin-top: 0;
+    padding: 8px 24px;
+}
+
+.not-sure-dns{
+    display: inline-block;
+    box-sizing: border-box;
+    width: 100%;
+    border: solid #ccd0d4;
+    border-width: 0 1px 1px 1px;
+    text-align: center;
+    background: #f9f9f9;
 }

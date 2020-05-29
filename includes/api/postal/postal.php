@@ -2,6 +2,7 @@
 
 namespace MailHawk\Api\Postal;
 
+use function MailHawk\get_mailhawk_api_key;
 use function MailHawk\isset_not_empty;
 use function MailHawk\set_mailhawk_is_suspended;
 
@@ -47,7 +48,7 @@ class Postal {
 
 		// Try and get from settings, otherwise return an error.
 		if ( empty( self::$api_key ) ){
-			$api_key = get_option( 'mailhawk_mta_credential_key' );
+			$api_key = get_mailhawk_api_key();
 
 			if ( ! $api_key ){
 				return new \WP_Error( 'error', 'Invalid API key.' );

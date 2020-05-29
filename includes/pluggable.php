@@ -1,31 +1,56 @@
 <?php
 
 use MailHawk\Hawk_Mailer;
+use MailHawk\PHPMailer\Exception as MailHawkMailerException;
 use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\get_authenticated_sender_inbox;
+use function MailHawk\is_mailhawk_network_active;
 use function MailHawk\is_valid_email;
 
-function mailhawk_is_connected(){
+/**
+ * Whether MailHawk is connected to the service...
+ *
+ * @return bool
+ */
+function mailhawk_is_connected() {
+
+    // Check the network setting...
+    if ( is_mailhawk_network_active() && ! is_main_site() ){
+        return get_blog_option( get_main_site_id(), 'mailhawk_is_connected' ) === 'yes';
+    }
+
 	return get_option( 'mailhawk_is_connected' ) === 'yes';
 }
 
 if ( ! function_exists( 'wp_mail' ) && mailhawk_is_connected() ):
 
 	function wp_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
-		return mailhawk_mail( $to, $subject, $message, $headers, $attachments );
+		try {
+			return mailhawk_mail( $to, $subject, $message, $headers, $attachments );
+		} catch ( MailHawkMailerException $e ) {
+			do_action( 'wp_mail_failed', new WP_Error( 'wp_mail_failed', $e->getMessage() ) );
+			return false;
+		}
 	}
 elseif ( function_exists( 'wp_mail' ) && mailhawk_is_connected() ) :
 	add_action( 'admin_notices', 'mailhawk_wp_mail_already_defined' );
 endif;
 
 function mailhawk_wp_mail_already_defined() {
+
+    // ignore on multisite...
+    if ( is_mailhawk_network_active() && ! is_main_site() ){
+        return;
+    }
+
 	?>
-	<div class="notice notice-warning is-dismissible">
-		<img class="alignleft" height="70" style="margin: 3px 10px 0 0"
-		     src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/hawk-head.png' ); ?>" alt="Hawk">
-		<p>
+    <div class="notice notice-warning is-dismissible">
+        <img class="alignleft" height="70" style="margin: 3px 10px 0 0"
+             src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/hawk-head.png' ); ?>" alt="Hawk">
+        <p>
 			<?php _e( '<b>Attention:</b> It looks like another plugin is overwriting the <code>wp_mail</code> function. Please disable it to allow MailHawk to work properly.', 'mailhawk' ); ?>
-		</p>
-	</div>
+        </p>
+    </div>
 	<?php
 }
 
@@ -50,9 +75,10 @@ function mailhawk_wp_mail_already_defined() {
  * @param string|array $attachments Optional. Files to attach.
  *
  * @return bool Whether the email contents were sent successfully.
- * @since 1.2.1
- *
+ * @throws MailHawkMailerException
  * @global Hawk_Mailer $phpmailer
+ *
+ * @since 1.2.1
  *
  */
 function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
@@ -378,7 +404,7 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 			}
 		}
 	}
-	
+
 	/**
 	 * Fires after PHPMailer is initialized.
 	 *
@@ -388,17 +414,40 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	 *
 	 */
 	do_action_ref_array( 'phpmailer_init', array( &$phpmailer ) );
-	
+
 	// Set the AltBody if not set and the email is HTML based...
-	if ( $phpmailer->ContentType === 'text/html' && empty( $phpmailer->AltBody )){
-	    $phpmailer->AltBody = wp_strip_all_tags( $phpmailer->Body );
+	if ( $phpmailer->ContentType === 'text/html' && empty( $phpmailer->AltBody ) ) {
+		$phpmailer->AltBody = wp_strip_all_tags( $phpmailer->Body );
+	}
+
+	// Set the sender if we are on a network subsite
+	if ( is_mailhawk_network_active() && ! is_main_site() ){
+	    $sender = get_authenticated_sender_inbox();
+//	    $phpmailer->Sender = $sender;
+	    $phpmailer->addCustomHeader( 'Sender', $sender );
     }
 
 	// Send!
 	try {
 		return $phpmailer->send();
-	} catch ( phpmailerException $e ) {
+	} catch ( MailHawkMailerException $e ) {
 
+		$mail_error_data                             = compact( 'to', 'subject', 'message', 'headers', 'attachments' );
+		$mail_error_data['phpmailer_exception_code'] = $e->getCode();
+
+		/**
+		 * Fires after a phpmailerException is caught.
+		 *
+		 * @param WP_Error $error A WP_Error object with the phpmailerException message, and an array
+		 *                        containing the mail recipient, subject, message, headers, and attachments.
+		 *
+		 * @since 4.4.0
+		 *
+		 */
+		do_action( 'wp_mail_failed', new WP_Error( 'wp_mail_failed', $e->getMessage(), $mail_error_data ) );
+
+		return false;
+	} catch ( phpmailerException $e ) {
 		$mail_error_data                             = compact( 'to', 'subject', 'message', 'headers', 'attachments' );
 		$mail_error_data['phpmailer_exception_code'] = $e->getCode();
 
@@ -425,6 +474,6 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
  *
  * @return bool
  */
-function contains_html( $text='' ){
+function contains_html( $text = '' ) {
 	return wp_strip_all_tags( $text ) != $text;
 }

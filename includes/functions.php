@@ -2,6 +2,7 @@
 
 namespace MailHawk;
 
+use MailHawk\Api\Postal\Domains;
 use WP_Error;
 
 /**
@@ -373,6 +374,20 @@ function get_date_time_format() {
 }
 
 /**
+ * Get the API key for the network...
+ *
+ * @return mixed|void
+ */
+function get_mailhawk_api_key() {
+
+	if ( is_mailhawk_network_active() ) {
+		return get_blog_option( get_main_site_id(), 'mailhawk_mta_credential_key' );
+	}
+
+	return get_option( 'mailhawk_mta_credential_key' );
+}
+
+/**
  * Set the mailhawk API key
  *
  * @param string $key
@@ -407,19 +422,45 @@ function action_url( $action, $args = [] ) {
 /**
  * Check if the MailHawk was added to the current server SPF record.
  *
+ * Check is the SPF is set...
+ * @param $domain string the domain in question...
+ *
  * @return bool
  */
-function mailhawk_spf_set() {
+function mailhawk_spf_is_set( $domain='' ) {
 
-	if ( $set = get_transient( 'mailhawk_spf_set' ) ) {
-		return $set === 'yes';
+	if ( ! $domain ){
+		$domain = home_url();
 	}
 
-	$set = check_spf_ip( wp_parse_url( site_url(), PHP_URL_HOST ), 'spf.mailhawk.io' ) ? 'yes' : 'no';
-
-	set_transient( 'mailhawk_spf_set', $set, HOUR_IN_SECONDS );
+	$set = check_spf_ip( wp_parse_url( $domain, PHP_URL_HOST ), 'spf.mta01.mailhawk.io' ) ? 'yes' : 'no';
 
 	return $set === 'yes';
+}
+
+/**
+ * Get the value of the SPF record or false if it doesn't exist.
+ *
+ * @param $hostname
+ *
+ * @return bool|string
+ */
+function get_spf_record( $hostname ){
+	$txt_records = @dns_get_record( $hostname, DNS_TXT );
+
+	if ( empty( $txt_records ) ) {
+		return false;
+	}
+
+	foreach ( $txt_records as $record ) {
+		if ( array_key_exists( 'txt', $record ) ) {
+			if ( strpos( $record['txt'], 'v=spf1' ) !== false ) {
+				return $record['txt'];
+			}
+		}
+	}
+
+	return false;
 }
 
 /**
@@ -522,6 +563,15 @@ function get_log_retention_days() {
  */
 function get_email_retry_attempts() {
 	return absint( get_option( 'mailhawk_failed_email_retries', 3 ) );
+}
+
+/**
+ * Get the default from email address
+ *
+ * @return mixed|void
+ */
+function get_default_from_email_address() {
+	return get_option( 'mailhawk_default_from_email_address' );
 }
 
 /**

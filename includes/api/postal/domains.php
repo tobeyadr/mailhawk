@@ -98,5 +98,31 @@ class Domains extends Postal {
 		return $response->data;
 	}
 
+	/**
+	 * Only return domains which have been fully verified...
+	 *
+	 * @return array|bool
+	 */
+	public static function get_verified() {
+
+
+		$domains = self::query_all();
+
+		if ( is_wp_error( $domains ) || empty( $domains ) ) {
+			return false;
+		}
+
+		$verified = [];
+
+		foreach ( $domains as $domain ) {
+			if ( $domain->spf->spf_status === 'OK' && $domain->dkim->dkim_status === 'OK' ) {
+				$verified[] = $domain;
+			}
+		}
+
+		return $verified;
+
+	}
+
 
 }
