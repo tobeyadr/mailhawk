@@ -1,4 +1,4 @@
-=== MailHawk ===
+=== MailHawk - WordPress Email Delivery Solved ===
 Contributors: Adrian Tobey, Marc Goldman, trainingbusinesspros
 Donate link: https://mailhawk.io/
 Tags: email, smtp, delivery, optin, form
@@ -55,6 +55,13 @@ Yes, you can connect multiple sites to one account without paying extra!
 
 
 == Changelog ==
+
+= 1.0.4 (2020-05-29) =
+* ADDED Support for WaaS and Multisite.
+* ADDED Promotion for Groundhogg during guided setup.
+* TWEAKED improved the setup process and UI.
+* TWEAKED improved the DNS screen.
+* FIXED use our own version of the PHPMailer/Exception
 
 = 1.0.3 (2020-05-27) =
 * ADDED Automatically generate plain-text version of email if `content-type` is `text/html`
