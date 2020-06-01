@@ -32,7 +32,7 @@ class Admin {
 	public function __construct() {
 
 	    // Do not show on subsites...
-	    if ( ! is_mailhawk_network_active() || ! is_main_site() ){
+	    if ( is_mailhawk_network_active() && ! is_main_site() ){
 	        return;
         }
 

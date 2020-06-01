@@ -4,7 +4,7 @@
  * Plugin Name: MailHawk
  * Plugin URI: https://mailhawk.io
  * Description: Send better email that will reach the inbox with MailHawk.
- * Version: 1.0.5
+ * Version: 1.0.6
  * Author: MailHawk Inc.
  * Author URI: http://mailhawk.io
  * License: GPLv3
@@ -22,8 +22,8 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'MAILHAWK_VERSION', '1.0.5' );
-define( 'MAILHAWK_PREVIOUS_STABLE_VERSION', '1.0.4' );
+define( 'MAILHAWK_VERSION', '1.0.6' );
+define( 'MAILHAWK_PREVIOUS_STABLE_VERSION', '1.0.5' );
 define( 'MAILHAWK_LICENSE_SERVER_URL', 'https://mailhawk.io' );
 
 define( 'MAILHAWK__FILE__', __FILE__ );

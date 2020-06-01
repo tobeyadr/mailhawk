@@ -56,6 +56,9 @@ Yes, you can connect multiple sites to one account without paying extra!
 
 == Changelog ==
 
+= 1.0.6 (2020-06-01) =
+* FIXED bug causing MailHawk not to appear on non-multisite installations.
+
 = 1.0.5 (2020-05-29) =
 * ADDED Additional notice on domains page explaining DNS.
 
