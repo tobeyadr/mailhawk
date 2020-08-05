@@ -2,7 +2,9 @@
 
 use MailHawk\Hawk_Mailer;
 use MailHawk\PHPMailer\Exception as MailHawkMailerException;
+use function MailHawk\get_address_email_hostname;
 use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\get_authenticated_sender_domain;
 use function MailHawk\get_authenticated_sender_inbox;
 use function MailHawk\is_mailhawk_network_active;
 use function MailHawk\is_valid_email;
@@ -421,7 +423,8 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	}
 
 	// Set the sender if we are on a network subsite
-	if ( is_mailhawk_network_active() && ! is_main_site() ){
+    // or if the from domain is not equal to the authenticated sender domain.
+	if ( is_mailhawk_network_active() && get_address_email_hostname( $from_email ) !== get_authenticated_sender_domain() ){
 	    $sender = get_authenticated_sender_inbox();
 //	    $phpmailer->Sender = $sender;
 	    $phpmailer->addCustomHeader( 'Sender', $sender );

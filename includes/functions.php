@@ -137,7 +137,7 @@ function get_valid_email_stati() {
  *
  * @param        $array
  * @param string $key
- * @param bool $default
+ * @param bool   $default
  *
  * @return mixed
  */
@@ -175,7 +175,7 @@ function isset_not_empty( $array, $key = '' ) {
  * Get a variable from the $_POST global
  *
  * @param string $key
- * @param bool $default
+ * @param bool   $default
  *
  * @return mixed
  */
@@ -187,7 +187,7 @@ function get_post_var( $key = '', $default = false ) {
  * Get a variable from the $_REQUEST global
  *
  * @param string $key
- * @param bool $default
+ * @param bool   $default
  *
  * @return mixed
  */
@@ -199,7 +199,7 @@ function get_request_var( $key = '', $default = false ) {
  * Get a variable from the $_GET global
  *
  * @param string $key
- * @param bool $default
+ * @param bool   $default
  *
  * @return mixed
  */
@@ -263,7 +263,7 @@ function array_to_css( $atts ) {
  *
  * @param string $name
  * @param string $val
- * @param bool $expiry
+ * @param bool   $expiry
  *
  * @return bool
  */
@@ -275,7 +275,7 @@ function set_cookie( $name = '', $val = '', $expiry = false ) {
  * Retrieve a cookie
  *
  * @param string $cookie
- * @param bool $default
+ * @param bool   $default
  *
  * @return mixed
  */
@@ -423,13 +423,14 @@ function action_url( $action, $args = [] ) {
  * Check if the MailHawk was added to the current server SPF record.
  *
  * Check is the SPF is set...
+ *
  * @param $domain string the domain in question...
  *
  * @return bool
  */
-function mailhawk_spf_is_set( $domain='' ) {
+function mailhawk_spf_is_set( $domain = '' ) {
 
-	if ( ! $domain ){
+	if ( ! $domain ) {
 		$domain = home_url();
 	}
 
@@ -445,7 +446,7 @@ function mailhawk_spf_is_set( $domain='' ) {
  *
  * @return bool|string
  */
-function get_spf_record( $hostname ){
+function get_spf_record( $hostname ) {
 	$txt_records = @dns_get_record( $hostname, DNS_TXT );
 
 	if ( empty( $txt_records ) ) {
@@ -469,7 +470,7 @@ function get_spf_record( $hostname ){
  * @author Samui Banti - https://samiwell.eu
  *
  * @param string $hostname - The host name of the email address in format suitable for dns_get_record() function.
- * @param string $ip - The IP address of the server that sends the email.
+ * @param string $ip       - The IP address of the server that sends the email.
  *
  * @return bool if the server is allowed to send on the behalf of the hostname
  */
@@ -521,9 +522,25 @@ function get_json_error( $json ) {
 }
 
 /**
+ * Extract the host name from an email address
+ *
+ * @param $address
+ *
+ * @return bool|string
+ */
+function get_address_email_hostname( $address ) {
+
+	if ( strpos( $address, '@' ) === false ) {
+		return false;
+	}
+
+	return substr( $address, strpos( $address, '@' ) + 1 );
+}
+
+/**
  * Build a default site email address.
  *
- * @param $url
+ * @param        $url
  * @param string $prefix
  *
  * @return bool|string
