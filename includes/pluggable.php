@@ -425,8 +425,8 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	// Set the sender if we are on a network subsite
     // or if the from domain is not equal to the authenticated sender domain.
 	if ( is_mailhawk_network_active() && get_address_email_hostname( $from_email ) !== get_authenticated_sender_domain() ){
-	    $sender = get_authenticated_sender_inbox();
-//	    $phpmailer->Sender = $sender;
+	    $prefix = preg_replace( "/[^A-Za-z0-9_\-.]/", '', get_bloginfo( 'name' ) );
+	    $sender = get_authenticated_sender_inbox( $prefix );
 	    $phpmailer->addCustomHeader( 'Sender', $sender );
     }
 
