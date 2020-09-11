@@ -56,6 +56,9 @@ Yes, you can connect multiple sites to one account without paying extra!
 
 == Changelog ==
 
+= 1.0.8 (2020-09-11) =
+* FIXED Preview/Details modal not working after first click caused by updated jQuery Lib.
+
 = 1.0.6 (2020-06-01) =
 * FIXED bug causing MailHawk not to appear on non-multisite installations.
 
