@@ -4,7 +4,7 @@
  * Plugin Name: MailHawk
  * Plugin URI: https://mailhawk.io
  * Description: Send better email that will reach the inbox with MailHawk.
- * Version: 1.0.9
+ * Version: 1.0.10
  * Author: MailHawk Inc.
  * Author URI: http://mailhawk.io
  * License: GPLv3
@@ -22,7 +22,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'MAILHAWK_VERSION', '1.0.9' );
+define( 'MAILHAWK_VERSION', '1.0.10' );
 define( 'MAILHAWK_PREVIOUS_STABLE_VERSION', '1.0.8' );
 define( 'MAILHAWK_LICENSE_SERVER_URL', 'https://mailhawk.io' );
 
@@ -44,7 +44,7 @@ if ( ! version_compare( PHP_VERSION, '5.6', '>=' ) ) {
 } elseif ( ! version_compare( get_bloginfo( 'version' ), '4.9', '>=' ) ) {
     add_action( 'admin_notices', 'mailhawk_fail_wp_version' );
 } else {
-    require __DIR__ . 'includes/plugin.php';
+    require __DIR__ . '/includes/plugin.php';
 }
 
 /**
