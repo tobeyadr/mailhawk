@@ -56,6 +56,9 @@ Yes, you can connect multiple sites to one account without paying extra!
 
 == Changelog ==
 
+= 1.0.9 (2020-09-21) =
+* FIXED Plugins sending and empty string as an attachment causing emails to fail.
+
 = 1.0.8 (2020-09-11) =
 * FIXED Preview/Details modal not working after first click caused by updated jQuery Lib.
 

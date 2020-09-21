@@ -57,9 +57,6 @@ class Hawk_Mailer extends PHPMailer {
 
 		$message    = $this->getSentMIMEMessage();
 
-//		print_r( $message );
-//			die();
-
 		$recipients = array_keys( $this->all_recipients );
 
 		$msg_id = Send::raw( $this->From, $recipients, $message );

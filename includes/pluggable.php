@@ -52,6 +52,7 @@ function mailhawk_wp_mail_already_defined() {
         <p>
 			<?php _e( '<b>Attention:</b> It looks like another plugin is overwriting the <code>wp_mail</code> function. Please disable it to allow MailHawk to work properly.', 'mailhawk' ); ?>
         </p>
+        <div class="wp-clearfix"></div>
     </div>
 	<?php
 }
@@ -399,6 +400,11 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 
 	if ( ! empty( $attachments ) ) {
 		foreach ( $attachments as $attachment ) {
+
+		    if ( empty( $attachment ) ){
+		        continue;
+            }
+
 			try {
 				$phpmailer->addAttachment( $attachment );
 			} catch ( phpmailerException $e ) {

@@ -154,6 +154,11 @@ class Plugin {
 		add_action( 'rest_api_init', function (){
 			new Webhook_Listener();
 		} );
+
+		// Compat for Follow Up Emails Plugin
+		add_filter( 'fue_mail_method', function (){
+			return 'wp_mail';
+		}, 99 );
 	}
 
 	/**

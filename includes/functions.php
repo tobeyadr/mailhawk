@@ -669,5 +669,17 @@ function get_email_status_pretty_name( $status ) {
 	];
 
 	return get_array_var( $stati, $status );
-
 }
+
+/**
+ * Output an wp_json error if the test email failed to send for whatever reason.
+ *
+ * @param $wp_error
+ */
+function fue_test_email_output_error_msg(){
+	add_action( 'wp_mail_failed', function ( $error ){
+		wp_send_json_error( $error );
+	} );
+}
+
+add_action( 'fue_before_test_email_send', __NAMESPACE__ . '\fue_test_email_output_error_msg' );
