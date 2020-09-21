@@ -44,7 +44,7 @@ if ( ! version_compare( PHP_VERSION, '5.6', '>=' ) ) {
 } elseif ( ! version_compare( get_bloginfo( 'version' ), '4.9', '>=' ) ) {
     add_action( 'admin_notices', 'mailhawk_fail_wp_version' );
 } else {
-    require __DIR__ . 'includes/plugin.php';
+    require __DIR__ . '/includes/plugin.php';
 }
 
 /**
