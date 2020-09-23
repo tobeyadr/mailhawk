@@ -15,10 +15,10 @@ use function MailHawk\is_valid_email;
  */
 function mailhawk_is_connected() {
 
-    // Check the network setting...
-    if ( is_mailhawk_network_active() && ! is_main_site() ){
-        return get_blog_option( get_main_site_id(), 'mailhawk_is_connected' ) === 'yes';
-    }
+	// Check the network setting...
+	if ( is_mailhawk_network_active() && ! is_main_site() ) {
+		return get_blog_option( get_main_site_id(), 'mailhawk_is_connected' ) === 'yes';
+	}
 
 	return get_option( 'mailhawk_is_connected' ) === 'yes';
 }
@@ -30,6 +30,7 @@ if ( ! function_exists( 'wp_mail' ) && mailhawk_is_connected() ):
 			return mailhawk_mail( $to, $subject, $message, $headers, $attachments );
 		} catch ( MailHawkMailerException $e ) {
 			do_action( 'wp_mail_failed', new WP_Error( 'wp_mail_failed', $e->getMessage() ) );
+
 			return false;
 		}
 	}
@@ -39,29 +40,32 @@ endif;
 
 function mailhawk_wp_mail_already_defined() {
 
-    // ignore on multisite...
-    if ( ( is_mailhawk_network_active() && ! is_main_site() ) || ! current_user_can( 'activate_plugins' ) ){
-        return;
-    }
+	// ignore on multisite...
+	if ( ( is_mailhawk_network_active() && ! is_main_site() ) || ! current_user_can( 'activate_plugins' ) ) {
+		return;
+	}
 
 	try {
 		$plugin_file = mailhawk_extrapolate_wp_mail_plugins();
 	} catch ( ReflectionException $e ) {
-        return;
-	}
-
-	if ( ! $plugin_file || ! current_user_can( 'deactivate_plugin', $plugin_file ) ) {
 		return;
 	}
 
-    $deactivate_link = sprintf(
-        '<a href="%s" class="button" aria-label="%s">%s</a>',
-        wp_nonce_url( 'plugins.php?action=deactivate&amp;plugin=' . urlencode( $plugin_file ), 'deactivate-plugin_' . $plugin_file ),
-        /* translators: %s: Plugin name. */
-        esc_attr( __( 'Deactivate Conflicting Plugin', 'mailhawk' ) ),
-	    __( 'Deactivate Conflicting Plugin', 'mailhawk' )
-    );
+	$is_pluggable_file = strpos( $plugin_file, '/wp-includes/pluggable.php' ) !== false;
 
+	$deactivate_link = '';
+
+	if ( $plugin_file && ! $is_pluggable_file && current_user_can( 'deactivate_plugin', $plugin_file ) ) {
+
+		$deactivate_link = sprintf(
+			'<a href="%s" class="button" aria-label="%s">%s</a>',
+			wp_nonce_url( 'plugins.php?action=deactivate&amp;plugin=' . urlencode( $plugin_file ), 'deactivate-plugin_' . $plugin_file ),
+			/* translators: %s: Plugin name. */
+			esc_attr( __( 'Deactivate Conflicting Plugin', 'mailhawk' ) ),
+			__( 'Deactivate Conflicting Plugin', 'mailhawk' )
+		);
+
+	}
 
 	?>
     <div class="notice notice-warning is-dismissible">
@@ -71,9 +75,15 @@ function mailhawk_wp_mail_already_defined() {
 			<?php _e( '<b>Attention:</b> It looks like another plugin is overwriting the <code>wp_mail</code> function. Please disable it to allow MailHawk to work properly.', 'mailhawk' ); ?>
         </p>
         <p>
-            <?php _e( '<code>wp_mail</code> is defined on:', 'mailhawk' ); ?> <code><?php echo esc_html( $plugin_file ); ?></code>
-	        <?php echo  $deactivate_link ?>
+			<?php _e( '<code>wp_mail</code> is defined in:', 'mailhawk' ); ?>
+            <code><?php echo esc_html( $plugin_file ); ?></code>
+			<?php echo $deactivate_link ?>
         </p>
+		<?php if ( $is_pluggable_file ) : ?>
+            <p>
+                <?php _e( 'One of your plugins is including pluggable functions from WordPress before it should. This is causing a conflict with MailHawk and potentially other plugins you are using. You will have to deactivate your plugins one-by-one until this notice goes away to discover which plugin is causing the issue.', 'mailhawk' ); ?>
+            </p>
+		<?php endif; ?>
         <div class="wp-clearfix"></div>
     </div>
 	<?php
@@ -85,23 +95,28 @@ function mailhawk_wp_mail_already_defined() {
  * @throws ReflectionException
  * @return string
  */
-function mailhawk_extrapolate_wp_mail_plugins(){
+function mailhawk_extrapolate_wp_mail_plugins() {
 
-	$reflFunc = new \ReflectionFunction('wp_mail' );
-	$defined = wp_normalize_path( $reflFunc->getFileName() );
+	$reflFunc = new \ReflectionFunction( 'wp_mail' );
+	$defined  = wp_normalize_path( $reflFunc->getFileName() );
 
-	$active_plugins = get_option('active_plugins', [] );
+	$active_plugins = get_option( 'active_plugins', [] );
 
-	foreach ( $active_plugins as $active_plugin ){
+	foreach ( $active_plugins as $active_plugin ) {
 
-	    $plugin_dir = 'wp-content/plugins/' . dirname( $active_plugin ) . '/';
+		$plugin_dir = 'wp-content/plugins/' . dirname( $active_plugin ) . '/';
 
-	    if ( strpos( $defined, $plugin_dir ) !== false ){
-	        return $active_plugin;
-        }
-    }
+		if ( strpos( $defined, $plugin_dir ) !== false ) {
+			return $active_plugin;
+		}
+	}
 
-	return false;
+	// No active plugins are the cause, that means a plugin is probably including pluggable.php explicitly somewhere...
+	// BAD JU-JU guys...
+
+	// todo, find out which plugin includes pluggable before it's supposed to.
+
+	return $defined;
 }
 
 /**
@@ -118,17 +133,18 @@ function mailhawk_extrapolate_wp_mail_plugins(){
  * The default charset is based on the charset used on the blog. The charset can
  * be set using the {@see 'wp_mail_charset'} filter.
  *
- * @param string|array $to Array or comma-separated list of email addresses to send message.
- * @param string $subject Email subject
- * @param string $message Message contents
- * @param string|array $headers Optional. Additional headers.
+ * @throws MailHawkMailerException
+ * @since 1.2.1
+ *
+ * @param string       $message     Message contents
+ * @param string|array $headers     Optional. Additional headers.
  * @param string|array $attachments Optional. Files to attach.
  *
- * @return bool Whether the email contents were sent successfully.
- * @throws MailHawkMailerException
- * @global Hawk_Mailer $phpmailer
+ * @param string|array $to          Array or comma-separated list of email addresses to send message.
+ * @param string       $subject     Email subject
  *
- * @since 1.2.1
+ * @return bool Whether the email contents were sent successfully.
+ * @global Hawk_Mailer $phpmailer
  *
  */
 function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
@@ -137,10 +153,10 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	/**
 	 * Filters the wp_mail() arguments.
 	 *
+	 * @since 2.2.0
+	 *
 	 * @param array $args A compacted array of wp_mail() arguments, including the "to" email,
 	 *                    subject, message, headers, and attachments values.
-	 *
-	 * @since 2.2.0
 	 *
 	 */
 	$atts = apply_filters( 'wp_mail', compact( 'to', 'subject', 'message', 'headers', 'attachments' ) );
@@ -307,9 +323,9 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	/**
 	 * Filters the email address to send from.
 	 *
-	 * @param string $from_email Email address to send from.
-	 *
 	 * @since 2.2.0
+	 *
+	 * @param string $from_email Email address to send from.
 	 *
 	 */
 	$from_email = apply_filters( 'wp_mail_from', $from_email );
@@ -317,9 +333,9 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	/**
 	 * Filters the name to associate with the "from" email address.
 	 *
-	 * @param string $from_name Name associated with the "from" email address.
-	 *
 	 * @since 2.3.0
+	 *
+	 * @param string $from_name Name associated with the "from" email address.
 	 *
 	 */
 	$from_name = apply_filters( 'wp_mail_from_name', $from_name );
@@ -400,9 +416,9 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	/**
 	 * Filters the wp_mail() content type.
 	 *
-	 * @param string $content_type Default wp_mail() content type.
-	 *
 	 * @since 2.3.0
+	 *
+	 * @param string $content_type Default wp_mail() content type.
 	 *
 	 */
 	$content_type = apply_filters( 'wp_mail_content_type', $content_type );
@@ -424,9 +440,9 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	/**
 	 * Filters the default wp_mail() charset.
 	 *
-	 * @param string $charset Default email charset.
-	 *
 	 * @since 2.3.0
+	 *
+	 * @param string $charset Default email charset.
 	 *
 	 */
 	$phpmailer->CharSet = apply_filters( 'wp_mail_charset', $charset );
@@ -448,9 +464,9 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	if ( ! empty( $attachments ) ) {
 		foreach ( $attachments as $attachment ) {
 
-		    if ( empty( $attachment ) ){
-		        continue;
-            }
+			if ( empty( $attachment ) ) {
+				continue;
+			}
 
 			try {
 				$phpmailer->addAttachment( $attachment );
@@ -463,9 +479,9 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	/**
 	 * Fires after PHPMailer is initialized.
 	 *
-	 * @param PHPMailer $phpmailer The PHPMailer instance (passed by reference).
-	 *
 	 * @since 2.2.0
+	 *
+	 * @param PHPMailer $phpmailer The PHPMailer instance (passed by reference).
 	 *
 	 */
 	do_action_ref_array( 'phpmailer_init', array( &$phpmailer ) );
@@ -476,12 +492,12 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	}
 
 	// Set the sender if we are on a network subsite
-    // or if the from domain is not equal to the authenticated sender domain.
-	if ( is_mailhawk_network_active() && get_address_email_hostname( $from_email ) !== get_authenticated_sender_domain() ){
-	    $prefix = preg_replace( "/[^A-Za-z0-9_\-.]/", '', get_bloginfo( 'name' ) );
-	    $sender = get_authenticated_sender_inbox( $prefix );
-	    $phpmailer->addCustomHeader( 'Sender', $sender );
-    }
+	// or if the from domain is not equal to the authenticated sender domain.
+	if ( is_mailhawk_network_active() && get_address_email_hostname( $from_email ) !== get_authenticated_sender_domain() ) {
+		$prefix = preg_replace( "/[^A-Za-z0-9_\-.]/", '', get_bloginfo( 'name' ) );
+		$sender = get_authenticated_sender_inbox( $prefix );
+		$phpmailer->addCustomHeader( 'Sender', $sender );
+	}
 
 	// Send!
 	try {
@@ -494,10 +510,10 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 		/**
 		 * Fires after a phpmailerException is caught.
 		 *
+		 * @since 4.4.0
+		 *
 		 * @param WP_Error $error A WP_Error object with the phpmailerException message, and an array
 		 *                        containing the mail recipient, subject, message, headers, and attachments.
-		 *
-		 * @since 4.4.0
 		 *
 		 */
 		do_action( 'wp_mail_failed', new WP_Error( 'wp_mail_failed', $e->getMessage(), $mail_error_data ) );
@@ -510,10 +526,10 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 		/**
 		 * Fires after a phpmailerException is caught.
 		 *
+		 * @since 4.4.0
+		 *
 		 * @param WP_Error $error A WP_Error object with the phpmailerException message, and an array
 		 *                        containing the mail recipient, subject, message, headers, and attachments.
-		 *
-		 * @since 4.4.0
 		 *
 		 */
 		do_action( 'wp_mail_failed', new WP_Error( 'wp_mail_failed', $e->getMessage(), $mail_error_data ) );

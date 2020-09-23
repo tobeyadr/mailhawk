@@ -39,6 +39,9 @@ add_action( 'plugins_loaded', 'mailhawk_load_plugin_textdomain' );
 
 define( 'MAILHAWK_TEXT_DOMAIN', 'mailhawk' );
 
+// todo remove this after testing...
+include ABSPATH . 'wp-includes/pluggable.php';
+
 if ( ! version_compare( PHP_VERSION, '5.6', '>=' ) ) {
     add_action( 'admin_notices', 'mailhawk_fail_php_version' );
 } elseif ( ! version_compare( get_bloginfo( 'version' ), '4.9', '>=' ) ) {
