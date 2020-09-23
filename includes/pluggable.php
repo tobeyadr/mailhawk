@@ -3,7 +3,6 @@
 use MailHawk\Hawk_Mailer;
 use MailHawk\PHPMailer\Exception as MailHawkMailerException;
 use function MailHawk\get_address_email_hostname;
-use function MailHawk\get_admin_mailhawk_uri;
 use function MailHawk\get_authenticated_sender_domain;
 use function MailHawk\get_authenticated_sender_inbox;
 use function MailHawk\is_mailhawk_network_active;
@@ -41,20 +40,68 @@ endif;
 function mailhawk_wp_mail_already_defined() {
 
     // ignore on multisite...
-    if ( is_mailhawk_network_active() && ! is_main_site() ){
+    if ( ( is_mailhawk_network_active() && ! is_main_site() ) || ! current_user_can( 'activate_plugins' ) ){
         return;
     }
 
+	try {
+		$plugin_file = mailhawk_extrapolate_wp_mail_plugins();
+	} catch ( ReflectionException $e ) {
+        return;
+	}
+
+	if ( ! $plugin_file || ! current_user_can( 'deactivate_plugin', $plugin_file ) ) {
+		return;
+	}
+
+    $deactivate_link = sprintf(
+        '<a href="%s" class="button" aria-label="%s">%s</a>',
+        wp_nonce_url( 'plugins.php?action=deactivate&amp;plugin=' . urlencode( $plugin_file ), 'deactivate-plugin_' . $plugin_file ),
+        /* translators: %s: Plugin name. */
+        esc_attr( __( 'Deactivate Conflicting Plugin', 'mailhawk' ) ),
+	    __( 'Deactivate Conflicting Plugin', 'mailhawk' )
+    );
+
+
 	?>
     <div class="notice notice-warning is-dismissible">
-        <img class="alignleft" height="70" style="margin: 3px 10px 0 0"
+        <img class="alignleft" height="70" style="margin: 3px 10px 3px 3px"
              src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/hawk-head.png' ); ?>" alt="Hawk">
         <p>
 			<?php _e( '<b>Attention:</b> It looks like another plugin is overwriting the <code>wp_mail</code> function. Please disable it to allow MailHawk to work properly.', 'mailhawk' ); ?>
         </p>
+        <p>
+            <?php _e( '<code>wp_mail</code> is defined on:', 'mailhawk' ); ?> <code><?php echo esc_html( $plugin_file ); ?></code>
+	        <?php echo  $deactivate_link ?>
+        </p>
         <div class="wp-clearfix"></div>
     </div>
 	<?php
+}
+
+/**
+ * Find which plugin has wp_mail defined.
+ *
+ * @throws ReflectionException
+ * @return string
+ */
+function mailhawk_extrapolate_wp_mail_plugins(){
+
+	$reflFunc = new \ReflectionFunction('wp_mail' );
+	$defined = wp_normalize_path( $reflFunc->getFileName() );
+
+	$active_plugins = get_option('active_plugins', [] );
+
+	foreach ( $active_plugins as $active_plugin ){
+
+	    $plugin_dir = 'wp-content/plugins/' . dirname( $active_plugin ) . '/';
+
+	    if ( strpos( $defined, $plugin_dir ) !== false ){
+	        return $active_plugin;
+        }
+    }
+
+	return false;
 }
 
 /**
