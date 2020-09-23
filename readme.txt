@@ -56,6 +56,9 @@ Yes, you can connect multiple sites to one account without paying extra!
 
 == Changelog ==
 
+= 1.0.11 (2020-09-23) =
+* ADDED Better notice with mor context when there is a `wp_mail` conflict.
+
 = 1.0.9 (2020-09-21) =
 * FIXED Plugins sending and empty string as an attachment causing emails to fail.
 
