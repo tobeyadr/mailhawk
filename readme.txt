@@ -35,7 +35,7 @@ With MailHawk you can rest assured that your...
 
 Will reach the recipients inbox!
 
-## How does it work?
+## 📧 How does it work?
 
 MailHawk is an SMTP plugin & SMTP service *all-in-one!* Which means we're your one stop shop for sending emails from WordPress.
 
@@ -47,7 +47,21 @@ To get started all you need to do is follow these steps:
 4. Configure your DNS records.
 5. Start sending email!
 
-## Who is behind MailHawk?
+## 🤷‍♂️ Who will benefit from MailHawk?
+
+Any WordPress website that needs to send emails needs a WordPress SMTP service like MailHawk!
+
+It will especially help send emails from plugins like:
+
+* [Groundhogg](https://groundhogg.io)
+* WooCommerce
+* LearnDash
+* LifterLMS
+* BuddyBoss & BuddyPress
+* Easy Digital Downloads
+* And more...
+
+## 🧑‍🤝‍🧑 Who is behind MailHawk?
 
 Our team is made up of people who've spent a long time in the email industry!
 
@@ -63,27 +77,27 @@ Our team is made up of people who've spent a long time in the email industry!
 
 MailHawk is making sending email from WordPress easier and more transparent with these innovative features.
 
-## ANALYTICS & DASHBOARD REPORTING
+## 📈 ANALYTICS & DASHBOARD REPORTING
 
 Wondering if your emails are reaching the inbox? You can see your deliverability rate right within the MailHawk dashboard on your WordPress site! Use this information to make adjustments to your emails to improve your deliverability!
 
-## DOMAIN AUTHENTICATION
+## 🌎 DOMAIN AUTHENTICATION
 
 MailHawk provides SPF and DKIM authentication methods. This will drastically improve your email deliverability and provide you with a greater chance of skipping the spam folder.
 
-## BLACKLIST/WHITELIST MANAGEMENT
+## 🛡️ BLACKLIST/WHITELIST MANAGEMENT
 
 Stop spam from ruining your sender reputation by maintaining a blacklist of emails and domains which are causing you issues. Bounced emails can be automatically added to the blacklist so don’t have to worry about invalid email attacks.
 
-## EMAIL LOGGING
+## 📫 EMAIL LOGGING
 
 Keep track of your emails and debug email sending failures! You can resend emails, retry failed emails and even see which emails bounced! If you ever need to prove an email was sent you can check the log for up to 14 days after the email was sent! View content, headers and even the raw MIME message if you need to.
 
-## MULTISITE COMPATIBLE
+## 🌐 MULTISITE COMPATIBLE
 
 Are you using Multisite? MailHawk can be enabled across your entire multisite so you only have to configure it once!
 
-## WAAS COMPATIBLE
+## 🌐 WAAS COMPATIBLE
 
 Building a WaaS an not sure how to handle WordPress SMTP? [Choose one of our WaaS plans](https://mailhawk.io/waas/) and use MailHawk for all your customers!
 
