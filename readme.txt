@@ -129,9 +129,13 @@ Yes, we have special [WaaS account plans](https://mailhawk.io/waas/) to accommod
 
 Yes, MailHawk is specifically designed to prevent your emails from ending up in the spam folder.
 
-
 == Screenshots ==
 
+1. Pick the plan the best suits your needs!
+2. See your delivery reports right inside your WordPress dashboard.
+3. Keep track of your emails and view issues with our email log.
+4. Authenticate your domain and vastly improve the deliverability of your emails.
+5. Prevent abusers from tarnishing your sender reputation by blacklisting offenders.
 
 == Changelog ==
 
