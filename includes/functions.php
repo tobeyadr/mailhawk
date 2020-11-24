@@ -24,8 +24,6 @@ function get_admin_mailhawk_uri( $params = [] ) {
  * @return string
  */
 function get_rest_api_webhook_listener_uri() {
-	// Todo: replace dummy URL with an actual URL
-//	return 'https://webhook.site/33c26b2c-f4f3-460e-a48a-7cf89a6e0f5f';
 	return rest_url( 'mailhawk/listen' );
 }
 
@@ -204,7 +202,7 @@ function get_request_var( $key = '', $default = false ) {
  * @return mixed
  */
 function get_url_var( $key = '', $default = false ) {
-	return urlencode( wp_unslash( get_array_var( $_GET, $key, $default ) ) );
+	return urldecode( wp_unslash( get_array_var( $_GET, $key, $default ) ) );
 }
 
 /**

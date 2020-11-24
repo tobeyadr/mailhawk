@@ -376,6 +376,9 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 					}
 				}
 
+				// Trim the fat
+				$address = trim( $address );
+
 				if ( ! is_valid_email( $address ) ) {
 					do_action( 'wp_mail_failed', new WP_Error( 'wp_mail_failed', sprintf( 'MailHawk marked %s as an invalid email address. If you wish to allow this recipient to receive email please whitelist their address.', $address ) ) );
 
