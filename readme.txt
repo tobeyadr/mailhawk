@@ -65,11 +65,11 @@ It will especially help send emails from plugins like:
 
 Our team is made up of people who've spent a long time in the email industry!
 
-👨  **[Adrian Tobey]**, _CEO & Creator of [Groundhogg](https://www.groundhogg.io/)_
+👨  **Adrian Tobey**, _CEO & Creator of [Groundhogg](https://www.groundhogg.io/)_
 
 > There are many SMTP plugins and SMTP services, but you always have to get BOTH to work. With MailHawk you get just sign up and start sending email right away. No extra services, zero complications. No one focused on WordPress email deliverability like we do.
 
-👨  **[Marc Goldman]**, _CEO of Send13 & Klean13_
+👨  **Marc Goldman**, _CEO of Send13 & Klean13_
 
 > I'm super excited to bring my many years of email deliverability experience to the WordPress community so we can help more small business have their WordPress emails reach the inbox!
 
