@@ -3,7 +3,7 @@ Contributors: Adrian Tobey, Marc Goldman, trainingbusinesspros
 Donate link: https://mailhawk.io/pricing/
 Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
 Requires at least: 4.9
-Tested up to: 5.4
+Tested up to: 5.5
 Stable tag: trunk
 Requires PHP: 5.6
 License: GPLv2 or later
@@ -67,7 +67,7 @@ Our team is made up of people who've spent a long time in the email industry!
 
 👨  **Adrian Tobey**, _CEO & Creator of [Groundhogg](https://www.groundhogg.io/)_
 
-> There are many SMTP plugins and SMTP services, but you always have to get BOTH to work. With MailHawk you get just sign up and start sending email right away. No extra services, zero complications. No one focused on WordPress email deliverability like we do.
+> There are many SMTP plugins and SMTP services, but you always have to get BOTH to work. With MailHawk you just sign up and start sending email right away. No extra services, zero complications. No one is as focused on WordPress email deliverability as we are.
 
 👨  **Marc Goldman**, _CEO of Send13 & Klean13_
 
@@ -177,7 +177,3 @@ Yes, MailHawk is specifically designed to prevent your emails from ending up in 
 
 = 1.0.1 =
 * Initial release
-
-
-== Upgrade Notice ==
-
