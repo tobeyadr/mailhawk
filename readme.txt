@@ -139,7 +139,7 @@ Yes, MailHawk is specifically designed to prevent your emails from ending up in 
 
 == Changelog ==
 
-= 1.0.14 (2020-11-25) =
+= 1.0.13 (2020-11-25) =
 * FIXED Call to `pluggable.php` to early.
 
 = 1.0.12 (2020-11-24) =
