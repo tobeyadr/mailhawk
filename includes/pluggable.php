@@ -23,7 +23,9 @@ function mailhawk_is_connected() {
 	return get_option( 'mailhawk_is_connected' ) === 'yes';
 }
 
-if ( ! function_exists( 'wp_mail' ) && mailhawk_is_connected() ):
+if ( function_exists( 'wp_mail' ) && mailhawk_is_connected() ) :
+	add_action( 'admin_notices', 'mailhawk_wp_mail_already_defined' );
+elseif ( ! function_exists( 'wp_mail' ) && mailhawk_is_connected() ):
 
 	function wp_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
 		try {
@@ -34,8 +36,6 @@ if ( ! function_exists( 'wp_mail' ) && mailhawk_is_connected() ):
 			return false;
 		}
 	}
-elseif ( function_exists( 'wp_mail' ) && mailhawk_is_connected() ) :
-	add_action( 'admin_notices', 'mailhawk_wp_mail_already_defined' );
 endif;
 
 function mailhawk_wp_mail_already_defined() {

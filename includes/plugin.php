@@ -170,7 +170,7 @@ class Plugin {
 	 * @access private
 	 */
 	private function register_autoloader() {
-		require dirname( __FILE__ ) . '/autoloader.php';
+		require __DIR__ . '/autoloader.php';
 
 		Autoloader::run();
 	}
@@ -200,15 +200,15 @@ class Plugin {
 	 * Include any files that must be loaded right away
 	 */
 	protected function load_immediate() {
-		require dirname( __FILE__ ) . '/multisite.php';
-		require dirname( __FILE__ ) . '/pluggable.php';
+		require __DIR__ . '/multisite.php';
+		require __DIR__ . '/pluggable.php';
 	}
 
 	/**
 	 * Include other files
 	 */
 	private function includes() {
-		require dirname( __FILE__ ) . '/functions.php';
+		require __DIR__ . '/functions.php';
 	}
 }
 
