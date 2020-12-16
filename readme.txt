@@ -139,6 +139,10 @@ Yes, MailHawk is specifically designed to prevent your emails from ending up in 
 
 == Changelog ==
 
+= 1.0.14 (2020-12-16) =
+* TWEAKED DNS record now always show in lower case.
+* FIXED jQuery deprecation warnings.
+
 = 1.0.13 (2020-11-25) =
 * FIXED Call to `pluggable.php` to early.
 
