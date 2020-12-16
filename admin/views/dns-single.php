@@ -89,7 +89,7 @@ if ( get_url_var( 'action' ) === 'is_verified' ) {
         <tr>
             <td><?php _e( '<code>TXT</code> (DKIM)' ) ?></td>
             <td><input class="code" onfocus="this.select()" type="text"
-                       value="<?php esc_attr_e( $domain->dkim->dkim_record_name ); ?>"
+                       value="<?php esc_attr_e( strtolower( $domain->dkim->dkim_record_name ) ); ?>"
                        readonly></td>
             <td><input class="code" onfocus="this.select()" type="text"
                        value="3600"
