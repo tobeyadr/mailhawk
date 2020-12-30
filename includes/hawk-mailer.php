@@ -3,8 +3,17 @@
 namespace MailHawk;
 
 use MailHawk\Api\Postal\Send;
-use MailHawk\PHPMailer\Exception;
-use MailHawk\PHPMailer\PHPMailer;
+
+use PHPMailer\PHPMailer\PHPMailer as PHPMailer;
+use PHPMailer\PHPMailer\SMTP as SMTP;
+use PHPMailer\PHPMailer\Exception as PHPMailerException;
+
+if ( ! class_exists( '\PHPMailer' ) ) {
+	require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
+	require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
+	require_once ABSPATH . WPINC . '/PHPMailer/Exception.php';
+}
+
 
 class Hawk_Mailer extends PHPMailer {
 
@@ -47,7 +56,7 @@ class Hawk_Mailer extends PHPMailer {
 	 * Create a message and send it.
 	 * Uses the sending method specified by $Mailer.
 	 * @return boolean false on error - See the ErrorInfo property for details of the error.
-	 * @throws Exception
+	 * @throws PHPMailerException
 	 */
 	public function send() {
 
@@ -89,7 +98,7 @@ class Hawk_Mailer extends PHPMailer {
 
 		if ( is_wp_error( $msg_id ) ) {
 
-			$exc = new Exception( $msg_id->get_error_message(), self::STOP_CRITICAL );
+			$exc = new PHPMailerException( $msg_id->get_error_message(), self::STOP_CRITICAL );
 
 			$this->mailHeader = '';
 			$this->setError( $exc->getMessage() );

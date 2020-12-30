@@ -1,7 +1,7 @@
 <?php
 
 use MailHawk\Hawk_Mailer;
-use MailHawk\PHPMailer\Exception as MailHawkMailerException;
+use PHPMailer\PHPMailer\Exception as PHPMailerException;
 use function MailHawk\get_admin_mailhawk_uri;
 use function MailHawk\get_authenticated_sender_inbox;
 use function MailHawk\is_mailhawk_network_active;
@@ -27,7 +27,7 @@ if ( ! function_exists( 'wp_mail' ) && mailhawk_is_connected() ):
 	function wp_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
 		try {
 			return mailhawk_mail( $to, $subject, $message, $headers, $attachments );
-		} catch ( MailHawkMailerException $e ) {
+		} catch ( PHPMailerException $e ) {
 			do_action( 'wp_mail_failed', new WP_Error( 'wp_mail_failed', $e->getMessage() ) );
 			return false;
 		}
@@ -75,7 +75,7 @@ function mailhawk_wp_mail_already_defined() {
  * @param string|array $attachments Optional. Files to attach.
  *
  * @return bool Whether the email contents were sent successfully.
- * @throws MailHawkMailerException
+ * @throws PHPMailerException
  * @global Hawk_Mailer $phpmailer
  *
  * @since 1.2.1
@@ -276,7 +276,7 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 
 	try {
 		$phpmailer->setFrom( $from_email, $from_name, false );
-	} catch ( phpmailerException $e ) {
+	} catch ( PHPMailerException $e ) {
 		$mail_error_data                             = compact( 'to', 'subject', 'message', 'headers', 'attachments' );
 		$mail_error_data['phpmailer_exception_code'] = $e->getCode();
 
@@ -330,7 +330,7 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 						$phpmailer->addReplyTo( $address, $recipient_name );
 						break;
 				}
-			} catch ( phpmailerException $e ) {
+			} catch ( PHPMailerException $e ) {
 				continue;
 			}
 		}
@@ -399,7 +399,7 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 		foreach ( $attachments as $attachment ) {
 			try {
 				$phpmailer->addAttachment( $attachment );
-			} catch ( phpmailerException $e ) {
+			} catch ( PHPMailerException $e ) {
 				continue;
 			}
 		}
@@ -423,38 +423,20 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 	// Set the sender if we are on a network subsite
 	if ( is_mailhawk_network_active() && ! is_main_site() ){
 	    $sender = get_authenticated_sender_inbox();
-//	    $phpmailer->Sender = $sender;
 	    $phpmailer->addCustomHeader( 'Sender', $sender );
     }
 
 	// Send!
 	try {
 		return $phpmailer->send();
-	} catch ( MailHawkMailerException $e ) {
-
+	} catch ( PHPMailerException $e ) {
 		$mail_error_data                             = compact( 'to', 'subject', 'message', 'headers', 'attachments' );
 		$mail_error_data['phpmailer_exception_code'] = $e->getCode();
 
 		/**
-		 * Fires after a phpmailerException is caught.
+		 * Fires after a \PHPMailer\PHPMailer\Exception is caught.
 		 *
-		 * @param WP_Error $error A WP_Error object with the phpmailerException message, and an array
-		 *                        containing the mail recipient, subject, message, headers, and attachments.
-		 *
-		 * @since 4.4.0
-		 *
-		 */
-		do_action( 'wp_mail_failed', new WP_Error( 'wp_mail_failed', $e->getMessage(), $mail_error_data ) );
-
-		return false;
-	} catch ( phpmailerException $e ) {
-		$mail_error_data                             = compact( 'to', 'subject', 'message', 'headers', 'attachments' );
-		$mail_error_data['phpmailer_exception_code'] = $e->getCode();
-
-		/**
-		 * Fires after a phpmailerException is caught.
-		 *
-		 * @param WP_Error $error A WP_Error object with the phpmailerException message, and an array
+		 * @param WP_Error $error A WP_Error object with the \PHPMailer\PHPMailer\Exception message, and an array
 		 *                        containing the mail recipient, subject, message, headers, and attachments.
 		 *
 		 * @since 4.4.0
