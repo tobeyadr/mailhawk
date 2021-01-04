@@ -1,7 +1,6 @@
 <?php
 
 use MailHawk\Hawk_Mailer;
-use MailHawk\PHPMailer\Exception as MailHawkMailerException;
 use function MailHawk\get_address_email_hostname;
 use function MailHawk\get_authenticated_sender_domain;
 use PHPMailer\PHPMailer\Exception as PHPMailerException;
@@ -32,7 +31,7 @@ elseif ( ! function_exists( 'wp_mail' ) && mailhawk_is_connected() ):
 	function wp_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
 		try {
 			return mailhawk_mail( $to, $subject, $message, $headers, $attachments );
-		} catch ( MailHawkMailerException $e ) {
+		} catch ( \PHPMailer\PHPMailer\Exception $e ) {
 			do_action( 'wp_mail_failed', new WP_Error( 'wp_mail_failed', $e->getMessage() ) );
 
 			return false;
