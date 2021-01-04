@@ -553,9 +553,9 @@ class Admin {
 
 		wp_register_script( 'chart-js', MAILHAWK_ASSETS_URL . 'lib/chart/Chart.bundle.min.js' );
 
+		wp_enqueue_script( 'mailhawk-full-frame', MAILHAWK_ASSETS_URL . 'js/fullframe.js', [ 'jquery' ], null, true );
 		wp_enqueue_style( 'mailhawk-admin', MAILHAWK_ASSETS_URL . 'css/admin.css' );
 		wp_enqueue_script( 'mailhawk-admin', MAILHAWK_ASSETS_URL . 'js/admin.js', [ 'jquery' ], null, true );
-		wp_enqueue_script( 'mailhawk-full-frame', MAILHAWK_ASSETS_URL . 'js/fullframe.js', [ 'jquery' ], null, true );
 
 		wp_localize_script( 'mailhawk-admin', 'MailHawkConnect', [
 			'connecting_text' => '<span class="dashicons dashicons-admin-generic"></span>' . __( 'Connecting You To MailHawk...', 'mailhawk' )

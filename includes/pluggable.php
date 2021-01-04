@@ -1,6 +1,9 @@
 <?php
 
 use MailHawk\Hawk_Mailer;
+use MailHawk\PHPMailer\Exception as MailHawkMailerException;
+use function MailHawk\get_address_email_hostname;
+use function MailHawk\get_authenticated_sender_domain;
 use PHPMailer\PHPMailer\Exception as PHPMailerException;
 use function MailHawk\get_admin_mailhawk_uri;
 use function MailHawk\get_authenticated_sender_inbox;
@@ -22,26 +25,49 @@ function mailhawk_is_connected() {
 	return get_option( 'mailhawk_is_connected' ) === 'yes';
 }
 
-if ( ! function_exists( 'wp_mail' ) && mailhawk_is_connected() ):
+if ( function_exists( 'wp_mail' ) && mailhawk_is_connected() ) :
+	add_action( 'admin_notices', 'mailhawk_wp_mail_already_defined' );
+elseif ( ! function_exists( 'wp_mail' ) && mailhawk_is_connected() ):
 
 	function wp_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
 		try {
 			return mailhawk_mail( $to, $subject, $message, $headers, $attachments );
-		} catch ( PHPMailerException $e ) {
+		} catch ( MailHawkMailerException $e ) {
 			do_action( 'wp_mail_failed', new WP_Error( 'wp_mail_failed', $e->getMessage() ) );
+
 			return false;
 		}
 	}
-elseif ( function_exists( 'wp_mail' ) && mailhawk_is_connected() ) :
-	add_action( 'admin_notices', 'mailhawk_wp_mail_already_defined' );
 endif;
 
 function mailhawk_wp_mail_already_defined() {
 
-    // ignore on multisite...
-    if ( is_mailhawk_network_active() && ! is_main_site() ){
-        return;
-    }
+	// ignore on multisite...
+	if ( ( is_mailhawk_network_active() && ! is_main_site() ) || ! current_user_can( 'activate_plugins' ) ) {
+		return;
+	}
+
+	try {
+		$plugin_file = mailhawk_extrapolate_wp_mail_plugins();
+	} catch ( ReflectionException $e ) {
+		return;
+	}
+
+	$is_pluggable_file = strpos( $plugin_file, '/wp-includes/pluggable.php' ) !== false;
+
+	$deactivate_link = '';
+
+	if ( $plugin_file && ! $is_pluggable_file && current_user_can( 'deactivate_plugin', $plugin_file ) ) {
+
+		$deactivate_link = sprintf(
+			'<a href="%s" class="button" aria-label="%s">%s</a>',
+			wp_nonce_url( 'plugins.php?action=deactivate&amp;plugin=' . urlencode( $plugin_file ), 'deactivate-plugin_' . $plugin_file ),
+			/* translators: %s: Plugin name. */
+			esc_attr( __( 'Deactivate Conflicting Plugin', 'mailhawk' ) ),
+			__( 'Deactivate Conflicting Plugin', 'mailhawk' )
+		);
+
+	}
 
 	?>
     <div class="notice notice-warning is-dismissible">
@@ -50,8 +76,49 @@ function mailhawk_wp_mail_already_defined() {
         <p>
 			<?php _e( '<b>Attention:</b> It looks like another plugin is overwriting the <code>wp_mail</code> function. Please disable it to allow MailHawk to work properly.', 'mailhawk' ); ?>
         </p>
+        <p>
+			<?php _e( '<code>wp_mail</code> is defined in:', 'mailhawk' ); ?>
+            <code><?php echo esc_html( $plugin_file ); ?></code>
+			<?php echo $deactivate_link ?>
+        </p>
+		<?php if ( $is_pluggable_file ) : ?>
+            <p>
+                <?php _e( 'One of your plugins is including pluggable functions from WordPress before it should. This is causing a conflict with MailHawk and potentially other plugins you are using. You will have to deactivate your plugins one-by-one until this notice goes away to discover which plugin is causing the issue.', 'mailhawk' ); ?>
+            </p>
+		<?php endif; ?>
+        <div class="wp-clearfix"></div>
     </div>
 	<?php
+}
+
+/**
+ * Find which plugin has wp_mail defined.
+ *
+ * @throws ReflectionException
+ * @return string
+ */
+function mailhawk_extrapolate_wp_mail_plugins() {
+
+	$reflFunc = new \ReflectionFunction( 'wp_mail' );
+	$defined  = wp_normalize_path( $reflFunc->getFileName() );
+
+	$active_plugins = get_option( 'active_plugins', [] );
+
+	foreach ( $active_plugins as $active_plugin ) {
+
+		$plugin_dir = 'wp-content/plugins/' . dirname( $active_plugin ) . '/';
+
+		if ( strpos( $defined, $plugin_dir ) !== false ) {
+			return $active_plugin;
+		}
+	}
+
+	// No active plugins are the cause, that means a plugin is probably including pluggable.php explicitly somewhere...
+	// BAD JU-JU guys...
+
+	// todo, find out which plugin includes pluggable before it's supposed to.
+
+	return $defined;
 }
 
 /**
@@ -310,6 +377,9 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 					}
 				}
 
+				// Trim the fat
+				$address = trim( $address );
+
 				if ( ! is_valid_email( $address ) ) {
 					do_action( 'wp_mail_failed', new WP_Error( 'wp_mail_failed', sprintf( 'MailHawk marked %s as an invalid email address. If you wish to allow this recipient to receive email please whitelist their address.', $address ) ) );
 
@@ -434,9 +504,9 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 		$mail_error_data['phpmailer_exception_code'] = $e->getCode();
 
 		/**
-		 * Fires after a \PHPMailer\PHPMailer\Exception is caught.
+		 * Fires after a phpmailerException is caught.
 		 *
-		 * @param WP_Error $error A WP_Error object with the \PHPMailer\PHPMailer\Exception message, and an array
+		 * @param WP_Error $error A WP_Error object with the phpmailerException message, and an array
 		 *                        containing the mail recipient, subject, message, headers, and attachments.
 		 *
 		 * @since 4.4.0

@@ -57,7 +57,7 @@ if ( is_wp_error( $domains ) || empty( $domains ) ) {
                    value="<?php esc_attr_e( $domain->spf->spf_record ); ?>"
                    readonly>
             <h3><?php _e( 'DKIM Record' ); ?></h3>
-            <p class="description"><?php printf( __( 'You need to add a new TXT record with the name %s with the following content.', 'mailhawk' ), "<code>{$domain->dkim->dkim_record_name}</code>" ); ?></p>
+            <p class="description"><?php printf( __( 'You need to add a new TXT record with the name <code>%s</code> with the following content.', 'mailhawk' ), strtolower( $domain->dkim->dkim_record_name ) ); ?></p>
             <input class="code" onfocus="this.select()" type="text"
                    value="<?php esc_attr_e( $domain->dkim->dkim_record ); ?>"
                    readonly>
