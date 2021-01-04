@@ -11,12 +11,12 @@ $form_inputs = [
 
 ?>
 <style>
-    .wrap{
+    .wrap {
         max-width: 500px;
         margin: auto;
     }
 
-    .mailhawk-header{
+    .mailhawk-header {
         text-align: center;
     }
 
@@ -29,19 +29,12 @@ $form_inputs = [
     </div>
     <div class="mailhawk-content-box">
         <p><?php _e( 'Connect to <b>MailHawk</b> and instantly solve your WordPress email delivery problems. Starts at just <b>$14.97</b>/m.', 'mailhawk' ); ?></p>
-        <form method="post" action="<?php echo esc_url( trailingslashit( MAILHAWK_LICENSE_SERVER_URL ) ); ?>">
-			<?php
-
-			foreach ( $form_inputs as $input => $value ) {
-				?><input type="hidden" name="<?php esc_attr_e( $input ); ?>"
-                         value="<?php esc_attr_e( $value ); ?>"><?php
-			}
-
-			?>
-            <button id="connect" class="button button-primary big-button" type="submit" value="connect">
+        <div style="text-align: center">
+            <a id="connect" class="button button-primary big-button"
+               href="<?php echo esc_url( add_query_arg( urlencode_deep( $form_inputs ), MAILHAWK_LICENSE_SERVER_URL ) ); ?>">
                 <span class="dashicons dashicons-email-alt"></span>
 				<?php _e( 'Connect MailHawk Now!', 'mailhawk' ); ?>
-            </button>
-        </form>
+            </a>
+        </div>
     </div>
 </div>

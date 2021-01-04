@@ -64,6 +64,10 @@
     height: auto;
 }
 
+#connect.big-button{
+    font-weight: bold;
+}
+
 #mailhawk-status {
     width: 100%;
     height: 100px;

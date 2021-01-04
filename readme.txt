@@ -139,6 +139,10 @@ Yes, MailHawk is specifically designed to prevent your emails from ending up in 
 
 == Changelog ==
 
+= 1.0.15 (2021-01-04) =
+* TWEAKED use URL params instead of POST VAR for connect process.
+* TWEAKED use updated PHPMailer Lib from WP 5.5 instead of included one.
+
 = 1.0.14 (2020-12-16) =
 * TWEAKED DNS record now always show in lower case.
 * FIXED jQuery deprecation warnings.

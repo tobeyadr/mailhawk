@@ -53,20 +53,15 @@ if ( ! is_wp_error( $limits ) ){
         </ul>
         <p><?php _e( 'To continue using MailHawk you must reactivate you account.', 'mailhawk' ); ?></p>
         <div style="text-align: center">
-            <form method="post" action="<?php echo esc_url( trailingslashit( MAILHAWK_LICENSE_SERVER_URL ) ); ?>">
-				<?php
-
-				foreach ( $form_inputs as $input => $value ) {
-					?><input type="hidden" name="<?php esc_attr_e( $input ); ?>"
-                             value="<?php esc_attr_e( $value ); ?>"><?php
-				}
-
-				?>
-                <button id="connect" class="button button-primary big-button" type="submit" value="connect">
-                    <span class="dashicons dashicons-email-alt"></span>
-					<?php _e( 'Reactivate My Account Now!', 'mailhawk' ); ?>
-                </button>
-            </form>
+            <a id="connect" class="button button-primary big-button" href="<?php echo esc_url( add_query_arg( urlencode_deep( $form_inputs ), MAILHAWK_LICENSE_SERVER_URL ) ); ?>">
+                <span class="dashicons dashicons-email-alt"></span>
+                <?php _e( 'Reactivate My Account Now!', 'mailhawk' ); ?>
+            </a>
+	        <?php $url = \MailHawk\action_url( 'disconnect_mailhawk' ); ?>
         </div>
+        <p style="text-align: center">
+            <a class="danger" style="color:red"
+               href="<?php echo esc_attr( $url ); ?>"><?php _e( 'Disconnect MailHawk', 'mailhawk' ) ?></a>
+        </p>
     </div>
 </div>
