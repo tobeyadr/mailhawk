@@ -3,7 +3,7 @@ Contributors: Adrian Tobey, Marc Goldman, trainingbusinesspros
 Donate link: https://mailhawk.io/pricing/
 Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
 Requires at least: 4.9
-Tested up to: 5.5
+Tested up to: 5.6
 Stable tag: trunk
 Requires PHP: 5.6
 License: GPLv2 or later

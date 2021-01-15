@@ -36,6 +36,7 @@ class Email_Log_Item extends Base_Object {
 	 * Retry to send the email.
 	 *
 	 * @return bool
+	 * @throws \PHPMailer\PHPMailer\Exception
 	 */
 	public function retry() {
 
