@@ -25,16 +25,17 @@ use function MailHawk\set_mailhawk_is_suspended;
 
 /**
  * Class Admin
+ *
  * @package MailHawk\Admin
  */
 class Admin {
 
 	public function __construct() {
 
-	    // Do not show on subsites...
-	    if ( is_mailhawk_network_active() && ! is_main_site() ){
-	        return;
-        }
+		// Do not show on subsites...
+		if ( is_mailhawk_network_active() && ! is_main_site() ) {
+			return;
+		}
 
 		// Load any scripts
 		add_action( 'admin_enqueue_scripts', [ $this, 'scripts' ] );
@@ -129,13 +130,13 @@ class Admin {
 	/**
 	 * Disconnect mailhawk
 	 */
-	protected function maybe_disconnect(){
+	protected function maybe_disconnect() {
 		if ( ! wp_verify_nonce( get_url_var( '_wpnonce' ), 'disconnect_mailhawk' ) ) {
 			return;
 		}
 
 		// remotely deactivate this site
-        Licensing::instance()->deactivate();
+		Licensing::instance()->deactivate();
 
 		// Set local is connected to false
 		set_mailhawk_is_connected( false );
@@ -240,7 +241,11 @@ class Admin {
 			wp_die( $response );
 		}
 
-		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'domain' => $domain, 'view' => 'domains', 'action' => 'is_verified' ] ) ) );
+		die( wp_safe_redirect( get_admin_mailhawk_uri( [
+			'domain' => $domain,
+			'view'   => 'domains',
+			'action' => 'is_verified'
+		] ) ) );
 	}
 
 	/**
@@ -272,13 +277,20 @@ class Admin {
 		if ( is_wp_error( $response ) ) {
 
 			switch ( $response->get_error_code() ) {
-				default:
-					wp_die( $response );
-					break;
 				case 'ReachedDomainLimit':
+					add_action( 'mailhawk_notices', [ $this, 'domain_limit_reached_notice' ] );
 
+					return;
+				default:
+				case 'InvalidDomainName':
+				case 'DomainNameMissing':
+					add_action( 'mailhawk_notices', [ $this, 'invalid_domain_provided_notice' ] );
 
-					break;
+					return;
+				case 'DomainNameExists':
+					add_action( 'mailhawk_notices', [ $this, 'domain_name_already_registered' ] );
+
+					return;
 			}
 		}
 
@@ -360,8 +372,8 @@ class Admin {
 		add_action( 'wp_mail_failed', [ $this, 'maybe_email_failed' ] );
 
 		$success = wp_mail( $to, $subject, $body, [
-            'sender' => 'app@mailhawk.io'
-        ] );
+			'sender' => 'app@mailhawk.io'
+		] );
 
 		if ( $success ) {
 			add_action( 'mailhawk_notices', [ $this, 'show_test_successful_notice' ] );
@@ -469,7 +481,7 @@ class Admin {
 
 		// Enable failed email retries
 		$enable_retries = absint( get_post_var( 'retry_failed_emails' ) );
-        update_option( 'mailhawk_retry_failed_emails', $enable_retries );
+		update_option( 'mailhawk_retry_failed_emails', $enable_retries );
 
 		// Number of retries
 		$number_of_retries = absint( get_post_var( 'number_of_retries' ) );
@@ -477,16 +489,18 @@ class Admin {
 			update_option( 'mailhawk_failed_email_retries', $number_of_retries );
 		}
 
+		update_option( 'mailhawk_mta_credential_key', sanitize_text_field( get_post_var( 'mailhawk_mta_credential_key' ) ) );
+		update_option( 'mailhawk_license_server_token', sanitize_text_field( get_post_var( 'mailhawk_license_server_token' ) ) );
+
 		// Enable failed email retries
 		$delete_all_data = absint( get_post_var( 'delete_all_data' ) );
 		update_option( 'mailhawk_delete_all_data', $delete_all_data );
 
-		if ( is_multisite() && is_main_site() ){
-		    update_option( 'mailhawk_ms_sender_domain', sanitize_text_field( get_post_var( 'sender_domain' ) ) );
-        }
+		if ( is_multisite() && is_main_site() ) {
+			update_option( 'mailhawk_ms_sender_domain', sanitize_text_field( get_post_var( 'sender_domain' ) ) );
+		}
 
 		add_action( 'mailhawk_notices', [ $this, 'show_settings_saved_notice' ] );
-
 	}
 
 	/**
@@ -600,16 +614,16 @@ class Admin {
 		}
 
 		?>
-        <div class="wrap">
-            <div class="mailhawk-header">
-                <h1><img title="MailHawk Logo" alt="MailHawk Logo"
-                         src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/logo.png' ); ?>"></h1>
+		<div class="wrap">
+			<div class="mailhawk-header">
+				<h1><img title="MailHawk Logo" alt="MailHawk Logo"
+				         src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/logo.png' ); ?>"></h1>
 				<?php do_action( 'mailhawk_notices' ); ?>
-            </div>
+			</div>
 
 			<?php include __DIR__ . '/views/menu.php'; ?>
 
-            <div class="mailhawk-view-content">
+			<div class="mailhawk-view-content">
 
 				<?php
 
@@ -637,8 +651,8 @@ class Admin {
 
 				?>
 
-            </div>
-        </div>
+			</div>
+		</div>
 
 		<?php
 
@@ -670,18 +684,18 @@ class Admin {
 		$check_again = add_query_arg( [ 'action' => 'refresh_dns' ], get_admin_mailhawk_uri() );
 
 		?>
-        <div class="notice notice-warning">
-            <p><?php _e( 'We noticed your SPF record is missing. This can lead to delivery issues when sending crucial email.', 'mailhawk' ); ?></p>
-            <p><b><?php _e( 'Fix Your SPF Record!', 'mailhawk' ); ?></b></p>
-            <p><?php _e( "Please ensure you add <code>include:spf.mailhawk.io</code> to your SPF record.", 'mailhawk' ); ?></p>
-            <p><input id="spf" type="text" class="code" value="<?php esc_attr_e( get_suggested_spf_record() ); ?>"
-                      onfocus="this.select()" readonly></p>
-            <p>
-                <a href="#" class="button button-secondary"><?php _e( 'Instructions', 'mailhawk' ); ?></a>&nbsp;
-                <a href="<?php echo wp_nonce_url( $check_again, 'refresh_dns' ); ?>"
-                   class="button button-secondary"><?php _e( 'Check Again', 'mailhawk' ); ?></a>
-            </p>
-        </div>
+		<div class="notice notice-warning">
+			<p><?php _e( 'We noticed your SPF record is missing. This can lead to delivery issues when sending crucial email.', 'mailhawk' ); ?></p>
+			<p><b><?php _e( 'Fix Your SPF Record!', 'mailhawk' ); ?></b></p>
+			<p><?php _e( "Please ensure you add <code>include:spf.mailhawk.io</code> to your SPF record.", 'mailhawk' ); ?></p>
+			<p><input id="spf" type="text" class="code" value="<?php esc_attr_e( get_suggested_spf_record() ); ?>"
+			          onfocus="this.select()" readonly></p>
+			<p>
+				<a href="#" class="button button-secondary"><?php _e( 'Instructions', 'mailhawk' ); ?></a>&nbsp;
+				<a href="<?php echo wp_nonce_url( $check_again, 'refresh_dns' ); ?>"
+				   class="button button-secondary"><?php _e( 'Check Again', 'mailhawk' ); ?></a>
+			</p>
+		</div>
 		<?php
 	}
 
@@ -695,17 +709,17 @@ class Admin {
 		}
 
 		?>
-        <div class="notice notice-warning is-dismissible">
-            <img class="alignleft" height="70" style="margin: 3px 10px 0 0"
-                 src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/hawk-head.png' ); ?>" alt="Hawk">
-            <p>
+		<div class="notice notice-warning is-dismissible">
+			<img class="alignleft" height="70" style="margin: 3px 10px 0 0"
+			     src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/hawk-head.png' ); ?>" alt="Hawk">
+			<p>
 				<?php _e( '<b>Attention:</b> It looks like MailHawk is installed but is not connected to the MailHawk service.', 'mailhawk' ); ?>
-            </p>
-            <p>
-                <a href="<?php echo esc_url( get_admin_mailhawk_uri() ); ?>"
-                   class="button button-secondary"><?php _e( 'Connect or Register Now!', 'mailhawk' ); ?></a>
-            </p>
-        </div>
+			</p>
+			<p>
+				<a href="<?php echo esc_url( get_admin_mailhawk_uri() ); ?>"
+				   class="button button-secondary"><?php _e( 'Connect or Register Now!', 'mailhawk' ); ?></a>
+			</p>
+		</div>
 		<?php
 
 	}
@@ -721,17 +735,17 @@ class Admin {
 		}
 
 		?>
-        <div class="notice notice-warning is-dismissible">
-            <img class="alignleft" height="70" style="margin: 3px 10px 0 0"
-                 src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/hawk-head.png' ); ?>" alt="Hawk">
-            <p>
+		<div class="notice notice-warning is-dismissible">
+			<img class="alignleft" height="70" style="margin: 3px 10px 0 0"
+			     src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/hawk-head.png' ); ?>" alt="Hawk">
+			<p>
 				<?php _e( '<b>Attention:</b> It looks like your account has been suspended. To continue sending email you must reactivate your account.', 'mailhawk' ); ?>
-            </p>
-            <p>
-                <a href="<?php echo esc_url( get_admin_mailhawk_uri() ); ?>"
-                   class="button button-secondary"><?php _e( 'Reactivate Now!', 'mailhawk' ); ?></a>
-            </p>
-        </div>
+			</p>
+			<p>
+				<a href="<?php echo esc_url( get_admin_mailhawk_uri() ); ?>"
+				   class="button button-secondary"><?php _e( 'Reactivate Now!', 'mailhawk' ); ?></a>
+			</p>
+		</div>
 		<?php
 
 	}
@@ -742,9 +756,9 @@ class Admin {
 	public function connection_failed_notice() {
 
 		?>
-        <div class="notice notice-error is-dismissible">
-            <p><?php _e( 'We failed to connect you to the MailHawk service. Please try connecting again. If the problem persists, get in touch with us!', 'mailhawk' ); ?></p>
-        </div>
+		<div class="notice notice-error is-dismissible">
+			<p><?php _e( 'We failed to connect you to the MailHawk service. Please try connecting again. If the problem persists, get in touch with us!', 'mailhawk' ); ?></p>
+		</div>
 		<?php
 	}
 
@@ -758,9 +772,9 @@ class Admin {
 		}
 
 		?>
-        <div class="notice notice-success is-dismissible">
-            <p><?php _e( 'You are now connected to the MailHawk service! get ready to experience superior WordPress email deliverability :)', 'mailhawk' ); ?></p>
-        </div>
+		<div class="notice notice-success is-dismissible">
+			<p><?php _e( 'You are now connected to the MailHawk service! get ready to experience superior WordPress email deliverability :)', 'mailhawk' ); ?></p>
+		</div>
 		<?php
 
 	}
@@ -775,9 +789,9 @@ class Admin {
 		}
 
 		?>
-        <div class="notice notice-success is-dismissible">
-            <p><?php printf( __( 'Successfully registered %s.', 'mailhawk' ), "<code>" . sanitize_text_field( get_url_var( 'domain' ) ) . "</code>" ); ?></p>
-        </div>
+		<div class="notice notice-success is-dismissible">
+			<p><?php printf( __( 'Successfully registered %s.', 'mailhawk' ), "<code>" . sanitize_text_field( get_url_var( 'domain' ) ) . "</code>" ); ?></p>
+		</div>
 		<?php
 	}
 
@@ -791,9 +805,9 @@ class Admin {
 		}
 
 		?>
-        <div class="notice notice-success is-dismissible">
-            <p><?php printf( __( 'Successfully deleted %s.', 'mailhawk' ), "<code>" . sanitize_text_field( get_url_var( 'deleted_domain' ) ) . "</code>" ); ?></p>
-        </div>
+		<div class="notice notice-success is-dismissible">
+			<p><?php printf( __( 'Successfully deleted %s.', 'mailhawk' ), "<code>" . sanitize_text_field( get_url_var( 'deleted_domain' ) ) . "</code>" ); ?></p>
+		</div>
 		<?php
 	}
 
@@ -802,9 +816,9 @@ class Admin {
 	 */
 	public function show_address_added_to_blacklist_notice() {
 		?>
-        <div class="notice notice-success is-dismissible">
-            <p><?php printf( __( 'Added %s to the blacklist.', 'mailhawk' ), "<code>" . sanitize_email( get_post_var( 'address' ) ) . "</code>" ); ?></p>
-        </div>
+		<div class="notice notice-success is-dismissible">
+			<p><?php printf( __( 'Added %s to the blacklist.', 'mailhawk' ), "<code>" . sanitize_email( get_post_var( 'address' ) ) . "</code>" ); ?></p>
+		</div>
 		<?php
 	}
 
@@ -813,9 +827,42 @@ class Admin {
 	 */
 	public function show_address_added_to_whitelist_notice() {
 		?>
-        <div class="notice notice-success is-dismissible">
-            <p><?php printf( __( 'Added %s to the whitelist.', 'mailhawk' ), "<code>" . sanitize_email( get_post_var( 'address' ) ) . "</code>" ); ?></p>
-        </div>
+		<div class="notice notice-success is-dismissible">
+			<p><?php printf( __( 'Added %s to the whitelist.', 'mailhawk' ), "<code>" . sanitize_email( get_post_var( 'address' ) ) . "</code>" ); ?></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Show a notice when an email address is added to the whitelist
+	 */
+	public function domain_limit_reached_notice() {
+		?>
+		<div class="notice notice-error is-dismissible">
+			<p><?php _e( "You've reached your domain limit. Upgrade your plan to register additional domains.", 'mailhawk' ); ?></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Show a notice when an email address is added to the whitelist
+	 */
+	public function invalid_domain_provided_notice() {
+		?>
+		<div class="notice notice-error is-dismissible">
+			<p><?php _e( "Not a valid domain name.", 'mailhawk' ); ?></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Show a notice when an email address is added to the whitelist
+	 */
+	public function domain_name_already_registered() {
+		?>
+		<div class="notice notice-error is-dismissible">
+			<p><?php _e( "You've already registered this domain name.", 'mailhawk' ); ?></p>
+		</div>
 		<?php
 	}
 
@@ -824,10 +871,10 @@ class Admin {
 	 */
 	public function show_test_not_successful_notice() {
 		?>
-        <div class="notice notice-error is-dismissible">
-            <p><?php printf( __( 'There was a problem sending the email to %s.', 'mailhawk' ), "<code>" . get_array_var( $this->test_data, 'to' ) . "</code>", "<code>" . $this->send_error->get_error_message() . "</code>" ); ?></p>
-            <p><?php echo "<code>" . $this->send_error->get_error_message() . "</code>"; ?></p>
-        </div>
+		<div class="notice notice-error is-dismissible">
+			<p><?php printf( __( 'There was a problem sending the email to %s.', 'mailhawk' ), "<code>" . get_array_var( $this->test_data, 'to' ) . "</code>", "<code>" . $this->send_error->get_error_message() . "</code>" ); ?></p>
+			<p><?php echo "<code>" . $this->send_error->get_error_message() . "</code>"; ?></p>
+		</div>
 		<?php
 	}
 
@@ -836,9 +883,9 @@ class Admin {
 	 */
 	public function show_test_successful_notice() {
 		?>
-        <div class="notice notice-success is-dismissible">
-            <p><?php printf( __( 'We sent a test email to %s.', 'mailhawk' ), "<code>" . get_array_var( $this->test_data, 'to' ) . "</code>" ); ?></p>
-        </div>
+		<div class="notice notice-success is-dismissible">
+			<p><?php printf( __( 'We sent a test email to %s.', 'mailhawk' ), "<code>" . get_array_var( $this->test_data, 'to' ) . "</code>" ); ?></p>
+		</div>
 		<?php
 	}
 
@@ -847,9 +894,9 @@ class Admin {
 	 */
 	public function show_settings_saved_notice() {
 		?>
-        <div class="notice notice-success is-dismissible">
-            <p><?php _e( 'Settings saved!', 'mailhawk' ); ?></p>
-        </div>
+		<div class="notice notice-success is-dismissible">
+			<p><?php _e( 'Settings saved!', 'mailhawk' ); ?></p>
+		</div>
 		<?php
 	}
 
@@ -858,9 +905,9 @@ class Admin {
 	 */
 	public function show_email_retry_success_notice() {
 		?>
-        <div class="notice notice-success is-dismissible">
-            <p><?php _e( 'Email resent!', 'mailhawk' ); ?></p>
-        </div>
+		<div class="notice notice-success is-dismissible">
+			<p><?php _e( 'Email resent!', 'mailhawk' ); ?></p>
+		</div>
 		<?php
 	}
 
@@ -869,10 +916,10 @@ class Admin {
 	 */
 	public function show_retry_email_not_successful_notice() {
 		?>
-        <div class="notice notice-error is-dismissible">
-            <p><?php _e( 'There was a problem re-sending the email.', 'mailhawk' ); ?></p>
-            <p><?php echo "<code>" . $this->send_error->get_error_message() . "</code>"; ?></p>
-        </div>
+		<div class="notice notice-error is-dismissible">
+			<p><?php _e( 'There was a problem re-sending the email.', 'mailhawk' ); ?></p>
+			<p><?php echo "<code>" . $this->send_error->get_error_message() . "</code>"; ?></p>
+		</div>
 		<?php
 	}
 
@@ -881,9 +928,9 @@ class Admin {
 	 */
 	public function show_domain_verified_notice() {
 		?>
-        <div class="notice notice-success is-dismissible">
-            <p><?php _e( 'Your domain has been verified successfully!', 'mailhawk' ); ?></p>
-        </div>
+		<div class="notice notice-success is-dismissible">
+			<p><?php _e( 'Your domain has been verified successfully!', 'mailhawk' ); ?></p>
+		</div>
 		<?php
 	}
 
@@ -892,9 +939,9 @@ class Admin {
 	 */
 	public function show_domain_unverified_notice() {
 		?>
-        <div class="notice notice-error is-dismissible">
-            <p><?php _e( "We were unable to verify your domain. It can take up to 24 hours for records to propogate, so check again in an hour or so.", 'mailhawk' ); ?></p>
-        </div>
+		<div class="notice notice-error is-dismissible">
+			<p><?php _e( "We were unable to verify your domain. It can take up to 24 hours for records to propogate, so check again in an hour or so.", 'mailhawk' ); ?></p>
+		</div>
 		<?php
 	}
 }

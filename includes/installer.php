@@ -2,10 +2,10 @@
 
 namespace MailHawk;
 
-class Installer extends \MailHawk\Utils\Installer {
+class Installer extends Utils\Installer {
 
 	/**
-	 * Install the emails tabe
+	 * Install the emails table
 	 */
 	protected function activate() {
 		Plugin::instance()->emails->create_table();

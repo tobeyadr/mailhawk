@@ -105,7 +105,6 @@ class Domains extends Postal {
 	 */
 	public static function get_verified() {
 
-
 		$domains = self::query_all();
 
 		if ( is_wp_error( $domains ) || empty( $domains ) ) {
