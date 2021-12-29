@@ -122,7 +122,7 @@ class Admin {
 		set_mailhawk_is_suspended( false );
 
 		// Create the webhook listener.
-		Webhooks::create( get_bloginfo( 'name' ), get_rest_api_webhook_listener_uri(), true );
+		$this->maybe_register_webhook();
 
 		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'action' => 'setup' ] ) ) );
 	}
@@ -336,11 +336,14 @@ class Admin {
 	 * Register the webhook response.
 	 */
 	protected function maybe_register_webhook() {
-		$response = Webhooks::create( get_bloginfo( 'name' ), get_rest_api_webhook_listener_uri(), true );
 
-		if ( is_wp_error( $response ) ) {
-			wp_die( $response );
-		}
+		// Delete any old webhooks with the same URI
+		Webhooks::delete( get_rest_api_webhook_listener_uri() );
+
+		Webhooks::create( get_bloginfo( 'name' ), get_rest_api_webhook_listener_uri(), false, [
+			'MessageDeliveryFailed',
+			'MessageBounced',
+		] );
 	}
 
 	/**

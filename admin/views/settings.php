@@ -150,7 +150,7 @@ if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
 			<tr>
 				<th><?php _e( 'Email API key', 'mailhawk' ); ?></th>
 				<td>
-					<input type="text" name="mailhawk_mta_credential_key"
+					<input type="password" name="mailhawk_mta_credential_key"
 					       value="<?php esc_attr_e( get_mailhawk_api_key() ); ?>">
 					<p class="description">
 						<?php _e( "This is what authorizes your site to connect to the MailHawk service. Do not change this unless instructed by support.", 'mailhawk' ); ?>
@@ -160,7 +160,7 @@ if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
 			<tr>
 				<th><?php _e( 'License Token', 'mailhawk' ); ?></th>
 				<td>
-					<input type="text" name="mailhawk_license_server_token"
+					<input type="password" name="mailhawk_license_server_token"
 					       value="<?php esc_attr_e( get_option( 'mailhawk_license_server_token' ) ); ?>">
 					<p class="description">
 						<?php _e( "Allows you to connect to the licensing server.", 'mailhawk' ); ?>

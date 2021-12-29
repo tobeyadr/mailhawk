@@ -4,7 +4,7 @@ Donate link: https://mailhawk.io/pricing/
 Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
 Requires at least: 5.0
 Tested up to: 5.8
-Stable tag: 1.1
+Stable tag: 1.1.1
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -138,6 +138,9 @@ Yes, MailHawk is specifically designed to prevent your emails from ending up in 
 5. Prevent abusers from tarnishing your sender reputation by blacklisting offenders.
 
 == Changelog ==
+
+= 1.1.1 (2021-12-29) =
+* TWEAKED Change webhook settings to only send bounce notifications instead of ALL email events.
 
 = 1.1 (2021-10-12) =
 * ADDED Settings for API KEY so can be changed by support.
