@@ -90,12 +90,6 @@ class Webhook_Listener {
 					return new \WP_Error( 'invalid_email', 'The provided email address is invalid.' );
 				}
 
-				// Add email address to blacklist
-				Plugin::instance()->emails->add( [
-					'email'  => $to_address,
-					'status' => 'bounced'
-				] );
-
 				// Get the message ID
 				$msg_id = sanitize_text_field( $payload['original_message']['message_id'] );
 

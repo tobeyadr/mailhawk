@@ -1,13 +1,9 @@
 <?php
 
 use MailHawk\Hawk_Mailer;
-use function MailHawk\get_address_email_hostname;
-use function MailHawk\get_authenticated_sender_domain;
 use PHPMailer\PHPMailer\Exception as PHPMailerException;
-use function MailHawk\get_admin_mailhawk_uri;
 use function MailHawk\get_authenticated_sender_inbox;
 use function MailHawk\is_mailhawk_network_active;
-use function MailHawk\is_valid_email;
 
 /**
  * Whether MailHawk is connected to the service...
@@ -378,12 +374,6 @@ function mailhawk_mail( $to, $subject, $message, $headers = '', $attachments = a
 
 				// Trim the fat
 				$address = trim( $address );
-
-				if ( ! is_valid_email( $address ) ) {
-					do_action( 'wp_mail_failed', new WP_Error( 'wp_mail_failed', sprintf( 'MailHawk marked %s as an invalid email address. If you wish to allow this recipient to receive email please whitelist their address.', $address ) ) );
-
-					return false;
-				}
 
 				switch ( $address_header ) {
 					case 'to':
