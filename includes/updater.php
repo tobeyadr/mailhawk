@@ -17,7 +17,6 @@ class Updater extends \MailHawk\Utils\Updater{
 	 */
 	protected function get_available_updates() {
 		return [
-			'1.0.1',
 			'1.0.1.1',
 			'1.1.1'
 		];
@@ -42,3 +41,4 @@ class Updater extends \MailHawk\Utils\Updater{
 
 	}
 }
+

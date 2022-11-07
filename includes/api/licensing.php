@@ -2,8 +2,10 @@
 
 namespace MailHawk\Api;
 
+use function MailHawk\get_core_option;
 use function MailHawk\get_json_error;
 use function MailHawk\is_json_error;
+use function MailHawk\update_core_option;
 
 class Licensing {
 
@@ -51,7 +53,7 @@ class Licensing {
 	 * Licensing constructor.
 	 */
 	public function __construct() {
-		$this->token = get_option( 'mailhawk_license_server_token' );
+		$this->token = get_core_option( 'mailhawk_license_server_token' );
 	}
 
 	/**
@@ -61,7 +63,7 @@ class Licensing {
 	 */
 	public function set_token( $token ) {
 		$this->token = $token;
-		update_option( 'mailhawk_license_server_token', $token );
+		update_core_option( 'mailhawk_license_server_token', $token );
 	}
 
 	/**

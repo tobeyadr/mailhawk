@@ -29,7 +29,7 @@ class Reporting extends Postal {
 	/**
 	 * Get the server limits and usage.
 	 *
-	 * @return object|\WP_Error
+	 * @return array|\WP_Error
 	 */
 	public static function limits() {
 
@@ -41,7 +41,7 @@ class Reporting extends Postal {
 			return $response;
 		}
 
-		return $response->data;
+		return (array) $response->data;
 	}
 
 }

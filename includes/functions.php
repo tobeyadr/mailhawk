@@ -3,6 +3,7 @@
 namespace MailHawk;
 
 use MailHawk\Api\Postal\Domains;
+use MailHawk\Api\Postal\Reporting;
 use WP_Error;
 
 /**
@@ -47,6 +48,10 @@ function get_email_status( $email_address ) {
 	return $email_obj->status;
 }
 
+function get_email_hostname( $email_address ) {
+	return explode( '@', $email_address )[1];
+}
+
 /**
  * Test whether an email address is valid.
  *
@@ -59,6 +64,11 @@ function is_valid_email( $email_address ) {
 	if ( ! is_email( $email_address ) ) {
 		return false;
 	}
+
+
+//	if ( get_email_hostname( $email_address ) ) {
+//
+//	}
 
 	$global_email = sprintf( '*@%s', substr( $email_address, strpos( $email_address, '@' ) + 1 ) );
 
@@ -372,17 +382,45 @@ function get_date_time_format() {
 }
 
 /**
+ * Get core option based on mailhawk configuration
+ *
+ * @param $option
+ *
+ * @return false|mixed|null
+ */
+function get_core_option( $option = '' ) {
+
+	if ( is_mailhawk_network_active() ) {
+		return get_blog_option( get_main_site_id(), $option );
+	}
+
+	return get_option( $option );
+}
+
+/**
+ * Update core option based on mailhawk configuration
+ *
+ * @param string $option
+ * @param mixed  $value
+ *
+ * @return mixed
+ */
+function update_core_option( $option = '', $value = '' ) {
+
+	if ( is_mailhawk_network_active() ) {
+		return update_blog_option( get_main_site_id(), $option, $value );
+	}
+
+	return update_option( $option, $value );
+}
+
+/**
  * Get the API key for the network...
  *
  * @return mixed|void
  */
 function get_mailhawk_api_key() {
-
-	if ( is_mailhawk_network_active() ) {
-		return get_blog_option( get_main_site_id(), 'mailhawk_mta_credential_key' );
-	}
-
-	return get_option( 'mailhawk_mta_credential_key' );
+	return get_core_option( 'mailhawk_mta_credential_key' );
 }
 
 /**
@@ -674,10 +712,49 @@ function get_email_status_pretty_name( $status ) {
  *
  * @param $wp_error
  */
-function fue_test_email_output_error_msg(){
-	add_action( 'wp_mail_failed', function ( $error ){
+function fue_test_email_output_error_msg() {
+	add_action( 'wp_mail_failed', function ( $error ) {
 		wp_send_json_error( $error );
 	} );
 }
 
 add_action( 'fue_before_test_email_send', __NAMESPACE__ . '\fue_test_email_output_error_msg' );
+
+/**
+ * Get the current email usage
+ *
+ * @return array|bool
+ */
+function get_email_usage() {
+
+	$usage = get_transient( 'mailhawk_email_usage' );
+
+	if ( $usage ) {
+		return $usage;
+	}
+
+	$limits = Reporting::limits();
+
+	if ( is_wp_error( $limits ) ) {
+		return false;
+	}
+
+	$monthly_send_limit = $limits[ array_search( 'monthly_send_limit', wp_list_pluck( $limits, 'type' ) ) ];
+
+	$usage = $monthly_send_limit->usage;
+	$limit = $monthly_send_limit->limit;
+
+	$percent_usage = floor( ( $usage / $limit ?: 1 ) * 100 );
+
+	$result = [
+		'percent'   => $percent_usage,
+		'usage'     => $usage,
+		'limit'     => $limit,
+		'remaining' => $limit - $usage
+	];
+
+	update_core_option( 'mailhawk_monthly_email_limit', $limit );
+	set_transient( 'mailhawk_email_usage', $result, MINUTE_IN_SECONDS );
+
+	return $result;
+}

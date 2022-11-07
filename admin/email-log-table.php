@@ -44,8 +44,8 @@ class Email_Log_Table extends WP_List_Table {
 	 *
 	 * bulk steps or checkboxes, simply leave the 'cb' entry out of your array.
 	 *
-	 * @return array An associative array containing column information.
 	 * @see WP_List_Table::::single_row_columns()
+	 * @return array An associative array containing column information.
 	 */
 	public function get_columns() {
 		$columns = array(
@@ -121,7 +121,7 @@ class Email_Log_Table extends WP_List_Table {
 	}
 
 	/**
-	 * @param  $email Email_Log_Item
+	 * @param        $email Email_Log_Item
 	 * @param string $column_name
 	 * @param string $primary
 	 *
@@ -276,7 +276,7 @@ class Email_Log_Table extends WP_List_Table {
 	 * For more detailed insight into how columns are handled, take a look at
 	 * WP_List_Table::single_row_columns()
 	 *
-	 * @param object $email A singular item (one full row's worth of data).
+	 * @param object $email       A singular item (one full row's worth of data).
 	 * @param string $column_name The name/slug of the column to be processed.
 	 *
 	 * @return string|void Text or HTML to be placed inside the column <td>.
@@ -308,12 +308,24 @@ class Email_Log_Table extends WP_List_Table {
 	 */
 	protected function get_bulk_actions() {
 
-		$actions = [
-			'retry'     => __( 'Retry', 'mailhawk' ),
-			'resend'    => __( 'Resend', 'mailhawk' ),
-			'blacklist' => __( 'Blacklist', 'mailhawk' ),
-			'whitelist' => __( 'Whitelist', 'mailhawk' ),
-		];
+		switch ( get_url_var( 'status' ) ) {
+			case 'sent':
+				$actions = [
+					'resend' => __( 'Resend', 'mailhawk' ),
+				];
+				break;
+			case 'failed':
+				$actions = [
+					'retry' => __( 'Retry', 'mailhawk' ),
+				];
+				break;
+			default:
+				$actions = [
+					'retry'  => __( 'Retry', 'mailhawk' ),
+					'resend' => __( 'Resend', 'mailhawk' ),
+				];
+				break;
+		}
 
 		return apply_filters( 'mailhawk/log/bulk_actions', $actions );
 	}

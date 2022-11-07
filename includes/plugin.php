@@ -159,6 +159,8 @@ class Plugin {
 		add_filter( 'fue_mail_method', function (){
 			return 'wp_mail';
 		}, 99 );
+
+		new Telemetry();
 	}
 
 	/**

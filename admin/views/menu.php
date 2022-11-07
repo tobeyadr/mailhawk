@@ -16,12 +16,11 @@ $menu_items = [
 		'text' => __( 'Domains' ),
 		'icon' => 'admin-site',
 	],
-	[
-		'view' => 'blacklist',
-		'text' => __( 'Blacklist' ),
-		'icon' => 'shield',
-	],
-
+//	[
+//		'view' => 'blacklist',
+//		'text' => __( 'Blacklist' ),
+//		'icon' => 'shield',
+//	],
 	[
 		'view' => 'log',
 		'text' => __( 'Email Log' ),
