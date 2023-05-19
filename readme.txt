@@ -3,8 +3,8 @@ Contributors: Adrian Tobey, Marc Goldman, trainingbusinesspros
 Donate link: https://mailhawk.io/pricing/
 Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
 Requires at least: 5.0
-Tested up to: 6.1
-Stable tag: 1.2
+Tested up to: 6.2
+Stable tag: 1.2.1
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -138,6 +138,9 @@ Yes, MailHawk is specifically designed to prevent your emails from ending up in 
 5. Prevent abusers from tarnishing your sender reputation by blacklisting offenders.
 
 == Changelog ==
+
+= 1.2.1 (2023-05-19) =
+* ADDED Which account the MailHawk plugin is currently connected to in the Danger Zone settings.
 
 = 1.2 (2022-05-04) =
 * ADDED Telemetry for notifying admins when they are nearing their send limit

@@ -102,6 +102,15 @@ class Licensing {
 		return $this->request( 'wp-json/mailhawk/credentials', [], 'GET' );
 	}
 
+	/**
+	 * Get the credentials for the license key and postal API key
+	 *
+	 * @return object|\WP_Error
+	 */
+	public function get_account() {
+		return $this->request( 'wp-json/mailhawk/account', [], 'GET' );
+	}
+
 	public function deactivate(){
 		return $this->request( 'wp-json/mailhawk/deactivate', [], 'POST' );
 	}

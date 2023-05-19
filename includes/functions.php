@@ -758,3 +758,23 @@ function get_email_usage() {
 
 	return $result;
 }
+
+/**
+ * Gets data from a transient, if not set use the callback function and update the transient
+ *
+ * @param $transient string
+ * @param $callback callable
+ *
+ * @return mixed
+ */
+function maybe_get_from_transient( $transient, $callback, $ttl = DAY_IN_SECONDS ){
+
+	$data = get_transient( $transient );
+
+	if ( empty( $data ) ){
+		$data = call_user_func( $callback );
+		set_transient( $transient, $data, $ttl );
+	}
+
+	return $data;
+}
