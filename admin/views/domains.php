@@ -37,6 +37,7 @@ endif;
             <th><?php _e( 'Domain', 'mailhawk' ); ?></th>
             <th><?php _e( 'SPF', 'mailhawk' ); ?></th>
             <th><?php _e( 'DKIM', 'mailhawk' ); ?></th>
+            <th><?php _e( 'Return-Path', 'mailhawk' ); ?></th>
             <th><?php _e( 'DNS', 'mailhawk' ); ?></th>
         </tr>
         </thead>
@@ -46,6 +47,7 @@ endif;
 	            <td><a href="<?php echo esc_url( get_admin_mailhawk_uri( [ 'view' => 'domains', 'domain' => $domain->name ] ) ); ?>"><code><?php esc_html_e( $domain->name ); ?></code></a></td>
 				<td><?php echo $domain->spf->spf_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>" ; ?></td>
 				<td><?php echo $domain->dkim->dkim_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>" ; ?></td>
+				<td><?php echo $domain->return_path->return_path_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>" ; ?></td>
 				<td><a href="<?php echo esc_url( get_admin_mailhawk_uri( [ 'view' => 'domains', 'domain' => $domain->name ] ) ); ?>" class="button button-secondary"><?php _e( 'Configure', 'mailhawk' ); ?></a></td>
             </tr>
 		<?php endforeach; ?>

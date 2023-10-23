@@ -58,35 +58,6 @@ if ( get_url_var( 'action' ) === 'is_verified' ) {
         </thead>
         <tbody>
         <tr>
-            <td><?php _e( '<code>TXT</code> (SPF)' ) ?></td>
-            <td><input class="code" onfocus="this.select()" type="text"
-                       value="@"
-                       readonly></td>
-            <td><input class="code" onfocus="this.select()" type="text"
-                       value="3600"
-                       readonly></td>
-            <td>
-
-				<?php
-
-				// Get the actual spf record
-				$spf_record = get_spf_record( $domain->name );
-				// Use the customers current SPF record to add the mailhawk information
-				if ( $domain->spf->spf_status !== 'OK' && ! empty( $spf_record ) ):
-					preg_match( '/include:[^ ]+/', $domain->spf->spf_record, $matches );
-					$to_include = apply_filters( 'mailhawk/spf_include', $matches[0] );
-					$spf_record = preg_replace( '/([^ ]+$)/', "{$to_include} $1", $spf_record );
-				else:
-                    $spf_record = $domain->spf->spf_record;
-				endif; ?>
-
-                <input class="code" onfocus="this.select()" type="text"
-                       value="<?php esc_attr_e( $spf_record ); ?>"
-                       readonly></td>
-            <td><?php echo $domain->spf->spf_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified', 'mailhawk' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>"; ?>
-            </td>
-        </tr>
-        <tr>
             <td><?php _e( '<code>TXT</code> (DKIM)' ) ?></td>
             <td><input class="code" onfocus="this.select()" type="text"
                        value="<?php esc_attr_e( strtolower( $domain->dkim->dkim_record_name ) ); ?>"
@@ -98,6 +69,49 @@ if ( get_url_var( 'action' ) === 'is_verified' ) {
                        value="<?php esc_attr_e( $domain->dkim->dkim_record ); ?>"
                        readonly></td>
             <td><?php echo $domain->dkim->dkim_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified', 'mailhawk' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>"; ?>
+            </td>
+        </tr>
+        <tr>
+            <td><?php _e( '<code>CNAME</code>' ) ?></td>
+            <td><input class="code" onfocus="this.select()" type="text"
+                       value="<?php esc_attr_e( strtolower( $domain->return_path->return_path_domain ) ); ?>"
+                       readonly></td>
+            <td><input class="code" onfocus="this.select()" type="text"
+                       value="3600"
+                       readonly></td>
+            <td><input class="code" onfocus="this.select()" type="text"
+                       value="rp.mta01.mailhawk.io"
+                       readonly></td>
+            <td><?php echo $domain->return_path->return_path_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified', 'mailhawk' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>"; ?>
+            </td>
+        </tr>
+        <tr>
+            <td><?php _e( '<code>TXT</code> (SPF)' ) ?></td>
+            <td><input class="code" onfocus="this.select()" type="text"
+                       value="@"
+                       readonly></td>
+            <td><input class="code" onfocus="this.select()" type="text"
+                       value="3600"
+                       readonly></td>
+            <td>
+
+		        <?php
+
+		        // Get the actual spf record
+		        $spf_record = get_spf_record( $domain->name );
+		        // Use the customers current SPF record to add the mailhawk information
+		        if ( $domain->spf->spf_status !== 'OK' && ! empty( $spf_record ) ):
+			        preg_match( '/include:[^ ]+/', $domain->spf->spf_record, $matches );
+			        $to_include = apply_filters( 'mailhawk/spf_include', $matches[0] );
+			        $spf_record = preg_replace( '/([^ ]+$)/', "{$to_include} $1", $spf_record );
+		        else:
+			        $spf_record = $domain->spf->spf_record;
+		        endif; ?>
+
+                <input class="code" onfocus="this.select()" type="text"
+                       value="<?php esc_attr_e( $spf_record ); ?>"
+                       readonly></td>
+            <td><?php echo $domain->spf->spf_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified', 'mailhawk' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>"; ?>
             </td>
         </tr>
         </tbody>
