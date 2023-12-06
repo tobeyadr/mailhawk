@@ -11,6 +11,15 @@ $table = new Email_Log_Table();
 
 $table->prepare_items();
 
+// check if retries are enabled
+if ( get_option( 'mailhawk_disable_email_logging' ) ) :
+ ?>
+<div class="notice notice-warning">
+    <p><?php _e( 'Email logging is currently disabled. You can re-enable it in the settings.', 'mailhawk' ) ?></p>
+</div>
+<?php
+endif;
+
 ?>
 <div id="mailhawk-overlay" <?php if ( get_url_var( 'preview' ) ) echo 'style="display:block;"'; ?>></div>
 <div id="mailhawk-modal">

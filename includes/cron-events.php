@@ -63,7 +63,7 @@ class Cron_Events {
 	public function retry_failed_emails() {
 
 		// check if retries are enabled
-		if ( ! get_option( 'mailhawk_retry_failed_emails' ) ) {
+		if ( ! get_option( 'mailhawk_retry_failed_emails' ) || get_option( 'mailhawk_disable_email_logging' ) ) {
 			return;
 		}
 

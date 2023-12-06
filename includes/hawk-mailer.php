@@ -45,6 +45,12 @@ class Hawk_Mailer extends PHPMailer {
 	 * @return bool|int
 	 */
 	public static function add_log( $log_data = [] ) {
+
+		// Logging is disabled
+		if ( get_option( 'mailhawk_disable_email_logging' ) ){
+			return false;
+		}
+
 		if ( ! self::$log_item_id ) {
 			return Plugin::instance()->log->add( $log_data );
 		} else {

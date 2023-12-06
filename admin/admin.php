@@ -482,9 +482,14 @@ class Admin {
 			update_option( 'mailhawk_log_retention_in_days', $log_retention );
 		}
 
+        // Disable email logging
+		$enable_retries = absint( get_post_var( 'disable_email_logging' ) );
+		update_option( 'mailhawk_disable_email_logging', $enable_retries );
+
 		// Enable failed email retries
 		$enable_retries = absint( get_post_var( 'retry_failed_emails' ) );
 		update_option( 'mailhawk_retry_failed_emails', $enable_retries );
+
 
 		// Number of retries
 		$number_of_retries = absint( get_post_var( 'number_of_retries' ) );
