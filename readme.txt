@@ -3,8 +3,8 @@ Contributors: Adrian Tobey, Marc Goldman, trainingbusinesspros
 Donate link: https://mailhawk.io/pricing/
 Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
 Requires at least: 5.0
-Tested up to: 6.2
-Stable tag: 1.2.3
+Tested up to: 6.4
+Stable tag: 1.2.4
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -138,6 +138,9 @@ Yes, MailHawk is specifically designed to prevent your emails from ending up in 
 5. Prevent abusers from tarnishing your sender reputation by blacklisting offenders.
 
 == Changelog ==
+
+= 1.2.4 (2023-12-20) =
+* FIXED Google and some other inboxes switched to sending HardFail for inboxes that don't exist instead of a proper bounce.
 
 = 1.2.3 (2023-12-06) =
 * ADDED Option to disable email logging outright.

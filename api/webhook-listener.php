@@ -2,7 +2,6 @@
 
 namespace MailHawk\Api;
 
-use MailHawk\Classes\Email_Log_Item;
 use MailHawk\Plugin;
 use MailHawk\Utils\Signature_Verifier;
 use WP_REST_Response;
@@ -98,7 +97,7 @@ class Webhook_Listener {
 
 					$log = [
 						'status'        => 'bounced',
-						'error_code'    => 'bounced',
+						'error_code'    => 'Bounced',
 						'error_message' => __( 'This email could not be delivered and bounced back.', 'mailhawk' )
 					];
 
@@ -109,7 +108,7 @@ class Webhook_Listener {
 				 * Message bounced
 				 *
 				 * @param $to_address string email recipient
-				 * @param $msg_id string the msg_id of the email
+				 * @param $msg_id     string the msg_id of the email
 				 */
 				do_action( 'mailhawk/bounced', $to_address, $msg_id );
 
@@ -117,7 +116,8 @@ class Webhook_Listener {
 			case 'MessageDeliveryFailed':
 
 				// Get the message ID
-				$msg_id = sanitize_text_field( $payload['message']['message_id'] );
+				$msg_id    = sanitize_text_field( $payload['message']['message_id'] );
+				$error_msg = sanitize_text_field( $payload['details'] );
 
 				// If the message was sent from this site, update the status to failed
 				if ( Plugin::instance()->log->exists( [ 'msg_id' => $msg_id ] ) ) {
@@ -125,10 +125,24 @@ class Webhook_Listener {
 					$log = [
 						'status'        => 'failed',
 						'error_code'    => 'MessageDeliveryFailed',
-						'error_message' => __( 'This email could not be delivered.', 'mailhawk' )
+						'error_message' => $error_msg
 					];
 
 					Plugin::instance()->log->update( null, $log, [ 'msg_id' => $msg_id ] );
+				}
+
+				if ( $payload['status'] === 'HardFail' ){
+
+					// Get the recipient address
+					$to_address = sanitize_email( $payload['message']['to'] );
+
+					/**
+					 * Message bounced
+					 *
+					 * @param $to_address string email recipient
+					 * @param $msg_id     string the msg_id of the email
+					 */
+					do_action( 'mailhawk/bounced', $to_address, $msg_id );
 				}
 
 				break;
