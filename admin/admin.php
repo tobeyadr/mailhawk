@@ -8,14 +8,16 @@ use MailHawk\Api\Postal\Webhooks;
 use MailHawk\Classes\Email_Log_Item;
 use MailHawk\Keys;
 use MailHawk\Plugin;
-use function MailHawk\get_admin_mailhawk_uri;
+use function Groundhogg\get_contactdata;
+use function Groundhogg\is_a_contact;
 use function MailHawk\get_array_var;
 use function MailHawk\get_post_var;
-use function MailHawk\get_request_var;
 use function MailHawk\get_rest_api_webhook_listener_uri;
 use function MailHawk\get_suggested_spf_record;
 use function MailHawk\get_url_var;
+use function MailHawk\is_groundhogg_active;
 use function MailHawk\is_mailhawk_network_active;
+use function MailHawk\mailhawk_admin_page;
 use function MailHawk\mailhawk_is_connected;
 use function MailHawk\mailhawk_is_suspended;
 use function MailHawk\mailhawk_spf_is_set;
@@ -124,7 +126,7 @@ class Admin {
 		// Create the webhook listener.
 		$this->maybe_register_webhook();
 
-		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'action' => 'setup' ] ) ) );
+		die( wp_safe_redirect( mailhawk_admin_page( [ 'action' => 'setup' ] ) ) );
 	}
 
 	/**
@@ -141,7 +143,7 @@ class Admin {
 		// Set local is connected to false
 		set_mailhawk_is_connected( false );
 
-		die( wp_safe_redirect( get_admin_mailhawk_uri() ) );
+		die( wp_safe_redirect( mailhawk_admin_page() ) );
 	}
 
 	/**
@@ -192,7 +194,7 @@ class Admin {
 		}
 
 		// Send to DNS
-		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'action' => 'post_setup' ] ) ) );
+		die( wp_safe_redirect( mailhawk_admin_page( [ 'action' => 'post_setup' ] ) ) );
 
 	}
 
@@ -217,7 +219,7 @@ class Admin {
 			wp_die( $response );
 		}
 
-		die( wp_safe_redirect( get_admin_mailhawk_uri( [ 'deleted_domain' => $domain, 'view' => 'domains' ] ) ) );
+		die( wp_safe_redirect( mailhawk_admin_page( [ 'deleted_domain' => $domain, 'view' => 'domains' ] ) ) );
 	}
 
 	/**
@@ -241,7 +243,7 @@ class Admin {
 			wp_die( $response );
 		}
 
-		die( wp_safe_redirect( get_admin_mailhawk_uri( [
+		die( wp_safe_redirect( mailhawk_admin_page( [
 			'domain' => $domain,
 			'view'   => 'domains',
 			'action' => 'is_verified'
@@ -294,7 +296,7 @@ class Admin {
 			}
 		}
 
-		die( wp_safe_redirect( get_admin_mailhawk_uri( [
+		die( wp_safe_redirect( mailhawk_admin_page( [
 			'view'   => 'domains',
 			'domain' => $domain,
 			'added'  => 'yes',
@@ -413,32 +415,6 @@ class Admin {
 	}
 
 	/**
-	 * Output the email content.
-	 */
-	protected function maybe_preview_email() {
-
-		if ( ! wp_verify_nonce( get_url_var( '_mailhawk_nonce' ), 'preview_email' ) ) {
-			return;
-		}
-
-		$preview_id = absint( get_url_var( 'preview' ) );
-
-		$log_item = new Email_Log_Item( $preview_id );
-
-		if ( ! $log_item->exists() ) {
-			wp_die( 'Invalid log item ID.' );
-		}
-
-		if ( preg_match( '/<html[^>]*>/', $log_item->content ) ) {
-			echo $log_item->content;
-		} else {
-			echo wpautop( esc_html( $log_item->content ) );
-		}
-
-		die();
-	}
-
-	/**
 	 * Return the preview content
 	 */
 	public function ajax_load_preview_content() {
@@ -482,7 +458,7 @@ class Admin {
 			update_option( 'mailhawk_log_retention_in_days', $log_retention );
 		}
 
-        // Disable email logging
+		// Disable email logging
 		$enable_retries = absint( get_post_var( 'disable_email_logging' ) );
 		update_option( 'mailhawk_disable_email_logging', $enable_retries );
 
@@ -533,9 +509,78 @@ class Admin {
 			return;
 		}
 
-		add_action( 'mailhawk_notices', [ $this, 'show_email_retry_success_notice' ] );
+		if ( $log_item->is_quarantined() ) {
+			add_action( 'mailhawk_notices', [ $this, 'show_email_released_success_notice' ] );
+		} else {
+			add_action( 'mailhawk_notices', [ $this, 'show_email_retry_success_notice' ] );
+		}
 	}
 
+	/**
+	 * Maybe reject an email if viewing the log and rejected a quarantined email!
+	 *
+	 * @return void
+	 */
+	protected function maybe_reject_email() {
+		if ( ! wp_verify_nonce( get_url_var( '_mailhawk_nonce' ), 'reject_email' ) ) {
+			return;
+		}
+
+		$item_id = absint( get_url_var( 'id' ) );
+
+		$log_item = new Email_Log_Item( $item_id );
+
+		if ( ! $log_item->exists() ) {
+			return;
+		} else if ( ! $log_item->reject() ) {
+			return;
+		}
+
+		add_action( 'mailhawk_notices', [ $this, 'show_email_rejected_notice' ] );
+	}
+
+	/**
+	 * Rejects and email and unsubscribes them from the list
+	 *
+	 * @return void
+	 */
+	protected function maybe_reject_and_unsubscribe() {
+		if ( ! wp_verify_nonce( get_url_var( '_mailhawk_nonce' ), 'reject_unsub' ) ) {
+			return;
+		}
+
+		$item_id = absint( get_url_var( 'id' ) );
+
+		$log_item = new Email_Log_Item( $item_id );
+
+		if ( ! $log_item->exists() ) {
+			return;
+		} else if ( ! $log_item->reject() ) {
+			return;
+		}
+
+		if ( is_groundhogg_active() ) {
+
+			// Unsubscribe them as well
+			foreach ( $log_item->recipients as $recipient ) {
+
+                $contact = get_contactdata( $recipient );
+
+                if ( is_a_contact( $contact ) ) {
+					$contact->unsubscribe();
+				}
+			}
+		}
+
+		add_action( 'mailhawk_notices', [ $this, 'show_email_rejected_notice' ] );
+	}
+
+
+	/**
+	 * The table action from the list table
+	 *
+	 * @return mixed
+	 */
 	protected function get_table_action() {
 		return get_post_var( 'action', get_post_var( 'action2' ) );
 	}
@@ -545,35 +590,84 @@ class Admin {
 	 *
 	 * @return void
 	 */
-	protected function maybe_bulk_resend_email() {
-		if ( ! wp_verify_nonce( get_post_var( '_wpnonce' ), 'bulk-emails' ) || ! in_array( $this->get_table_action(), [
-				'resend',
-				'retry'
-			] ) ) {
+	protected function maybe_handle_bulk_action() {
+		if ( ! wp_verify_nonce( get_post_var( '_wpnonce' ), 'bulk-emails' ) ) {
 			return;
 		}
 
 		$item_ids = wp_parse_id_list( get_post_var( 'email' ) );
 
-        if ( empty( $item_ids ) ){
-	        add_action( 'mailhawk_notices', [ $this, 'show_no_emails_selected_notice' ] );
-	        return;
-        }
+		if ( empty( $item_ids ) ) {
+			add_action( 'mailhawk_notices', [ $this, 'show_no_emails_selected_notice' ] );
 
-		foreach ( $item_ids as $item_id ) {
-			$log_item = new Email_Log_Item( $item_id );
-			add_action( 'wp_mail_failed', [ $this, 'maybe_resend_failed' ] );
-
-			if ( ! $log_item->exists() ) {
-				return;
-			} else if ( ! $log_item->retry() ) {
-				return;
-			}
+			return;
 		}
 
-        if ( ! $this->send_error ){
-	        add_action( 'mailhawk_notices', [ $this, 'show_email_retry_success_notice' ] );
-        }
+		$log_items = array_map( function ( $id ) {
+			return new Email_Log_Item( $id );
+		}, $item_ids );
+
+		switch ( $this->get_table_action() ) {
+			case 'release':
+			case 'resend':
+
+				foreach ( $log_items as $log_item ) {
+
+					add_action( 'wp_mail_failed', [ $this, 'maybe_resend_failed' ] );
+
+					if ( ! $log_item->exists() ) {
+						return;
+					} else if ( ! $log_item->retry() ) {
+						return;
+					}
+				}
+
+				if ( ! $this->send_error ) {
+					add_action( 'mailhawk_notices', [ $this, 'show_email_retry_success_notice' ] );
+				}
+
+				break;
+			case 'reject':
+
+				foreach ( $log_items as $log_item ) {
+
+					if ( ! $log_item->exists() ) {
+						return;
+					} else if ( ! $log_item->reject() ) {
+						return;
+					}
+				}
+
+				add_action( 'mailhawk_notices', [ $this, 'show_email_rejected_notice' ] );
+				break;
+
+			case 'reject_unsub':
+
+				foreach ( $log_items as $log_item ) {
+
+					if ( ! $log_item->exists() ) {
+						return;
+					} else if ( ! $log_item->reject() ) {
+						return;
+					}
+
+					if ( is_groundhogg_active() ) {
+
+						// Unsubscribe them as well
+						foreach ( $log_item->recipients as $recipient ) {
+							$contact = get_contactdata( $recipient );
+							if ( is_a_contact( $contact ) ) {
+								$contact->unsubscribe();
+							}
+						}
+					}
+				}
+
+				add_action( 'mailhawk_notices', [ $this, 'show_email_rejected_notice' ] );
+				break;
+
+				break;
+		}
 	}
 
 	/**
@@ -595,10 +689,11 @@ class Admin {
 		$this->maybe_register_new_domain();
 		$this->maybe_manage_blacklist();
 		$this->maybe_send_test_email();
-		$this->maybe_preview_email();
 		$this->maybe_save_settings();
 		$this->maybe_resend_email();
-        $this->maybe_bulk_resend_email();
+		$this->maybe_reject_email();
+		$this->maybe_reject_and_unsubscribe();
+		$this->maybe_handle_bulk_action();
 
 	}
 
@@ -615,7 +710,7 @@ class Admin {
 
 		wp_register_script( 'chart-js', MAILHAWK_ASSETS_URL . 'lib/chart/Chart.bundle.min.js' );
 
-		wp_enqueue_script( 'mailhawk-full-frame', MAILHAWK_ASSETS_URL . 'js/fullframe.js', [ 'jquery' ], null, true );
+//		wp_enqueue_script( 'mailhawk-full-frame', MAILHAWK_ASSETS_URL . 'js/fullframe.js', [ 'jquery' ], null, true );
 		wp_enqueue_style( 'mailhawk-admin', MAILHAWK_ASSETS_URL . 'css/admin.css' );
 		wp_enqueue_script( 'mailhawk-admin', MAILHAWK_ASSETS_URL . 'js/admin.js', [ 'jquery' ], null, true );
 
@@ -729,7 +824,7 @@ class Admin {
 	 */
 	public function spf_missing_notice() {
 
-		$check_again = add_query_arg( [ 'action' => 'refresh_dns' ], get_admin_mailhawk_uri() );
+		$check_again = add_query_arg( [ 'action' => 'refresh_dns' ], mailhawk_admin_page() );
 
 		?>
         <div class="notice notice-warning">
@@ -764,7 +859,7 @@ class Admin {
 				<?php _e( '<b>Attention:</b> It looks like MailHawk is installed but is not connected to the MailHawk service.', 'mailhawk' ); ?>
             </p>
             <p>
-                <a href="<?php echo esc_url( get_admin_mailhawk_uri() ); ?>"
+                <a href="<?php echo esc_url( mailhawk_admin_page() ); ?>"
                    class="button button-secondary"><?php _e( 'Connect or Register Now!', 'mailhawk' ); ?></a>
             </p>
         </div>
@@ -790,7 +885,7 @@ class Admin {
 				<?php _e( '<b>Attention:</b> It looks like your account has been suspended. To continue sending email you must reactivate your account.', 'mailhawk' ); ?>
             </p>
             <p>
-                <a href="<?php echo esc_url( get_admin_mailhawk_uri() ); ?>"
+                <a href="<?php echo esc_url( mailhawk_admin_page() ); ?>"
                    class="button button-secondary"><?php _e( 'Reactivate Now!', 'mailhawk' ); ?></a>
             </p>
         </div>
@@ -960,6 +1055,28 @@ class Admin {
 	}
 
 	/**
+	 * Notice if email retry succeeded
+	 */
+	public function show_email_rejected_notice() {
+		?>
+        <div class="notice notice-success is-dismissible">
+            <p><?php _e( 'Email rejected!', 'mailhawk' ); ?></p>
+        </div>
+		<?php
+	}
+
+	/**
+	 * Notice if email retry succeeded
+	 */
+	public function show_email_released_success_notice() {
+		?>
+        <div class="notice notice-success is-dismissible">
+            <p><?php _e( 'Email released and sent!', 'mailhawk' ); ?></p>
+        </div>
+		<?php
+	}
+
+	/**
 	 * Show a notice when a test email could not be delivered.
 	 */
 	public function show_no_emails_selected_notice() {
@@ -976,7 +1093,7 @@ class Admin {
 	public function show_retry_email_not_successful_notice() {
 		?>
         <div class="notice notice-error is-dismissible">
-            <p><?php _e( 'There was a problem re-sending the email.', 'mailhawk' ); ?></p>
+            <p><?php _e( 'There was a problem sending the email.', 'mailhawk' ); ?></p>
             <p><?php echo "<code>" . $this->send_error->get_error_message() . "</code>"; ?></p>
         </div>
 		<?php

@@ -2,7 +2,7 @@
 
 namespace MailHawk\Admin\Views;
 
-use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\mailhawk_admin_page;
 use function MailHawk\get_url_var;
 
 $menu_items = [
@@ -47,7 +47,7 @@ $menu_items = [
 			<?php $is_active = get_url_var( 'view' ) === $item['view']; ?>
 
             <li><a class="<?php echo $is_active ? 'active' : ''; ?>"
-                   href="<?php echo esc_url( get_admin_mailhawk_uri( [ 'view' => $item['view'] ] ) ); ?>"><span
+                   href="<?php echo esc_url( mailhawk_admin_page( [ 'view' => $item['view'] ] ) ); ?>"><span
                             class="dashicons dashicons-<?php esc_attr_e( $item['icon'] ); ?>"></span><?php esc_html_e( $item['text'] ); ?>
                 </a>
             </li>

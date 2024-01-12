@@ -43,9 +43,6 @@
 
                 $modal.html( response.data.content );
 
-                $.fullFrame();
-
-                $modal.css( 'top', $(window).scrollTop() + 'px' );
                 $modal.show();
                 $overlay.show();
             },

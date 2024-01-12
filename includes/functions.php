@@ -2,7 +2,6 @@
 
 namespace MailHawk;
 
-use MailHawk\Api\Postal\Domains;
 use MailHawk\Api\Postal\Reporting;
 use WP_Error;
 
@@ -13,7 +12,7 @@ use WP_Error;
  *
  * @return string
  */
-function get_admin_mailhawk_uri( $params = [] ) {
+function mailhawk_admin_page( $params = [] ) {
 	$params = array_merge( [ 'page' => 'mailhawk' ], $params );
 
 	return add_query_arg( $params, admin_url( 'tools.php' ) );
@@ -627,6 +626,10 @@ function get_default_from_email_address() {
 	return get_option( 'mailhawk_default_from_email_address' );
 }
 
+function home_url_no_scheme() {
+	return preg_replace( '#^https?://#i', '', home_url() );
+}
+
 /**
  * Override the default from email
  *
@@ -697,11 +700,12 @@ function get_email_status_pretty_name( $status ) {
 	$status = strtolower( $status );
 
 	$stati = [
-		'sent'      => __( 'Sent', 'mailhawk' ),
-		'failed'    => __( 'Failed', 'mailhawk' ),
-		'delivered' => __( 'Delivered', 'mailhawk' ),
-		'bounced'   => __( 'Bounced', 'mailhawk' ),
-		'softfail'  => __( 'Soft Fail', 'mailhawk' ),
+		'sent'       => __( 'Sent', 'mailhawk' ),
+		'failed'     => __( 'Failed', 'mailhawk' ),
+		'delivered'  => __( 'Delivered', 'mailhawk' ),
+		'bounced'    => __( 'Bounced', 'mailhawk' ),
+		'softfail'   => __( 'Soft Fail', 'mailhawk' ),
+		'quarantine' => __( 'Quarantined', 'mailhawk' ),
 	];
 
 	return get_array_var( $stati, $status );
@@ -763,18 +767,153 @@ function get_email_usage() {
  * Gets data from a transient, if not set use the callback function and update the transient
  *
  * @param $transient string
- * @param $callback callable
+ * @param $callback  callable
  *
  * @return mixed
  */
-function maybe_get_from_transient( $transient, $callback, $ttl = DAY_IN_SECONDS ){
+function maybe_get_from_transient( $transient, $callback, $ttl = DAY_IN_SECONDS ) {
 
 	$data = get_transient( $transient );
 
-	if ( empty( $data ) ){
+	if ( empty( $data ) ) {
 		$data = call_user_func( $callback );
 		set_transient( $transient, $data, $ttl );
 	}
 
 	return $data;
+}
+
+
+/**
+ * List of free inbox providers
+ *
+ * @return array
+ */
+function get_free_inbox_providers(): array {
+	static $providers = [];
+
+	// initialize providers
+	if ( empty( $providers ) ) {
+		$providers = json_decode( file_get_contents( MAILHAWK_ASSETS_PATH . 'lib/free-email-providers.json' ), true );
+		$providers = apply_filters( 'mailhawk/get_free_inbox_providers', $providers );
+	}
+
+	return $providers;
+}
+
+
+/**
+ * Get the hostname of an email address
+ *
+ * @param $email string
+ *
+ * @return string
+ */
+function get_email_address_hostname( string $email ) {
+
+	if ( ! is_email( $email ) ) {
+		return false;
+	}
+
+	$parts = explode( '@', $email );
+
+	return $parts[1];
+}
+
+/**
+ * If the given email is from a free inbox provider
+ *
+ * @param $email string
+ *
+ * @return bool
+ */
+function is_free_email_provider( string $email ): bool {
+
+	if ( ! is_email( $email ) ) {
+		return false;
+	}
+
+	return apply_filters( 'mailhawk/is_free_email_provider', key_exists( get_email_address_hostname( $email ), get_free_inbox_providers() ), $email );
+}
+
+/**
+ * If the given email is from a free inbox provider
+ *
+ * @param $email string
+ *
+ * @return int
+ */
+function get_inbox_risk( string $email ): int {
+
+	if ( ! is_email( $email ) || ! is_free_email_provider( $email ) ) {
+		return 0;
+	}
+
+	$hostname = get_email_address_hostname( $email );
+	$inboxes  = get_free_inbox_providers();
+
+	return apply_filters( 'mailhawk/get_inbox_risk', $inboxes[ $hostname ], $email );
+}
+
+/**
+ * Assess the risk of sending an email to a particular user
+ *
+ * @param string $email_address
+ *
+ * @return int
+ */
+function assess_risk( string $email_address ): int {
+
+	// The baseline risk is 0;
+	$risk = 0;
+
+	// It's the admin email, dw about it
+	if ( $email_address === get_option( 'admin_email' ) ){
+		return 0;
+	}
+
+	// Same hostname as the site
+	if ( get_email_address_hostname( $email_address ) === wp_parse_url( home_url(), PHP_URL_HOST ) ){
+		return 0;
+	}
+
+	// Free email providers get risk increased
+	if ( is_free_email_provider( $email_address ) ) {
+		$risk += get_inbox_risk( $email_address );
+	}
+
+	// If they are a user, reduce their score
+	if ( email_exists( $email_address ) ) {
+		$risk -= 1;
+	}
+
+	return apply_filters( 'mailhawk/assess_risk', $risk, $email_address );
+}
+
+/**
+ * Is groundhogg installed maybe?
+ *
+ * @return bool
+ */
+function is_groundhogg_active() {
+	return defined( 'GROUNDHOGG_VERSION' );
+}
+
+/**
+ * Create a string list that ends witgh and
+ *
+ * @param $array
+ *
+ * @return mixed|string
+ */
+function andList( $array ) {
+	if ( empty( $array ) ) {
+		return '';
+	}
+	if ( count( $array ) === 1 ) {
+		return $array[0];
+	}
+
+	return sprintf( _x( '%s and %s', 'and preceding the last item in a list', 'mailhawk' ),
+		implode( ', ', array_slice( $array, 0, - 1 ) ), $array[ count( $array ) - 1 ] );
 }

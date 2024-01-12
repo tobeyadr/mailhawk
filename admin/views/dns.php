@@ -2,7 +2,7 @@
 
 // Todo get domains from API
 use MailHawk\Api\Postal\Domains;
-use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\mailhawk_admin_page;
 
 $domains = Domains::query_all();
 
@@ -64,7 +64,7 @@ if ( is_wp_error( $domains ) || empty( $domains ) ) {
 
 		<?php endforeach; ?>
 
-        <?php $finish_url = apply_filters( 'mailhawk/finish_url', get_admin_mailhawk_uri() ); ?>
+        <?php $finish_url = apply_filters( 'mailhawk/finish_url', mailhawk_admin_page() ); ?>
 
         <a class="button big-button button-primary"
            href="<?php echo esc_url( $finish_url ); ?>"><b>&larr; <?php _e( 'Finish Setup!', 'mailhawk' ); ?></b></a>

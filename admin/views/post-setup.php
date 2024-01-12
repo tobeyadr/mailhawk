@@ -2,7 +2,7 @@
 
 // Todo get domains from API
 use MailHawk\Api\Postal\Domains;
-use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\mailhawk_admin_page;
 
 ?>
 <style>
@@ -53,7 +53,7 @@ use function MailHawk\get_admin_mailhawk_uri;
         <p><?php _e( 'Congratulations! MailHawk is now connected to your site. Below are some next steps that will help you improve deliverability and keep you up to date on product news.', 'mailhawk' ); ?></p>
 
         <div class="next-step">
-            <a href="<?php echo esc_url( get_admin_mailhawk_uri( [ 'view' => 'domains', 'notice' => 'instructions' ] ) ); ?>" target="_blank"
+            <a href="<?php echo esc_url( mailhawk_admin_page( [ 'view' => 'domains', 'notice' => 'instructions' ] ) ); ?>" target="_blank"
                class="button big-button"><?php _e( 'Configure Now!' ); ?></a>
             <h2><?php _e( 'Configure your DNS!', 'mailhawk' ); ?></h2>
             <p><?php _e( 'Improve your email deliverability by configuring <code>SPF</code> and <code>DKIM</code> for the domains you registered.', 'mailhawk' ); ?></p>
@@ -72,14 +72,14 @@ use function MailHawk\get_admin_mailhawk_uri;
         </div>
 
         <!-- Groundhogg Ad -->
-		<?php if ( defined( 'GROUNDHOGG_VERSION' ) ): ?>
+		<?php if ( ! \MailHawk\is_groundhogg_active() ): ?>
             <img class="groundhogg-ad" id="groundhogg-connect"
                  title="<?php esc_attr_e( 'Install & Connect Groundhogg!', 'mailhawk' ); ?>"
                  src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/groundhogg-ad.png' ); ?>">
 			<?php \MailHawk\Groundhogg::instance()->output_js(); ?>
 		<?php endif; ?>
 
-		<?php $finish_url = apply_filters( 'mailhawk/finish_url', get_admin_mailhawk_uri() ); ?>
+		<?php $finish_url = apply_filters( 'mailhawk/finish_url', mailhawk_admin_page() ); ?>
 
         <a class="button big-button button-primary"
            href="<?php echo esc_url( $finish_url ); ?>"><b>&larr; <?php _e( 'Finish Setup!', 'mailhawk' ); ?></b></a>

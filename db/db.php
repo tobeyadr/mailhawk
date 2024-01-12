@@ -16,12 +16,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * This class is the foundation for all DB activities in MailHawk. With the exception of several new functions
  * such as generate_where, generate_search and search, this class was mostly borrowed from EDD with several mods and the original copyright belongs to Pippin...
  *
- * @package     Includes
+ * @since       File available since Release 0.1
  * @subpackage  Includes/DB
  * @author      Adrian Tobey <info@mailhawk.io>
  * @copyright   Copyright (c) 2018, MailHawk Inc.
  * @license     https://opensource.org/licenses/GPL-3.0 GNU Public License v3
- * @since       File available since Release 0.1
+ * @package     Includes
  */
 abstract class DB {
 
@@ -189,7 +189,7 @@ abstract class DB {
 	/**
 	 * Create a where clause given an array
 	 *
-	 * @param array $args
+	 * @param array  $args
 	 * @param string $operator
 	 *
 	 * @return string
@@ -282,8 +282,8 @@ abstract class DB {
 	 * Whitelist of columns
 	 *
 	 * @access  public
-	 * @return  array
 	 * @since   2.1
+	 * @return  array
 	 */
 	public function get_columns() {
 		return [];
@@ -293,8 +293,8 @@ abstract class DB {
 	 * Default column values
 	 *
 	 * @access  public
-	 * @return  array
 	 * @since   2.1
+	 * @return  array
 	 */
 	public function get_column_defaults() {
 		return [];
@@ -304,8 +304,8 @@ abstract class DB {
 	 * Retrieve a row by the primary key
 	 *
 	 * @access  public
-	 * @return  object
 	 * @since   2.1
+	 * @return  object
 	 */
 	public function get( $row_id ) {
 		global $wpdb;
@@ -317,8 +317,8 @@ abstract class DB {
 	 * Retrieve a row by a specific column / value
 	 *
 	 * @access  public
-	 * @return  object
 	 * @since   2.1
+	 * @return  object
 	 */
 	public function get_by( $column, $row_id ) {
 		global $wpdb;
@@ -331,8 +331,8 @@ abstract class DB {
 	 * Retrieve a specific column's value by the primary key
 	 *
 	 * @access  public
-	 * @return  string
 	 * @since   2.1
+	 * @return  string
 	 */
 	public function get_column( $column, $row_id ) {
 		global $wpdb;
@@ -345,8 +345,8 @@ abstract class DB {
 	 * Retrieve a specific column's value by the the specified column / value
 	 *
 	 * @access  public
-	 * @return  string
 	 * @since   2.1
+	 * @return  string
 	 */
 	public function get_column_by( $column, $column_where, $column_value ) {
 		global $wpdb;
@@ -377,10 +377,11 @@ abstract class DB {
 	 *
 	 * @access  public
 	 *
+	 * @since   2.1
+	 *
 	 * @param $data
 	 *
 	 * @return  int
-	 * @since   2.1
 	 */
 	public function insert( $data ) {
 		global $wpdb;
@@ -423,12 +424,14 @@ abstract class DB {
 	 *
 	 * @access  public
 	 *
-	 * @param int $row_id
+	 * @since   2.1
+	 *
 	 * @param array $data
 	 * @param array $where
 	 *
+	 * @param int   $row_id
+	 *
 	 * @return  bool
-	 * @since   2.1
 	 */
 	public function update( $row_id = 0, $data = [], $where = [] ) {
 
@@ -475,7 +478,7 @@ abstract class DB {
 	/**
 	 * Mass update records
 	 *
-	 * @param $data array
+	 * @param $data  array
 	 * @param $where array
 	 *
 	 * @return bool;
@@ -544,8 +547,8 @@ abstract class DB {
 	 * Delete a row identified by the primary key
 	 *
 	 * @access  public
-	 * @return  bool
 	 * @since   2.1
+	 * @return  bool
 	 */
 	public function delete( $row_id = 0 ) {
 
@@ -631,7 +634,7 @@ abstract class DB {
 	 * New and improved query function to access DB in more complex and interesting ways.
 	 *
 	 * @param array $query_vars
-	 * @param bool $from_cache
+	 * @param bool  $from_cache
 	 *
 	 * @return object[]|array[]|int
 	 */
@@ -676,15 +679,17 @@ abstract class DB {
 	public function get_sql( $query_vars = [] ) {
 		// Actual start
 		$query_vars = wp_parse_args( $query_vars, [
-			'where'   => [],
-			'limit'   => false,
-			'offset'  => false,
-			'orderby' => $this->get_primary_key(),
-			'order'   => 'desc', // ASC || DESC
-			'select'  => '*',
-			'search'  => false,
-			'func'    => false, // COUNT | AVG | SUM
-			'groupby' => false,
+			'where'         => [],
+			'limit'         => false,
+			'offset'        => false,
+			'orderby'       => $this->get_primary_key(),
+			'order'         => 'desc', // ASC || DESC
+			'select'        => '*',
+			'search'        => false,
+			'func'          => false, // COUNT | AVG | SUM
+			'groupby'       => false,
+			'search_column' => false,
+			'found_rows'    => false,
 		] );
 
 		// Build Where Statement
@@ -692,16 +697,23 @@ abstract class DB {
 
 		if ( $query_vars['search'] ) {
 
-			$search = [ 'relationship' => 'OR' ];
+			// Search specific column
+			if ( $query_vars['search_column'] && in_array( $query_vars['search_column'], $this->get_allowed_columns() ) ) {
+				$where[] = [ 'col'     => $query_vars['search_column'],
+				             'val'     => $query_vars['search'],
+				             'compare' => 'RLIKE'
+				];
+			} else {
+				$search = [ 'relationship' => 'OR' ];
 
-			foreach ( $this->get_columns() as $column => $type ) {
-				if ( $type === '%s' ) {
-					$search[] = [ 'col' => $column, 'val' => $query_vars['search'], 'compare' => 'RLIKE' ];
+				foreach ( $this->get_columns() as $column => $type ) {
+					if ( $type === '%s' ) {
+						$search[] = [ 'col' => $column, 'val' => $query_vars['search'], 'compare' => 'RLIKE' ];
+					}
 				}
+
+				$where[] = $search;
 			}
-
-			$where[] = $search;
-
 		}
 
 		$where = empty( $where ) ? '1=1' : $this->build_advanced_where_statement( $where );
@@ -743,6 +755,10 @@ abstract class DB {
 		];
 
 		$clauses = implode( ' ', array_filter( $clauses ) );
+
+		if ( $query_vars[ 'found_rows' ] ){
+			$select = 'SQL_CALC_FOUND_ROWS ' . $select;
+		}
 
 		$sql = "SELECT {$select} FROM {$this->get_table_name()} WHERE $clauses";
 
@@ -851,9 +867,9 @@ abstract class DB {
 	}
 
 	/**
-	 * @param array $data
+	 * @param array        $data
 	 * @param string|false $ORDER_BY
-	 * @param bool $from_cache
+	 * @param bool         $from_cache
 	 *
 	 * @return array|bool|null|object
 	 */
@@ -883,20 +899,6 @@ abstract class DB {
 			}
 
 			switch ( $key ) {
-				case 's':
-				case 'search':
-
-					$search = [ 'relationship' => 'OR' ];
-
-					foreach ( $this->get_columns() as $column => $type ) {
-						if ( $type === '%s' ) {
-							$search[] = [ 'col' => $column, 'val' => $val, 'compare' => 'RLIKE' ];
-						}
-					}
-
-					$where[] = $search;
-
-					break;
 				case 'before':
 					$where[] = [ 'col' => $this->get_date_key(), 'val' => $val, 'compare' => '<=' ];
 					break;
@@ -957,10 +959,11 @@ abstract class DB {
 	/**
 	 * Check if the given table exists
 	 *
+	 * @since  2.4
+	 *
 	 * @param string $table The table name
 	 *
 	 * @return bool          If the table name exists
-	 * @since  2.4
 	 */
 	public function table_exists( $table ) {
 		global $wpdb;
@@ -972,8 +975,8 @@ abstract class DB {
 	/**
 	 * Check if the table was ever installed
 	 *
-	 * @return bool Returns if the contacts table was installed and upgrade routine run
 	 * @since  2.4
+	 * @return bool Returns if the contacts table was installed and upgrade routine run
 	 */
 	public function installed() {
 		return $this->table_exists( $this->table_name );
@@ -1038,5 +1041,11 @@ abstract class DB {
 	 * Create the DB
 	 */
 	abstract public function create_table();
+
+
+	public function found_rows() {
+		global $wpdb;
+		return $wpdb->get_var( 'SELECT FOUND_ROWS()' );
+	}
 
 }

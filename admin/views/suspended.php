@@ -2,13 +2,13 @@
 
 use MailHawk\Api\Postal\Reporting;
 use MailHawk\Keys;
-use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\mailhawk_admin_page;
 use function MailHawk\set_mailhawk_is_suspended;
 
 $form_inputs = [
 	'mailhawk_plugin_reactivate' => 'yes',
 	'state'                      => Keys::instance()->state(),
-	'redirect_uri'               => get_admin_mailhawk_uri(),
+	'redirect_uri'               => mailhawk_admin_page(),
 ];
 
 $limits = Reporting::limits();

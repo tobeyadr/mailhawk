@@ -1,7 +1,7 @@
 <?php
 
 use MailHawk\Api\Postal\Domains;
-use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\mailhawk_admin_page;
 use function MailHawk\get_url_var;
 
 $domains = Domains::query_all();
@@ -44,11 +44,11 @@ endif;
         <tbody>
 		<?php foreach ( $domains as $domain ): ?>
             <tr>
-	            <td><a href="<?php echo esc_url( get_admin_mailhawk_uri( [ 'view' => 'domains', 'domain' => $domain->name ] ) ); ?>"><code><?php esc_html_e( $domain->name ); ?></code></a></td>
+	            <td><a href="<?php echo esc_url( mailhawk_admin_page( [ 'view' => 'domains', 'domain' => $domain->name ] ) ); ?>"><code><?php esc_html_e( $domain->name ); ?></code></a></td>
 				<td><?php echo $domain->spf->spf_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>" ; ?></td>
 				<td><?php echo $domain->dkim->dkim_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>" ; ?></td>
 				<td><?php echo $domain->return_path->return_path_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>" ; ?></td>
-				<td><a href="<?php echo esc_url( get_admin_mailhawk_uri( [ 'view' => 'domains', 'domain' => $domain->name ] ) ); ?>" class="button button-secondary"><?php _e( 'Configure', 'mailhawk' ); ?></a></td>
+				<td><a href="<?php echo esc_url( mailhawk_admin_page( [ 'view' => 'domains', 'domain' => $domain->name ] ) ); ?>" class="button button-secondary"><?php _e( 'Configure', 'mailhawk' ); ?></a></td>
             </tr>
 		<?php endforeach; ?>
         <?php if ( empty( $domains ) ): ?>

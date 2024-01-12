@@ -3,6 +3,7 @@
 namespace MailHawk\Classes;
 
 use MailHawk\DB\DB;
+use mysql_xdevapi\TableInsert;
 
 abstract class Base_Object implements \Serializable, \ArrayAccess {
 
@@ -362,7 +363,7 @@ abstract class Base_Object implements \Serializable, \ArrayAccess {
 	 * The return value will be casted to boolean if non-boolean was returned.
 	 * @since 5.0.0
 	 */
-	public function offsetExists( $offset ) {
+	public function offsetExists( $offset ): bool {
 		if ( property_exists( $this, $offset ) ) {
 			return $this->$offset !== null;
 		}
@@ -381,6 +382,7 @@ abstract class Base_Object implements \Serializable, \ArrayAccess {
 	 * @return mixed Can return all value types.
 	 * @since 5.0.0
 	 */
+	#[\ReturnTypeWillChange]
 	public function offsetGet( $offset ) {
 		if ( property_exists( $this, $offset ) ) {
 			return $this->$offset;
@@ -403,7 +405,7 @@ abstract class Base_Object implements \Serializable, \ArrayAccess {
 	 * @return void
 	 * @since 5.0.0
 	 */
-	public function offsetSet( $offset, $value ) {
+	public function offsetSet( $offset, $value ): void {
 		if ( is_null( $offset ) ) {
 			$this->data[] = $value;
 		} else {
@@ -422,7 +424,7 @@ abstract class Base_Object implements \Serializable, \ArrayAccess {
 	 * @return void
 	 * @since 5.0.0
 	 */
-	public function offsetUnset( $offset ) {
+	public function offsetUnset( $offset ): void {
 		if ( property_exists( $this, $offset ) ) {
 			$this->$offset = null;
 		}
@@ -436,5 +438,5 @@ abstract class Base_Object implements \Serializable, \ArrayAccess {
 	public function get_as_array() {
 		return apply_filters( "mailhawk/{$this->get_object_type()}/get_as_array", [ 'data' => $this->data ] );
 	}
-	
+
 }

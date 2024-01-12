@@ -3,7 +3,7 @@
 
 use MailHawk\Admin\Email_Log_Table;
 use MailHawk\Classes\Email_Log_Item;
-use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\mailhawk_admin_page;
 use function MailHawk\get_url_var;
 
 

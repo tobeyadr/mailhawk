@@ -3,7 +3,7 @@
 use MailHawk\Api\Licensing;
 use MailHawk\Api\Postal\Domains;
 use function MailHawk\build_site_email;
-use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\mailhawk_admin_page;
 use function MailHawk\get_authenticated_sender_domain;
 use function MailHawk\get_email_retry_attempts;
 use function MailHawk\get_log_retention_days;
@@ -143,7 +143,7 @@ $account_data = maybe_get_from_transient( 'mailhawk_account_info', function () {
 
 						<?php $domains = Domains::get_verified(); ?>
 						<?php if ( ! $domains ): ?>
-                            <p><a href="<?php echo esc_url( get_admin_mailhawk_uri( [ 'view' => 'domains' ] ) ); ?>">You
+                            <p><a href="<?php echo esc_url( mailhawk_admin_page( [ 'view' => 'domains' ] ) ); ?>">You
                                     must verify a domain first.</a></p>
 						<?php else: ?>
                             <select name="sender_domain" class="regular-text">

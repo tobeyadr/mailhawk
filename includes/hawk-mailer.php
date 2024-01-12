@@ -3,10 +3,8 @@
 namespace MailHawk;
 
 use MailHawk\Api\Postal\Send;
-
-use PHPMailer\PHPMailer\PHPMailer as PHPMailer;
-use PHPMailer\PHPMailer\SMTP as SMTP;
 use PHPMailer\PHPMailer\Exception as PHPMailerException;
+use PHPMailer\PHPMailer\PHPMailer as PHPMailer;
 
 if ( ! class_exists( '\PHPMailer' ) ) {
 	require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
@@ -17,7 +15,7 @@ if ( ! class_exists( '\PHPMailer' ) ) {
 
 class Hawk_Mailer extends PHPMailer {
 
-	public function clearAltBody(){
+	public function clearAltBody() {
 		$this->AltBody = '';
 	}
 
@@ -44,10 +42,10 @@ class Hawk_Mailer extends PHPMailer {
 	 *
 	 * @return bool|int
 	 */
-	public static function add_log( $log_data = [] ) {
+	public static function add_log( $log_data = [], $force = false ) {
 
 		// Logging is disabled
-		if ( get_option( 'mailhawk_disable_email_logging' ) ){
+		if ( ! $force && get_option( 'mailhawk_disable_email_logging' ) ) {
 			return false;
 		}
 
@@ -61,8 +59,8 @@ class Hawk_Mailer extends PHPMailer {
 	/**
 	 * Create a message and send it.
 	 * Uses the sending method specified by $Mailer.
-	 * @return boolean false on error - See the ErrorInfo property for details of the error.
 	 * @throws PHPMailerException
+	 * @return boolean false on error - See the ErrorInfo property for details of the error.
 	 */
 	public function send() {
 
@@ -71,17 +69,32 @@ class Hawk_Mailer extends PHPMailer {
 		}
 
 		$message    = $this->getSentMIMEMessage();
-
 		$recipients = array_keys( $this->all_recipients );
+		$quarantine = false;
 
-		$msg_id = Send::raw( $this->From, $recipients, $message );
+		// If a log item ID is set, we're releasing the message
+		if ( ! self::$log_item_id ){
+
+			// Check the risk factor of the recipients
+			foreach ( $recipients as $recipient ) {
+				$risk_factor = assess_risk( $recipient );
+
+				// 5 is an automatic quarantine
+				if ( $risk_factor >= 5 ) {
+					$quarantine = true;
+					// Schedule the quarantine notification
+					Quarantine::schedule_quarantine_notice();
+					break;
+				}
+			}
+		}
 
 		$headers = [
 			[ 'Content-Type', $this->ContentType ],
 			[ 'From', sprintf( "%s <%s>", $this->FromName, $this->From ) ],
 		];
 
-		if ( $this->Sender ){
+		if ( $this->Sender ) {
 			$headers[] = [ 'Sender', $this->Sender ];
 		}
 
@@ -93,11 +106,24 @@ class Hawk_Mailer extends PHPMailer {
 			'subject'       => $this->Subject,
 			'content'       => $this->Body,
 			'headers'       => $headers,
-			'raw'           => $message,
 			'error_code'    => '',
 			'error_message' => '',
 			'msg_id'        => ''
 		];
+
+		// This message is being quarantined...
+		if ( $quarantine ) {
+
+			$log_data['status']        = 'quarantine';
+			$log_data['error_code']    = 'held';
+			$log_data['error_message'] = 'Held for review.';
+
+			self::add_log( $log_data, true );
+
+			return true;
+		}
+
+		$msg_id = Send::raw( $this->From, $recipients, $message );
 
 		if ( is_wp_error( $msg_id ) ) {
 
@@ -122,6 +148,10 @@ class Hawk_Mailer extends PHPMailer {
 
 		$log_data['status'] = 'sent';
 		$log_data['msg_id'] = is_string( $msg_id ) ? $msg_id : '';
+
+		if ( is_groundhogg_active() ) {
+			\Groundhogg_Email_Services::set_message_id( $msg_id );
+		}
 
 		self::add_log( $log_data );
 

@@ -2,7 +2,7 @@
 
 // Todo get domains from API
 use MailHawk\Api\Postal\Domains;
-use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\mailhawk_admin_page;
 use function MailHawk\get_url_var;
 
 $domain = Domains::query( sanitize_text_field( get_url_var( 'domain' ) ) );
@@ -31,7 +31,7 @@ if ( is_wp_error( $domain ) ){
 		<?php printf( __( "<code>DKIM</code> is currently %s.", 'mailhawk' ), $verified ); ?>
 	</p>
 
-	<a href="<?php echo wp_nonce_url( get_admin_mailhawk_uri( [ 'domain' => $domain->name ] ), 'mailhawk_check_domain', '_mailhawk_nonce' ); ?>" class="button"><?php _e( 'Refresh', 'mailhawk' ); ?></a>
+	<a href="<?php echo wp_nonce_url( mailhawk_admin_page( [ 'domain' => $domain->name ] ), 'mailhawk_check_domain', '_mailhawk_nonce' ); ?>" class="button"><?php _e( 'Refresh', 'mailhawk' ); ?></a>
 
 	<h3><?php _e( 'SPF Record' ); ?></h3>
 
@@ -46,8 +46,8 @@ if ( is_wp_error( $domain ) ){
 	       readonly>
 
 	<p>
-		<a href="<?php echo esc_url( get_admin_mailhawk_uri( [ 'view' => 'domains' ] ) ); ?>">&larr; <?php _e( 'Back', 'mailhawk' ); ?></a>
-		<a href="<?php echo wp_nonce_url( get_admin_mailhawk_uri( [ 'domain' => $domain->name ] ), 'mailhawk_delete_domain', '_mailhawk_nonce' ); ?>" class="button delete alignright"><?php _e( 'Delete', 'mailhawk' ); ?></a>
+		<a href="<?php echo esc_url( mailhawk_admin_page( [ 'view' => 'domains' ] ) ); ?>">&larr; <?php _e( 'Back', 'mailhawk' ); ?></a>
+		<a href="<?php echo wp_nonce_url( mailhawk_admin_page( [ 'domain' => $domain->name ] ), 'mailhawk_delete_domain', '_mailhawk_nonce' ); ?>" class="button delete alignright"><?php _e( 'Delete', 'mailhawk' ); ?></a>
 	</p>
 
 </div>

@@ -144,8 +144,9 @@ class Plugin {
 
 		if ( is_admin() ) {
 			new Admin();
-			Groundhogg::instance();
 		}
+
+		Groundhogg::instance();
 
 		$this->installer = new Installer();
 		$this->updater   = new Updater();
@@ -161,6 +162,7 @@ class Plugin {
 		}, 99 );
 
 		new Telemetry();
+		new Quarantine();
 	}
 
 	/**

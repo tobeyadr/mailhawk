@@ -32,7 +32,6 @@ class Cron_Events {
 	 */
 	public function register_events() {
 		$this->register_event( 'mailhawk_trim_log_entries', 'daily' );
-//		$this->register_event( 'mailhawk_trim_blacklist_entries', 'daily' );
 		$this->register_event( 'mailhawk_retry_failed_emails', 'hourly' );
 	}
 

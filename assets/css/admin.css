@@ -134,6 +134,22 @@
 
 .mailhawk-table-wrap .email-sent {
     color: green;
+    font-weight: 500;
+}
+
+.mailhawk-table-wrap .email-failed {
+    color: red;
+    font-weight: 500;
+}
+
+.mailhawk-table-wrap .email-quarantined {
+    color: orange;
+    font-weight: 500;
+}
+
+table .row-actions span.reject a,
+table .row-actions span.reject_unsub a {
+    color: #d2120c;
 }
 
 .tag {
@@ -152,10 +168,6 @@
     color: #FFFFFF;
     background: #d2120c;
     font-weight: normal;
-}
-
-.mailhawk-table-wrap .email-failed {
-    color: red;
 }
 
 .domains .wp-list-table th,
@@ -320,16 +332,23 @@ a.button .dashicons {
 }
 
 #mailhawk-modal {
-    position: absolute;
+    display: none;
+    position: fixed;
     z-index: 100050;
     width: 700px;
     top: 50px;
+    bottom: 50px;
     left: calc(50% - 350px);
+    overflow: auto;
 }
 
 .mailhawk-content-box,
 .mailhawk-log-preview {
     position: relative;
+}
+
+.mailhawk-log-preview .mailhawk-content-box{
+    margin: 0;
 }
 
 .mailhawk-log-preview .close {
@@ -411,11 +430,51 @@ a.button .dashicons {
     height: 30px;
 }
 
+.mailhawk-log-preview .mh-email-preview{
+    border: 1px solid rgb(200, 200, 200);
+    border-radius: 10px;
+}
+
+.mailhawk-log-preview .mh-email-preview .mh-email-preview-header{
+    padding: 10px 20px;
+    border-bottom: 1px solid rgb(200, 200, 200);
+    display: flex;
+    gap: 20px;
+}
+
+.mailhawk-log-preview .mh-email-preview .mh-email-preview-header .avatar{
+    border-radius: 50%;
+}
+
+.mailhawk-log-preview .mh-email-preview .mh-email-preview-header h3,
+.mailhawk-log-preview .mh-email-preview .mh-email-preview-header p {
+    margin: 0;
+}
+
+.mailhawk-log-preview .mh-email-preview .mh-email-preview-header h3{
+    margin-bottom: 5px;
+}
+
+.mailhawk-log-preview .mailhawk-warning {
+    padding: 0 15px;
+    margin-bottom: 20px;
+    border: 1px solid;
+    border-radius: 5px;
+
+    color: #856404;
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+}
+
 .mailhawk-log-preview .mailhawk-error {
     padding: 15px;
     margin-bottom: 20px;
     border: 1px solid;
     border-radius: 5px;
+}
+
+.mailhawk-log-preview pre.code {
+    overflow: auto;
 }
 
 .mailhawk-content-box.danger {

@@ -6,10 +6,11 @@ use MailHawk\Classes\Email_Log_Item;
 use MailHawk\Plugin;
 use WP_List_Table;
 use wpdb;
-use function MailHawk\get_admin_mailhawk_uri;
 use function MailHawk\get_date_time_format;
 use function MailHawk\get_email_status_pretty_name;
 use function MailHawk\get_url_var;
+use function MailHawk\is_groundhogg_active;
+use function MailHawk\mailhawk_admin_page;
 
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
@@ -89,19 +90,20 @@ class Email_Log_Table extends WP_List_Table {
 
 		$views = [
 			[
-				'id'    => 'all',
-				'name'  => __( 'All' ),
-				'query' => [],
+				'id'   => '',
+				'name' => __( 'All' ),
 			],
 			[
-				'id'    => 'sent',
-				'name'  => __( 'Sent', 'mailhawk' ),
-				'query' => [ 'status' => 'sent' ],
+				'id'   => 'sent',
+				'name' => __( 'Sent', 'mailhawk' ),
 			],
 			[
-				'id'    => 'failed',
-				'name'  => __( 'Failed', 'mailhawk' ),
-				'query' => [ 'status' => 'failed' ],
+				'id'   => 'failed',
+				'name' => __( 'Failed', 'mailhawk' ),
+			],
+			[
+				'id'   => 'quarantine',
+				'name' => __( 'Quarantine', 'mailhawk' ),
 			]
 		];
 
@@ -109,11 +111,13 @@ class Email_Log_Table extends WP_List_Table {
 
 		foreach ( $views as $view ) {
 
-			$count  = Plugin::instance()->log->count( $view['query'] );
-			$params = array_merge( [ 'view' => 'log', 'subview' => $view['id'] ], $view['query'] );
-			$class  = get_url_var( 'subview' ) === $view['id'] ? 'current' : '';
+			$count  = Plugin::instance()->log->count( [
+				'status' => $view['id']
+			] );
+			$params = array_filter( array_merge( [ 'view' => 'log', 'status' => $view['id'] ] ) );
+			$class  = get_url_var( 'status' ) === $view['id'] ? 'current' : '';
 
-			$v[] = sprintf( "<a class=\"%s\" href=\"%s\">%s <span class=\"count\">(%s)</span></a>", $class, get_admin_mailhawk_uri( $params ), $view['name'], $count );
+			$v[] = sprintf( "<a class=\"%s\" href=\"%s\">%s <span class=\"count\">(%s)</span></a>", $class, mailhawk_admin_page( $params ), $view['name'], number_format_i18n( $count ) );
 
 		}
 
@@ -139,30 +143,47 @@ class Email_Log_Table extends WP_List_Table {
 		// Whitelist?
 		$actions = [];
 
+		$actions['mpreview'] = "<a data-log-id=\"" . $email->get_id() . "\" href='" . esc_url( mailhawk_admin_page( [
+				'view'    => 'log',
+				'preview' => $email->get_id()
+			] ) ) . "'>" . __( 'Details' ) . "</a>";
+
+		$retry_link = wp_nonce_url( mailhawk_admin_page( [
+			'view'   => 'log',
+			'status' => get_url_var( 'status' ),
+			'id'     => $email->get_id()
+		] ), 'retry_email', '_mailhawk_nonce' );
+
+		$reject_link = wp_nonce_url( mailhawk_admin_page( [
+			'view'   => 'log',
+			'status' => get_url_var( 'status' ),
+			'id'     => $email->get_id()
+		] ), 'reject_email', '_mailhawk_nonce' );
+
 		switch ( $email->status ) {
 
 			case 'sent':
 			case 'delivered':
-				$actions['resend']   = "<a href='" . wp_nonce_url( get_admin_mailhawk_uri( [
-						'view' => 'log',
-						'id'   => $email->get_id()
-					] ), 'retry_email', '_mailhawk_nonce' ) . "'>" . __( 'Resend', 'mailhawk' ) . "</a>";
-				$actions['mpreview'] = "<a data-log-id=\"" . $email->get_id() . "\" href='" . esc_url( get_admin_mailhawk_uri( [
-						'view'    => 'log',
-						'preview' => $email->get_id()
-					] ) ) . "'>" . __( 'Preview' ) . "</a>";
+				$actions['resend'] = "<a href='" . $retry_link . "'>" . __( 'Resend', 'mailhawk' ) . "</a>";
 				break;
 			case 'failed':
 			case 'bounced':
 			case 'softfail':
-				$actions['retry']    = "<a href='" . wp_nonce_url( get_admin_mailhawk_uri( [
-						'view' => 'log',
-						'id'   => $email->get_id()
-					] ), 'retry_email', '_mailhawk_nonce' ) . "'>" . __( 'Retry', 'mailhawk' ) . "</a>";
-				$actions['mpreview'] = "<a data-log-id=\"" . $email->get_id() . "\" href='" . esc_url( get_admin_mailhawk_uri( [
-						'view'    => 'log',
-						'preview' => $email->get_id()
-					] ) ) . "'>" . __( 'Details', 'mailhawk' ) . "</a>";
+				$actions['retry'] = "<a href='" . $retry_link . "'>" . __( 'Retry', 'mailhawk' ) . "</a>";
+				break;
+			case 'quarantine':
+				$actions['release'] = "<a href='" . $retry_link . "'>" . __( 'Release', 'mailhawk' ) . "</a>";
+
+				$actions['reject'] = "<a href='" . $reject_link . "'>" . __( 'Reject', 'mailhawk' ) . "</a>";
+
+				if ( is_groundhogg_active() ) {
+					$actions['reject_unsub'] = "<a href='" . wp_nonce_url( mailhawk_admin_page( [
+							'view'   => 'log',
+							'status' => 'status',
+							'id'     => $email->get_id()
+						] ), 'reject_unsub', '_mailhawk_nonce' ) . "'>" . __( 'Reject & Unsubscribe', 'mailhawk' ) . "</a>";
+				}
+
 				break;
 
 		}
@@ -177,8 +198,6 @@ class Email_Log_Table extends WP_List_Table {
 	 */
 	protected function column_to( $email ) {
 
-//		print_r( $email->recipients );
-
 		$links = [];
 
 		foreach ( $email->recipients as $recipient ) {
@@ -187,7 +206,12 @@ class Email_Log_Table extends WP_List_Table {
 				continue;
 			}
 
-			$links[] = sprintf( '<a href="mailto:%1$s">%1$s</a>', $recipient );
+			$links[] = sprintf( '<a href="%2$s">%1$s</a>', $recipient, mailhawk_admin_page( [
+				'view'          => 'log',
+				'status'        => get_url_var( 'status' ),
+				's'             => $recipient,
+				'search_column' => 'recipients'
+			] ) );
 
 		}
 
@@ -229,26 +253,26 @@ class Email_Log_Table extends WP_List_Table {
 	protected function column_status( $email ) {
 
 		switch ( $email->status ):
-
+			default:
 			case 'sent':
 			case 'delivered':
-
-				?>
-                <span class="email-sent"><?php echo get_email_status_pretty_name( $email->status ); ?></span>
-				<?php
-
+				$className = 'email-sent';
 				break;
 			case 'failed':
 			case 'bounced':
 			case 'softfail':
-
-				?>
-                <span class="email-failed"><?php echo get_email_status_pretty_name( $email->status ); ?></span>
-				<?php
-
+				$className = 'email-failed';
+				break;
+			case 'quarantine':
+				$className = 'email-quarantined';
 				break;
 
 		endswitch;
+
+
+		?>
+        <span class="<?php esc_attr_e( $className ); ?>"><?php echo get_email_status_pretty_name( $email->status ); ?></span>
+		<?php
 
 	}
 
@@ -319,11 +343,28 @@ class Email_Log_Table extends WP_List_Table {
 					'retry' => __( 'Retry', 'mailhawk' ),
 				];
 				break;
+			case 'quarantine':
+				$actions = [
+					'release' => __( 'Release', 'mailhawk' ),
+					'reject'  => __( 'Reject', 'mailhawk' ),
+				];
+
+				if ( is_groundhogg_active() ) {
+					$actions['reject_unsub'] = __( 'Reject & Unsubscribe', 'mailhawk' );
+				}
+				break;
 			default:
 				$actions = [
-					'retry'  => __( 'Retry', 'mailhawk' ),
-					'resend' => __( 'Resend', 'mailhawk' ),
+					'retry'   => __( 'Retry', 'mailhawk' ),
+					'resend'  => __( 'Resend', 'mailhawk' ),
+					'release' => __( 'Release', 'mailhawk' ),
+					'reject'  => __( 'Reject', 'mailhawk' ),
 				];
+
+				if ( is_groundhogg_active() ) {
+					$actions['reject_unsub'] = __( 'Reject & Unsubscribe', 'mailhawk' );
+				}
+
 				break;
 		}
 
@@ -351,30 +392,35 @@ class Email_Log_Table extends WP_List_Table {
 
 		$this->_column_headers = array( $columns, $hidden, $sortable );
 
-		$per_page = absint( get_url_var( 'limit', 20 ) );
-		$paged    = $this->get_pagenum();
-		$offset   = $per_page * ( $paged - 1 );
-		$search   = get_url_var( 's' );
-		$order    = get_url_var( 'order', 'DESC' );
-		$orderby  = get_url_var( 'orderby', 'ID' );
+		$per_page      = absint( get_url_var( 'limit', 30 ) );
+		$paged         = $this->get_pagenum();
+		$offset        = $per_page * ( $paged - 1 );
+		$search        = sanitize_text_field( get_url_var( 's' ) );
+		$search_column = sanitize_text_field( get_url_var( 'search_column' ) );
+		$order         = get_url_var( 'order', 'DESC' );
+		$orderby       = get_url_var( 'orderby', 'ID' );
 
 		$where = [];
 
-		if ( $status = sanitize_text_field( get_url_var( 'status' ) ) ) {
+		$status = sanitize_text_field( get_url_var( 'status' ) );
+
+		if ( $status && $status !== 'all' ) {
 			$where[] = [ 'col' => 'status', 'compare' => '=', 'val' => $status ];
 		}
 
 		$args = array(
-			'where'   => $where,
-			'search'  => $search,
-			'limit'   => $per_page,
-			'offset'  => $offset,
-			'order'   => $order,
-			'orderby' => $orderby,
+			'where'         => $where,
+			'search'        => $search,
+			'limit'         => $per_page,
+			'offset'        => $offset,
+			'order'         => $order,
+			'orderby'       => $orderby,
+			'search_column' => $search_column,
+			'found_rows'    => true,
 		);
 
 		$emails = Plugin::instance()->log->query( $args );
-		$total  = Plugin::instance()->log->count( $args );
+		$total  = Plugin::instance()->log->found_rows();
 
 		$items = [];
 

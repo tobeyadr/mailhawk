@@ -1,7 +1,6 @@
 <?php
 
 use MailHawk\Api\Postal\Reporting;
-use function MailHawk\get_date_time_format;
 use function MailHawk\mailhawk_is_suspended;
 
 wp_enqueue_script( 'chart-js' );
@@ -11,15 +10,15 @@ $days = 14;
 $data   = Reporting::query( $days, 'daily' );
 $limits = Reporting::limits();
 
-if ( is_wp_error( $limits ) || is_wp_error( $data ) ){
+if ( is_wp_error( $limits ) || is_wp_error( $data ) ) {
 
-    $error = is_wp_error( $limits ) ? $limits : $data;
+	$error = is_wp_error( $limits ) ? $limits : $data;
 
-    if ( mailhawk_is_suspended() ){
-	    wp_die( "<script>location.reload();</script>" );
-    }
+	if ( mailhawk_is_suspended() ) {
+		wp_die( "<script>location.reload();</script>" );
+	}
 
-    wp_die( $error );
+	wp_die( $error );
 }
 
 /** @var array $limits */
@@ -58,7 +57,7 @@ foreach ( $graph_data as $i => $datum ) {
 	$total_bounced += $bounces;
 }
 
-$delivery_rate = round( ( $total_sent / ( $total_bounced + $total_sent ?: 1 ) ) * 100, 2 );
+$delivery_rate = ( $total_sent / ( $total_bounced + $total_sent ?: 1 ) ) * 100;
 
 $config = [
 	'labels'                        => array_reverse( $labels ),
@@ -85,11 +84,11 @@ foreach ( $compare_data as $compare_datum ) {
 
 $comparisons = [];
 
-$comparisons['sent']                  = abs( round( ( ( $total_sent - $compare_sent ) / ( $total_sent ?: 1 ) ) * 100, 2 ) );
+$comparisons['sent']                  = abs( ( $total_sent - $compare_sent ) / ( $total_sent ?: 1 ) ) * 100;
 $comparisons['sent_is_up']            = $compare_sent < $total_sent;
-$comparisons['bounced']               = abs( round( ( ( $total_bounced - $compare_bounced ) / ( $total_bounced ?: 1 ) ) * 100, 2 ) );
+$comparisons['bounced']               = abs( ( ( $total_bounced - $compare_bounced ) / ( $total_bounced ?: 1 ) ) * 100 );
 $comparisons['bounced_is_down']       = $total_bounced < $compare_bounced;
-$comparisons['compare_delivery_rate'] = round( ( $compare_sent / ( $compare_bounced + $compare_sent ?: 1 ) ) * 100, 2 );
+$comparisons['compare_delivery_rate'] = ( $compare_sent / ( $compare_bounced + $compare_sent ?: 1 ) ) * 100;
 $comparisons['deliveries_compare']    = abs( $delivery_rate - $comparisons['compare_delivery_rate'] );
 $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_delivery_rate'];
 
@@ -103,11 +102,11 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
 
 <div class="mailhawk-content-box third report">
     <h2><?php _e( 'Sent', 'mailhawk' ); ?></h2>
-    <div class="big-number"><?php echo $total_sent; ?></div>
+    <div class="big-number"><?php echo number_format_i18n( $total_sent ); ?></div>
     <div class="comparison">
         <span class="percentage <?php esc_attr_e( $comparisons['sent_is_up'] ? 'green' : 'red' ); ?>">
             <span class="dashicons dashicons-arrow-<?php echo ( $comparisons['sent_is_up'] ) ? 'up' : 'down' ?>-alt"></span>
-			<?php echo $comparisons['sent']; ?>%
+			<?php echo number_format_i18n( $comparisons['sent'], 2 ); ?>%
 	    </span>
         <div class="vs">
             <span><?php _e( 'vs. Previous 7 Days', 'mailhawk' ); ?></span>
@@ -116,11 +115,11 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
 </div>
 <div class="mailhawk-content-box third report">
     <h2><?php _e( 'Bounces', 'mailhawk' ); ?></h2>
-    <div class="big-number"><?php echo $total_bounced; ?></div>
+    <div class="big-number"><?php echo number_format_i18n( $total_bounced ); ?></div>
     <div class="comparison">
 		<span class="percentage <?php esc_attr_e( $comparisons['bounced_is_down'] ? 'green' : 'red' ); ?>">
 			<span class="dashicons dashicons-arrow-<?php echo $comparisons['bounced_is_down'] ? 'down' : 'up' ?>-alt"></span>
-		<?php echo $comparisons['bounced']; ?>%
+		<?php echo number_format_i18n( $comparisons['bounced'], 2 ); ?>%
 		</span>
         <div class="vs">
             <span><?php _e( 'vs. Previous 7 Days', 'mailhawk' ); ?></span>
@@ -129,11 +128,11 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
 </div>
 <div class="mailhawk-content-box third report">
     <h2><?php _e( 'Delivery Rate', 'mailhawk' ); ?></h2>
-    <div class="big-number"><?php echo $delivery_rate; ?>%</div>
+    <div class="big-number"><?php echo number_format_i18n( $delivery_rate, 2 ); ?>%</div>
     <div class="comparison">
 		<span class="percentage <?php esc_attr_e( $comparisons['deliveries_is_up'] ? 'green' : 'red' ); ?>">
 			<span class="dashicons dashicons-arrow-<?php echo $comparisons['deliveries_is_up'] ? 'up' : 'down' ?>-alt"></span>
-		<?php echo $comparisons['deliveries_compare']; ?>%
+		<?php echo number_format_i18n( $comparisons['deliveries_compare'], 2 ); ?>%
 		</span>
         <div class="vs">
             <span><?php _e( 'vs. Previous 7 Days', 'mailhawk' ); ?></span>
@@ -162,82 +161,86 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
 
 <script>
 
-    var config = <?php echo wp_json_encode( $config ); ?>;
+  var config = <?php echo wp_json_encode( $config ); ?>;
 
-    var graphConfig = {
-        type: 'line',
-        data: {
-            labels: config.labels,
-            datasets: [
-                {
-                    label: config.sent_label,
-                    borderColor: '#68A4DA',
-                    pointBackgroundColor: '#68A4DA',
-                    backgroundColor: 'rgba(104,164,218,0.20)',
-                    data: config.sent,
-                    fill: true,
-                    pointRadius: 5,
-                    pointHoverRadius: 7
-                },
-                {
-                    label: config.sent_previous_7_days_label,
-                    borderColor: '#68A4DA',
-                    pointBackgroundColor: '#68A4DA',
-                    backgroundColor: 'rgba(104,164,218,0.20)',
-                    data: config.sent_previous_7_days,
-                    fill: false,
-                    borderDash: [5, 5],
-                    pointRadius: 5,
-                    pointHoverRadius: 7
-                },
-                {
-                    label: config.bounces_label,
-                    borderColor: '#DA3328',
-                    pointBackgroundColor: '#DA3328',
-                    backgroundColor: 'rgba(218,51,40,0.10)',
-                    data: config.bounces,
-                    fill: true
-                },
-                {
-                    label: config.bounces_previous_7_days_label,
-                    borderColor: '#DA3328',
-                    pointBackgroundColor: '#DA3328',
-                    backgroundColor: 'rgba(218,51,40,0.10)',
-                    data: config.bounces_previous_7_days,
-                    fill: false,
-                    borderDash: [5, 5]
-                }
-            ]
+  var graphConfig = {
+    type: 'line',
+    data: {
+      labels: config.labels,
+      datasets: [
+        {
+          label: config.sent_label,
+          borderColor: '#68A4DA',
+          pointBackgroundColor: '#68A4DA',
+          backgroundColor: 'rgba(104,164,218,0.20)',
+          data: config.sent,
+          fill: true,
+          pointRadius: 5,
+          pointHoverRadius: 7,
         },
-        options: {
-            responsive: true,
-            aspectRatio: 3,
-            title: {
-                display: false,
-                text: 'Chart.js Line Chart'
-            },
-            tooltips: {
-                mode: 'index',
-                intersect: true,
-            },
-            hover: {
-                mode: 'nearest',
-                intersect: true
-            },
-            scales: {
-                xAxes: [{
-                    display: true,
-                }],
-                yAxes: [{
-                    display: true,
-                }]
-            }
-        }
-    };
+        {
+          label: config.sent_previous_7_days_label,
+          borderColor: '#68A4DA',
+          pointBackgroundColor: '#68A4DA',
+          backgroundColor: 'rgba(104,164,218,0.20)',
+          data: config.sent_previous_7_days,
+          fill: false,
+          borderDash: [5, 5],
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        },
+        {
+          label: config.bounces_label,
+          borderColor: '#DA3328',
+          pointBackgroundColor: '#DA3328',
+          backgroundColor: 'rgba(218,51,40,0.10)',
+          data: config.bounces,
+          fill: true,
+        },
+        {
+          label: config.bounces_previous_7_days_label,
+          borderColor: '#DA3328',
+          pointBackgroundColor: '#DA3328',
+          backgroundColor: 'rgba(218,51,40,0.10)',
+          data: config.bounces_previous_7_days,
+          fill: false,
+          borderDash: [5, 5],
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      aspectRatio: 3,
+      title: {
+        display: false,
+        text: 'Chart.js Line Chart',
+      },
+      tooltips: {
+        mode: 'index',
+        intersect: true,
+      },
+      hover: {
+        mode: 'nearest',
+        intersect: true,
+      },
+      scales: {
+        xAxes: [
+          {
+            display: true,
+          },
+        ],
+        yAxes: [
+          {
+            display: true,
+          },
+        ],
+      },
+    },
+  }
 
-    window.onload = function () {
-        var ctx = document.getElementById('canvas').getContext('2d');
-        window.myLine = new Chart(ctx, graphConfig);
-    };
+  window.onload = function () {
+    var ctx = document.getElementById('canvas').getContext('2d')
+    window.myLine = new Chart(ctx, graphConfig)
+  }
 
 </script>

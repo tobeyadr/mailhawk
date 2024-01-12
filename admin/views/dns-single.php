@@ -2,7 +2,7 @@
 
 // Todo get domains from API
 use MailHawk\Api\Postal\Domains;
-use function MailHawk\get_admin_mailhawk_uri;
+use function MailHawk\mailhawk_admin_page;
 use function MailHawk\get_spf_record;
 use function MailHawk\get_url_var;
 use function MailHawk\mailhawk_spf_is_set;
@@ -32,7 +32,7 @@ if ( get_url_var( 'action' ) === 'is_verified' ) {
 ?>
 <div class="mailhawk-content-box setup domains domain-single">
 
-    <a href="<?php echo wp_nonce_url( get_admin_mailhawk_uri( [ 'domain' => $domain->name ] ), 'mailhawk_check_domain', '_mailhawk_nonce' ); ?>"
+    <a href="<?php echo wp_nonce_url( mailhawk_admin_page( [ 'domain' => $domain->name ] ), 'mailhawk_check_domain', '_mailhawk_nonce' ); ?>"
        class="button big-button button-primary verify-button"><?php _e( 'Verify', 'mailhawk' ); ?></a>
 
     <h1><?php printf( __( "Configure your DNS for <b>%s</b>!", 'mailhawk' ), esc_html( $domain->name ) ); ?></h1>
@@ -123,8 +123,8 @@ if ( get_url_var( 'action' ) === 'is_verified' ) {
                target="_blank"><?php _e( 'Learn how to configure your DNS', 'mailhawk' ); ?></a></p>
     </div>
     <p>
-        <a href="<?php echo esc_url( get_admin_mailhawk_uri( [ 'view' => 'domains' ] ) ); ?>">&larr; <?php _e( 'Back', 'mailhawk' ); ?></a>
-        <a href="<?php echo wp_nonce_url( get_admin_mailhawk_uri( [ 'domain' => $domain->name ] ), 'mailhawk_delete_domain', '_mailhawk_nonce' ); ?>"
+        <a href="<?php echo esc_url( mailhawk_admin_page( [ 'view' => 'domains' ] ) ); ?>">&larr; <?php _e( 'Back', 'mailhawk' ); ?></a>
+        <a href="<?php echo wp_nonce_url( mailhawk_admin_page( [ 'domain' => $domain->name ] ), 'mailhawk_delete_domain', '_mailhawk_nonce' ); ?>"
            class="button delete alignright"><?php _e( 'Delete', 'mailhawk' ); ?></a>
     </p>
 

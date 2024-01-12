@@ -9,6 +9,15 @@ use MailHawk\Plugin;
 class Email_Log_Item extends Base_Object {
 
 	/**
+	 * Just deletes the log item
+	 *
+	 * @return bool
+	 */
+	public function reject(): bool {
+		return Plugin::instance()->log->delete( $this->ID );
+	}
+
+	/**
 	 * Handle post setup actions...
 	 */
 	protected function post_setup() {
@@ -17,10 +26,26 @@ class Email_Log_Item extends Base_Object {
 			'retries'
 		];
 
-		foreach ( $int_props as $prop ){
+		foreach ( $int_props as $prop ) {
 			$this->$prop = intval( $this->$prop );
 		}
 
+	}
+
+	/**
+	 * Get the from name from the email headers
+	 *
+	 * @return string
+	 */
+	public function get_from_header(): string {
+
+		foreach ( $this->headers as $header ) {
+			if ( $header[0] === 'From' ) {
+				return $header[1];
+			}
+		}
+
+		return '<' . $this->from_address . '>';
 	}
 
 	/**
@@ -35,15 +60,15 @@ class Email_Log_Item extends Base_Object {
 	/**
 	 * Retry to send the email.
 	 *
-	 * @return bool
 	 * @throws \PHPMailer\PHPMailer\Exception
+	 * @return bool
 	 */
 	public function retry() {
 
 		// Compile headers!
 		$headers = [];
 
-		foreach ( $this->headers as $header ){
+		foreach ( $this->headers as $header ) {
 			$headers[] = sprintf( "%s: %s\n", $header[0], $header[1] );
 		}
 
@@ -54,7 +79,7 @@ class Email_Log_Item extends Base_Object {
 		// Mail this thing!
 		$result = mailhawk_mail( $this->recipients, $this->subject, $this->content, $headers );
 
-		if ( ! $result ){
+		if ( ! $result ) {
 			// update retries
 
 			$this->update( [
@@ -63,6 +88,35 @@ class Email_Log_Item extends Base_Object {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * @return mixed|string
+	 */
+	public function get_content_type() {
+		foreach ( $this->headers as $header ) {
+			if ( $header[0] === 'Content-Type' ) {
+				return $header[1];
+			}
+		}
+
+		return 'text/plain';
+	}
+
+	public function is_quarantined() {
+		return $this->status === 'quarantine';
+	}
+
+	public function is_plain_text() {
+		return $this->get_content_type() === 'text/plain';
+	}
+
+	public function get_preview_content() {
+		if ( $this->is_plain_text() ) {
+			return wpautop( esc_html( $this->content ) );
+		}
+
+		return $this->content;
 	}
 
 	/**
@@ -77,6 +131,10 @@ class Email_Log_Item extends Base_Object {
 	 */
 	public function catch_mail_error( $error ) {
 		$this->error = $error;
+	}
+
+	function get_date_sent() {
+		return new \DateTime( $this->date_sent, wp_timezone() );
 	}
 
 }
