@@ -3,8 +3,8 @@ Contributors: Adrian Tobey, Marc Goldman, trainingbusinesspros
 Donate link: https://mailhawk.io/pricing/
 Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
 Requires at least: 5.0
-Tested up to: 6.4
-Stable tag: 1.3
+Tested up to: 6.7
+Stable tag: 1.3.1
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -28,7 +28,7 @@ With MailHawk you can rest assured that your...
 * Password reset emails
 * LifterLMS notifications
 * LearnDash emails
-* Easy Digital Downloads renwal reminder emails
+* Easy Digital Downloads renewal reminder emails
 * Groundhogg broadcast emails
 * MailPoet Newsletter emails
 * BuddyBoss emails
@@ -42,7 +42,7 @@ MailHawk is an SMTP plugin & SMTP service *all-in-one!* Which means we're your o
 To get started all you need to do is follow these steps:
 
 1. Install MailHawk on your site!
-2. Connect your WordPress site the the MailHawk service.
+2. Connect your WordPress site to the MailHawk service.
 3. [Pick a plan](https://mailhawk.io/pricing/) that fits your needs.
 4. Configure your DNS records.
 5. Start sending email!
@@ -138,6 +138,10 @@ Yes, MailHawk is specifically designed to prevent your emails from ending up in 
 5. Prevent abusers from tarnishing your sender reputation by blacklisting offenders.
 
 == Changelog ==
+
+= 1.3.1 (2023-12-04) =
+* FIXED Retrying and releasing quarantined emails sending with incorrect content-type.
+* FIXED Quarantine release link in email details modal not working.
 
 = 1.3 (2023-01-12) =
 * ADDED [New email quarantine system](https://mailhawk.io/email-quarantine) to prevent potentially damaging emails from being sent.
