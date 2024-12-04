@@ -5,6 +5,7 @@ namespace MailHawk\Classes;
 use MailHawk\DB\DB;
 use MailHawk\Hawk_Mailer;
 use MailHawk\Plugin;
+use PHPMailer\PHPMailer\PHPMailer;
 
 class Email_Log_Item extends Base_Object {
 
@@ -69,12 +70,13 @@ class Email_Log_Item extends Base_Object {
 		$headers = [];
 
 		foreach ( $this->headers as $header ) {
-			$headers[] = sprintf( "%s: %s\n", $header[0], $header[1] );
+			$headers[] = sprintf( "%s: %s", $header[0], $header[1] );
 		}
 
 		Hawk_Mailer::set_log_item_id( $this->get_id() );
 
 		add_action( 'wp_mail_failed', [ $this, 'catch_mail_error' ] );
+		add_action( 'phpmailer_init', [ $this, 'maybe_set_alt_body' ] );
 
 		// Mail this thing!
 		$result = mailhawk_mail( $this->recipients, $this->subject, $this->content, $headers );
@@ -87,7 +89,21 @@ class Email_Log_Item extends Base_Object {
 			] );
 		}
 
+		remove_action( 'wp_mail_failed', [ $this, 'catch_mail_error' ] );
+		remove_action( 'phpmailer_init', [ $this, 'maybe_set_alt_body' ] );
+
 		return $result;
+	}
+
+	/**
+	 * Set the AltBody if there is one
+	 *
+	 * @param PHPMailer $phpmailer
+	 *
+	 * @return void
+	 */
+	public function maybe_set_alt_body( PHPMailer &$phpmailer ) {
+		$phpmailer->AltBody = $this->altbody;
 	}
 
 	/**

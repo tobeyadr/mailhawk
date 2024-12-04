@@ -27,7 +27,7 @@ $release_url = wp_nonce_url( mailhawk_admin_page( [
 	'view'    => 'log',
 	'status' => 'quarantine',
 	'id'      => $log_item_id
-] ), 'release_email', '_mailhawk_nonce' );
+] ), 'retry_email', '_mailhawk_nonce' );
 
 $reject_url = wp_nonce_url( mailhawk_admin_page( [
 	'view'    => 'log',

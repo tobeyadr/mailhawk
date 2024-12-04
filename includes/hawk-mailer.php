@@ -73,7 +73,7 @@ class Hawk_Mailer extends PHPMailer {
 		$quarantine = false;
 
 		// If a log item ID is set, we're releasing the message
-		if ( ! self::$log_item_id ){
+		if ( ! self::$log_item_id ) {
 
 			// Check the risk factor of the recipients
 			foreach ( $recipients as $recipient ) {
@@ -105,6 +105,7 @@ class Hawk_Mailer extends PHPMailer {
 			'from_address'  => $this->From,
 			'subject'       => $this->Subject,
 			'content'       => $this->Body,
+			'altbody'       => $this->AltBody,
 			'headers'       => $headers,
 			'error_code'    => '',
 			'error_message' => '',

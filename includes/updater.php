@@ -18,7 +18,8 @@ class Updater extends \MailHawk\Utils\Updater{
 	protected function get_available_updates() {
 		return [
 			'1.0.1.1',
-			'1.1.1'
+			'1.1.1',
+			'1.3.1'
 		];
 	}
 
@@ -39,6 +40,13 @@ class Updater extends \MailHawk\Utils\Updater{
 			'MessageBounced',
 		] );
 
+	}
+
+	/**
+	 * Add the altbody column
+	 */
+	public function version_1_3_1(){
+		Plugin::instance()->log->create_table();
 	}
 }
 

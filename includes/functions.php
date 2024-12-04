@@ -867,6 +867,11 @@ function assess_risk( string $email_address ): int {
 	// The baseline risk is 0;
 	$risk = 0;
 
+	// Test quarantine system using + synatx
+	if ( str_contains( $email_address, '+test-quarantine@' ) ) {
+		return 999;
+	}
+
 	// It's the admin email, dw about it
 	if ( $email_address === get_option( 'admin_email' ) ){
 		return 0;
