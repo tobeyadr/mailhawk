@@ -10,6 +10,10 @@ class Updater extends \MailHawk\Utils\Updater{
 		return MAILHAWK_TEXT_DOMAIN;
 	}
 
+	protected function get_plugin_file() {
+		return MAILHAWK__FILE__;
+	}
+
 	/**
 	 * The available updates
 	 *
