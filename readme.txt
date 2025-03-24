@@ -4,7 +4,7 @@ Donate link: https://mailhawk.io/pricing/
 Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 1.3.1
+Stable tag: 1.3.2
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -138,6 +138,9 @@ Yes, MailHawk is specifically designed to prevent your emails from ending up in 
 5. Prevent abusers from tarnishing your sender reputation by blacklisting offenders.
 
 == Changelog ==
+
+= 1.3.2 (2025-03-24) =
+* FIXED Vulnerability responsibly disclosed by Patchstack
 
 = 1.3.1 (2023-12-04) =
 * FIXED Retrying and releasing quarantined emails sending with incorrect content-type.

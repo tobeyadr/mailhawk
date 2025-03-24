@@ -764,7 +764,7 @@ class Admin {
 				<?php do_action( 'mailhawk_notices' ); ?>
             </div>
 
-			<?php include __DIR__ . '/views/menu.php'; ?>
+			<?php include __DIR__ . '/menu.php'; ?>
 
             <div class="mailhawk-view-content">
 
@@ -783,13 +783,19 @@ class Admin {
 						}
 
 						break;
+
+					case 'overview':
+					case 'blacklist':
+                    case 'dns':
+                    case 'log':
+                    case 'manage':
+                    case 'test':
+                    case 'settings':
+	                    include __DIR__ . '/views/' . $view . '.php';
+	                    break;
 					default:
-						if ( file_exists( __DIR__ . '/views/' . $view . '.php' ) ) {
-							include __DIR__ . '/views/' . $view . '.php';
-						}
+                        include __DIR__ . '/views/overview.php';
 						break;
-
-
 				endswitch;
 
 				?>
