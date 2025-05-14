@@ -48,6 +48,21 @@ function mailhawk_wp_mail_already_defined() {
 		return;
 	}
 
+    // ignore if Groundhogg
+    if ( $plugin_file === 'groundhogg/groundhogg.php' ) {
+	    ?>
+        <div class="notice notice-warning is-dismissible">
+            <img class="alignleft" height="40" style="margin: 3px 10px 3px 0"
+                 src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/hawk-head.png' ); ?>" alt="Hawk">
+            <p>
+			    <?php printf( __( '<b>Attention:</b> When using Groundhogg you must select MailHawk as your outgoing email service from the <a href="%s">Groundhogg email settings!</a>', 'mailhawk' ), admin_url( 'admin.php?page=gh_settings&tab=email' ) ); ?>
+            </p>
+            <div class="wp-clearfix"></div>
+        </div>
+	    <?php
+        return;
+    }
+
 	$is_pluggable_file = strpos( $plugin_file, '/wp-includes/pluggable.php' ) !== false;
 
 	$deactivate_link = '';

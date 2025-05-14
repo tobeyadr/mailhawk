@@ -113,7 +113,7 @@ class Keys {
 		$generated = $this->generate_random_key( $length );
 
 		update_user_meta( get_current_user_id(), $key, [
-			'value'      => $stored,
+			'value'      => $generated,
 			'expiration' => time() + $lifetime,
 		] );
 
