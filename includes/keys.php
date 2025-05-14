@@ -98,12 +98,16 @@ class Keys {
 	 */
 	public function get_temp_key( $key = '', $lifetime = 3600, $length = 20 ) {
 
-		$stored     = get_user_meta( get_current_user_id(), $key, true );
-		$value      = $stored['value'];
-		$expiration = $stored['expiration'];
+		$stored = get_user_meta( get_current_user_id(), $key, true );
 
-		if ( $stored && $value && $expiration > time() ) {
-			return $value;
+		if ( ! empty( $stored ) && is_array( $stored ) ) {
+
+			$value      = $stored['value'] ?? null;
+			$expiration = $stored['expiration'] ?? null;
+
+			if ( $value && $expiration > time() ) {
+				return $value;
+			}
 		}
 
 		$generated = $this->generate_random_key( $length );
