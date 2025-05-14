@@ -72,42 +72,48 @@ class Keys {
 	 *
 	 * @return string
 	 */
-	public function get_persistent_key( $key='', $length=20 ){
+	public function get_persistent_key( $key = '', $length = 20 ) {
 
 		$stored = get_option( $key );
 
-		if ( $stored ){
+		if ( $stored ) {
 			return $stored;
 		}
 
 		$generated = $this->generate_random_key( $length );
 		update_option( $key, $generated );
 
-		return $generated ;
+		return $generated;
 
 	}
 
 	/**
 	 * Generate a key and store it in a transient
 	 *
-	 * @param $key string
+	 * @param $key      string
 	 * @param $lifetime int
-	 * @param $length int
+	 * @param $length   int
 	 *
 	 * @return string
 	 */
-	public function get_temp_key( $key='', $lifetime=3600, $length=20 ){
+	public function get_temp_key( $key = '', $lifetime = 3600, $length = 20 ) {
 
-		$stored = get_transient( $key );
+		$stored     = get_user_meta( get_current_user_id(), $key, true );
+		$value      = $stored['value'];
+		$expiration = $stored['expiration'];
 
-		if ( $stored ){
-			return $stored;
+		if ( $stored && $value && $expiration > time() ) {
+			return $value;
 		}
 
 		$generated = $this->generate_random_key( $length );
-		set_transient( $key, $generated, $lifetime );
 
-		return $generated ;
+		update_user_meta( get_current_user_id(), $key, [
+			'value'      => $stored,
+			'expiration' => time() + $lifetime,
+		] );
+
+		return $generated;
 	}
 
 	/**
@@ -115,7 +121,7 @@ class Keys {
 	 *
 	 * @return string
 	 */
-	public function public_key(){
+	public function public_key() {
 		return $this->get_persistent_key( 'mailhawk_public_key', 40 );
 	}
 
@@ -124,7 +130,7 @@ class Keys {
 	 *
 	 * @return mixed|void
 	 */
-	public function access_token(){
+	public function access_token() {
 		return get_option( 'mailhawk_access_token' );
 	}
 
