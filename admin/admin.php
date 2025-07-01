@@ -90,8 +90,6 @@ class Admin {
 		if ( is_wp_error( $response ) ) {
 			add_action( 'mailhawk_notices', [ $this, 'connection_failed_notice' ] );
 
-			wp_send_json_error( [ 'where' => 'token', 'response' => $response, 'code' => $code ] );
-
 			return;
 		}
 
@@ -101,23 +99,12 @@ class Admin {
 
 			add_action( 'mailhawk_notices', [ $this, 'connection_failed_notice' ] );
 
-			wp_send_json_error( [ 'where' => 'credentials', 'response' => $response ] );
-
 			return;
 		}
 
 		$mta_credential_key = sanitize_text_field( $credentials->credential_key );
 
 		set_mailhawk_api_credentials( $mta_credential_key );
-
-		// Now we have to activate it via EDD.
-		if ( is_wp_error( $response ) ) {
-			add_action( 'mailhawk_notices', [ $this, 'connection_failed_notice' ] );
-
-			wp_send_json_error( [ 'where' => 'license', 'response' => $response ] );
-
-			return;
-		}
 
 		// All checks passed, connect MailHawk!
 		set_mailhawk_is_connected( true );

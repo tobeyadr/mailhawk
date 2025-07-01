@@ -1015,7 +1015,15 @@ abstract class DB {
 	 * @since  2.8
 	 */
 	public function set_last_changed() {
-		wp_cache_set( 'last_changed', microtime(), $this->get_cache_group() );
+		if ( function_exists( 'wp_cache_set_last_changed' ) ) {
+			return wp_cache_set_last_changed( $this->get_cache_group() );
+		}
+
+		$time = microtime();
+
+		wp_cache_set( 'last_changed', $time, $this->get_cache_group() );
+
+		return $time;
 	}
 
 	/**

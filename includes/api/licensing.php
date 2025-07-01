@@ -111,7 +111,7 @@ class Licensing {
 		return $this->request( 'wp-json/mailhawk/account', [], 'GET' );
 	}
 
-	public function deactivate(){
+	public function deactivate() {
 		return $this->request( 'wp-json/mailhawk/deactivate', [], 'POST' );
 	}
 
@@ -141,7 +141,8 @@ class Licensing {
 			'headers'     => $headers,
 			'body'        => wp_json_encode( $body ),
 			'data_format' => 'body',
-			'sslverify'   => true
+			'sslverify'   => true,
+			'timeout'     => 30
 		];
 
 		if ( $method === 'GET' ) {

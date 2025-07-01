@@ -4,7 +4,7 @@ Donate link: https://mailhawk.io/pricing/
 Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 1.3.3
+Stable tag: 1.3.4
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -129,6 +129,10 @@ Yes, we have special [WaaS account plans](https://mailhawk.io/waas/) to accommod
 
 Yes, MailHawk is specifically designed to prevent your emails from ending up in the spam folder.
 
+= How can I report security bugs? =
+
+You can report security bugs through the Patchstack Vulnerability Disclosure Program. The Patchstack team helps validate, triage and handle any security vulnerabilities. [Report a security vulnerability.]( https://patchstack.com/database/vdp/19bd47ae-c921-41f4-b595-2ce635777438 )
+
 == Screenshots ==
 
 1. Pick the plan the best suits your needs!
@@ -138,6 +142,10 @@ Yes, MailHawk is specifically designed to prevent your emails from ending up in 
 5. Prevent abusers from tarnishing your sender reputation by blacklisting offenders.
 
 == Changelog ==
+
+= 1.3.4 (2025-07-01) =
+* ADDED Patchstack MVDP program disclaimer.
+* FIXED JSON error if connection fails or times out when trying to initially connect MailHawk.
 
 = 1.3.3 (2025-05-14) =
 * TWEAKED Use user meta to store state key rather than transients to avoid connection issues when transients aren't working.
