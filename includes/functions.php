@@ -582,7 +582,13 @@ function get_address_email_hostname( $address ) {
  */
 function build_site_email( $url, $prefix = 'wp' ) {
 
-	$domain = str_replace( 'www.', '', wp_parse_url( $url, PHP_URL_HOST ) );
+	$hostname = wp_parse_url( $url, PHP_URL_HOST );
+
+	if ( ! $hostname ) {
+		return false;
+	}
+
+	$domain = str_replace( 'www.', '', $hostname );
 
 	// Invalid domain
 	if ( ! $domain ) {
@@ -873,12 +879,12 @@ function assess_risk( string $email_address ): int {
 	}
 
 	// It's the admin email, dw about it
-	if ( $email_address === get_option( 'admin_email' ) ){
+	if ( $email_address === get_option( 'admin_email' ) ) {
 		return 0;
 	}
 
 	// Same hostname as the site
-	if ( get_email_address_hostname( $email_address ) === wp_parse_url( home_url(), PHP_URL_HOST ) ){
+	if ( get_email_address_hostname( $email_address ) === wp_parse_url( home_url(), PHP_URL_HOST ) ) {
 		return 0;
 	}
 

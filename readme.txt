@@ -1,19 +1,19 @@
-=== WordPress SMTP Service, Email Delivery Solved! — MailHawk ===
-Contributors: Adrian Tobey, Marc Goldman, trainingbusinesspros
+=== MailHawk — Simple SMTP, Email Delivery, and Email Logging ===
+Contributors: Adrian Tobey, trainingbusinesspros
 Donate link: https://mailhawk.io/pricing/
 Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 1.3.4
+Stable tag: 1.3.4.1
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-An easier WordPress SMTP service. Improve your WordPress email deliverability!
+An easier SMTP service for WordPress. Improve your WordPress email deliverability!
 
 == Description ==
 
-WordPress SMTP & Email Delivery service
+SMTP & Email Delivery service for WordPress.
 
 👉 [Official Site](https://mailhawk.io/) | 👉 [Pricing](https://mailhawk.io/pricing/) | 👉 [WaaS](https://mailhawk.io/waas/)
 
@@ -142,6 +142,9 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 5. Prevent abusers from tarnishing your sender reputation by blacklisting offenders.
 
 == Changelog ==
+
+= 1.3.4.1 (2025-08-07) =
+* UPDATED Repository plugin name.
 
 = 1.3.4 (2025-07-01) =
 * ADDED Patchstack MVDP program disclaimer.
