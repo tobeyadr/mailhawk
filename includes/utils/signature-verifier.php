@@ -77,7 +77,7 @@ class Signature_Verifier {
 			return false;
 		}
 
-		$result = openssl_verify( $body, base64_decode( $signature ), $rsa_key, OPENSSL_ALGO_SHA1 );
+		$result = openssl_verify( $body, base64_decode( $signature ), $rsa_key, OPENSSL_ALGO_SHA256 );
 
 		// Result can be 1, 0, -1 or FALSE. Only 1 is success, consider everything
 		// else a failure.

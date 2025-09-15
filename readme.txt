@@ -144,7 +144,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 == Changelog ==
 
 = 1.3.5 (2025-09-15) =
-* TWEAKED New webhook verification since SHA1 is now deprecated on many systems.
+* TWEAKED New webhook verification uses SHA256 since SHA1 is now deprecated on many systems.
 
 = 1.3.4.1 (2025-08-07) =
 * UPDATED Repository plugin name.

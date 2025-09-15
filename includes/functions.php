@@ -24,15 +24,7 @@ function mailhawk_admin_page( $params = [] ) {
  * @return string
  */
 function get_rest_api_webhook_listener_uri() {
-
-	$token = get_option( 'mailhawk_api_webhook_token' );
-	if ( ! $token ) {
-		$token        = wp_generate_password( 8, false );
-		$hashed_token = wp_hash_password( $token );
-		update_option( 'mailhawk_api_webhook_token', $hashed_token );
-	}
-
-	return add_query_arg( 'mhtoken', $token, rest_url( 'mailhawk/listen' ) );
+	return rest_url( 'mailhawk/listen' );
 }
 
 /**

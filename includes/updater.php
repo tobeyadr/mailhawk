@@ -24,7 +24,6 @@ class Updater extends \MailHawk\Utils\Updater{
 			'1.0.1.1',
 			'1.1.1',
 			'1.3.1',
-			'1.3.5'
 		];
 	}
 
@@ -39,12 +38,10 @@ class Updater extends \MailHawk\Utils\Updater{
 	 * Update webhook
 	 */
 	public function version_1_1_1(){
-
 		Webhooks::update( get_rest_api_webhook_listener_uri(), false, [
 			'MessageDeliveryFailed',
 			'MessageBounced',
 		] );
-
 	}
 
 	/**
@@ -52,19 +49,6 @@ class Updater extends \MailHawk\Utils\Updater{
 	 */
 	public function version_1_3_1(){
 		Plugin::instance()->log->create_table();
-	}
-
-	public function version_1_3_5() {
-
-		// delete the old webhook, SHA1 is no longer supported on many servers
-		Webhooks::delete( rest_url( 'mailhawk/listen' ) );
-
-		// create a unique/obfuscated url for the webhook instead
-		Webhooks::create( get_hostname(), get_rest_api_webhook_listener_uri(), false, [
-			'MessageDeliveryFailed',
-			'MessageBounced',
-		] );
-
 	}
 }
 
