@@ -11,6 +11,7 @@ use MailHawk\Plugin;
 use function Groundhogg\get_contactdata;
 use function Groundhogg\is_a_contact;
 use function MailHawk\get_array_var;
+use function MailHawk\get_hostname;
 use function MailHawk\get_post_var;
 use function MailHawk\get_rest_api_webhook_listener_uri;
 use function MailHawk\get_suggested_spf_record;
@@ -329,7 +330,7 @@ class Admin {
 		// Delete any old webhooks with the same URI
 		Webhooks::delete( get_rest_api_webhook_listener_uri() );
 
-		Webhooks::create( get_bloginfo( 'name' ), get_rest_api_webhook_listener_uri(), false, [
+		Webhooks::create( get_hostname(), get_rest_api_webhook_listener_uri(), false, [
 			'MessageDeliveryFailed',
 			'MessageBounced',
 		] );

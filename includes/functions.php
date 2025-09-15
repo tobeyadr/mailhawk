@@ -24,9 +24,32 @@ function mailhawk_admin_page( $params = [] ) {
  * @return string
  */
 function get_rest_api_webhook_listener_uri() {
-	return rest_url( 'mailhawk/listen' );
+
+	$token = get_option( 'mailhawk_api_webhook_token' );
+	if ( ! $token ) {
+		$token        = wp_generate_password( 8, false );
+		$hashed_token = wp_hash_password( $token );
+		update_option( 'mailhawk_api_webhook_token', $hashed_token );
+	}
+
+	return add_query_arg( 'mhtoken', $token, rest_url( 'mailhawk/listen' ) );
 }
 
+/**
+ * Get the hostname of a URI or the current site
+ *
+ * @param $url
+ *
+ * @return array|false|mixed|null
+ */
+function get_hostname( $url = '' ) {
+
+	if ( empty( $url ) ) {
+		$url = home_url();
+	}
+
+	return wp_parse_url( $url, PHP_URL_HOST );
+}
 
 /**
  * Get the email address status

@@ -36,6 +36,13 @@ class Webhook_Listener {
 	 */
 	public function verify( \WP_REST_Request $request ) {
 
+		// use api token verification instead, SHA1 might be disabled.
+		if ( $request->has_param( 'mhtoken' ) ){
+			$token = $request->get_param( 'mhtoken' );
+
+			return wp_check_password( $token, get_option( 'mailhawk_api_webhook_token' ) );
+		}
+
 		$body      = file_get_contents( 'php://input' );
 		$signature = $_SERVER['HTTP_X_POSTAL_SIGNATURE'];
 

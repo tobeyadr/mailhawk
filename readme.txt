@@ -4,7 +4,7 @@ Donate link: https://mailhawk.io/pricing/
 Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 1.3.4.1
+Stable tag: 1.3.5
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -142,6 +142,9 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 5. Prevent abusers from tarnishing your sender reputation by blacklisting offenders.
 
 == Changelog ==
+
+= 1.3.5 (2025-09-15) =
+* TWEAKED New webhook verification since SHA1 is now deprecated on many systems.
 
 = 1.3.4.1 (2025-08-07) =
 * UPDATED Repository plugin name.
