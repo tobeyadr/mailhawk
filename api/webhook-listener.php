@@ -53,6 +53,9 @@ class Webhook_Listener {
 	/**
 	 * Handle the webhook events...
 	 *
+	 * The MTA sends either a single event, or an event of type Batch which carries a list of events
+	 * (see the batch_interval setting of the webhook).
+	 *
 	 * @param \WP_REST_Request $request
 	 *
 	 * @return \WP_Error|WP_REST_Response
@@ -61,6 +64,56 @@ class Webhook_Listener {
 
 		$event_type = $request->get_param( 'event' );
 		$payload    = $request->get_param( 'payload' );
+
+		if ( $event_type !== 'Batch' ) {
+
+			$result = $this->handle_event( $event_type, $payload );
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			return new WP_REST_Response( [ 'success' => true ] );
+		}
+
+		$events = is_array( $payload ) && isset( $payload['events'] ) && is_array( $payload['events'] ) ? $payload['events'] : [];
+
+		$processed = 0;
+
+		foreach ( $events as $event ) {
+
+			if ( ! is_array( $event ) || empty( $event['event'] ) ) {
+				continue;
+			}
+
+			// A bad event must not fail the whole batch, or the MTA will send all of it again
+			$result = $this->handle_event( $event['event'], $event['payload'] ?? [] );
+
+			if ( ! is_wp_error( $result ) ) {
+				$processed ++;
+			}
+		}
+
+		return new WP_REST_Response( [
+			'success'   => true,
+			'received'  => count( $events ),
+			'processed' => $processed,
+		] );
+	}
+
+	/**
+	 * Handle a single event
+	 *
+	 * @param string $event_type
+	 * @param array  $payload
+	 *
+	 * @return true|\WP_Error
+	 */
+	protected function handle_event( $event_type, $payload ) {
+
+		if ( ! is_array( $payload ) ) {
+			$payload = [];
+		}
 
 		switch ( $event_type ):
 
@@ -166,13 +219,47 @@ class Webhook_Listener {
 				}
 
 				break;
+			case 'MessageSpamComplaint':
+
+				// Get the recipient address
+				$to_address = sanitize_email( $payload['message']['to'] ?? '' );
+
+				if ( ! is_email( $to_address ) ) {
+					return new \WP_Error( 'invalid_email', 'The provided email address is invalid.' );
+				}
+
+				$msg_id = sanitize_text_field( $payload['message']['message_id'] ?? '' );
+
+				// If the message was sent from this site, mark it as complained about
+				if ( $msg_id && Plugin::instance()->log->exists( [ 'msg_id' => $msg_id ] ) ) {
+
+					$log = [
+						'status'        => 'complained',
+						'error_code'    => 'SpamComplaint',
+						'error_message' => __( 'The recipient reported this email as spam.', 'mailhawk' )
+					];
+
+					Plugin::instance()->log->update( null, $log, [ 'msg_id' => $msg_id ] );
+				}
+
+				$complaint = is_array( $payload['complaint'] ?? null ) ? $payload['complaint'] : [];
+
+				/**
+				 * A recipient reported an email as spam
+				 *
+				 * @param $to_address string email recipient
+				 * @param $msg_id     string the msg_id of the email
+				 * @param $complaint  array details about the report (feedback_type, reported_by, source_ip, arrival_date, received_at)
+				 */
+				do_action( 'mailhawk/spam_complaint', $to_address, $msg_id, $complaint );
+
+				break;
 			case 'DomainDNSError':
 
 				break;
 		endswitch;
 
-		return new WP_REST_Response( [ 'success' => true ] );
-
+		return true;
 	}
 
 }

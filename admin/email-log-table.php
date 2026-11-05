@@ -261,6 +261,7 @@ class Email_Log_Table extends WP_List_Table {
 			case 'failed':
 			case 'bounced':
 			case 'softfail':
+			case 'complained':
 				$className = 'email-failed';
 				break;
 			case 'quarantine':

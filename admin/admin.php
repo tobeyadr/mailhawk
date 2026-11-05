@@ -16,6 +16,8 @@ use function MailHawk\get_post_var;
 use function MailHawk\get_rest_api_webhook_listener_uri;
 use function MailHawk\get_suggested_spf_record;
 use function MailHawk\get_url_var;
+use function MailHawk\get_webhook_batch_interval;
+use function MailHawk\get_webhook_events;
 use function MailHawk\is_groundhogg_active;
 use function MailHawk\is_mailhawk_network_active;
 use function MailHawk\mailhawk_admin_page;
@@ -330,10 +332,7 @@ class Admin {
 		// Delete any old webhooks with the same URI
 		Webhooks::delete( get_rest_api_webhook_listener_uri() );
 
-		Webhooks::create( get_hostname(), get_rest_api_webhook_listener_uri(), false, [
-			'MessageDeliveryFailed',
-			'MessageBounced',
-		] );
+		Webhooks::create( get_hostname(), get_rest_api_webhook_listener_uri(), false, get_webhook_events(), get_webhook_batch_interval() );
 	}
 
 	/**

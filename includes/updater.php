@@ -24,6 +24,7 @@ class Updater extends \MailHawk\Utils\Updater{
 			'1.0.1.1',
 			'1.1.1',
 			'1.3.1',
+			'1.4.0',
 		];
 	}
 
@@ -49,6 +50,13 @@ class Updater extends \MailHawk\Utils\Updater{
 	 */
 	public function version_1_3_1(){
 		Plugin::instance()->log->create_table();
+	}
+
+	/**
+	 * Subscribe to spam complaints, and have the MTA send webhook events in batches
+	 */
+	public function version_1_4_0(){
+		Webhooks::update( get_rest_api_webhook_listener_uri(), false, get_webhook_events(), get_webhook_batch_interval() );
 	}
 }
 

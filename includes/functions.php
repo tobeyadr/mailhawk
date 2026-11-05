@@ -727,9 +727,44 @@ function get_email_status_pretty_name( $status ) {
 		'bounced'    => __( 'Bounced', 'mailhawk' ),
 		'softfail'   => __( 'Soft Fail', 'mailhawk' ),
 		'quarantine' => __( 'Quarantined', 'mailhawk' ),
+		'complained' => __( 'Reported as spam', 'mailhawk' ),
 	];
 
 	return get_array_var( $stati, $status );
+}
+
+/**
+ * The events this site asks the MTA to send to its webhook
+ *
+ * @return string[]
+ */
+function get_webhook_events() {
+	return [
+		'MessageDeliveryFailed',
+		'MessageBounced',
+		'MessageSpamComplaint',
+	];
+}
+
+/**
+ * How often, in seconds, the MTA should send this site's webhook events together in one request.
+ *
+ * One request per event can swamp a site when a send goes wrong and thousands of emails bounce at once.
+ * The MTA allows 60 to 86400 seconds, 0 turns batching off.
+ *
+ * @return int
+ */
+function get_webhook_batch_interval() {
+
+	/**
+	 * Filter the webhook batch interval in seconds
+	 *
+	 * @param int $interval
+	 */
+	$interval = absint( apply_filters( 'mailhawk/webhook_batch_interval', 15 * MINUTE_IN_SECONDS ) );
+
+	// 0 is off, anything else the MTA accepts
+	return $interval === 0 ? 0 : max( 60, min( DAY_IN_SECONDS, $interval ) );
 }
 
 /**
