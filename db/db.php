@@ -738,7 +738,9 @@ abstract class DB {
 
 		if ( ! $query_vars['func'] ) {
 			$orderby = $query_vars['orderby'] && in_array( $query_vars['orderby'], $this->get_allowed_columns() ) ? sprintf( 'ORDER BY %s', $query_vars['orderby'] ) : '';
-			$order   = $query_vars['order'] ? strtoupper( $query_vars['order'] ) : '';
+			// The order ends up in the SQL as it is, so it can only be one of the two directions
+			$order = $query_vars['order'] ? strtoupper( $query_vars['order'] ) : '';
+			$order = $order && ! in_array( $order, [ 'ASC', 'DESC' ], true ) ? 'DESC' : $order;
 		} else {
 			$orderby = $order = false;
 		}
