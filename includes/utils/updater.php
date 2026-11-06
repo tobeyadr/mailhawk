@@ -236,7 +236,7 @@ abstract class Updater {
 
 		$action = 'mailhawk_' . $this->get_updater_name() . '_do_updates';
 
-		if ( ! current_user_can( 'manage_options' ) || ! get_url_var( 'action' ) === $action || ! wp_verify_nonce( get_url_var( '_wpnonce' ), $action ) ) {
+		if ( ! current_user_can( 'manage_options' ) || get_url_var( 'action' ) !== $action || ! wp_verify_nonce( get_url_var( '_wpnonce' ), $action ) ) {
 			return;
 		}
 
