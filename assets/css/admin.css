@@ -703,9 +703,8 @@ th.value {
     padding: 10px 24px 14px;
 }
 
-/* The stat cards: a small muted title above a big number */
-.mailhawk-content-box.report.third h2,
-.mailhawk-content-box.report.fourth h2 {
+/* Every overview card: a small muted title (the graph, the stat cards, and usage) */
+.mailhawk-content-box.report h2 {
     font-size: 12px;
     font-weight: 600;
     letter-spacing: .06em;
