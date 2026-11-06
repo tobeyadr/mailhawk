@@ -64,13 +64,17 @@ $reject_url = wp_nonce_url( mailhawk_admin_page( [
 
                 <div class="mailhawk-error">
                     <div class="error-explanation">
-						<?php _e( 'There was a problem sending this email:', 'mailhawk' ); ?>
+						<?php echo esc_html( \MailHawk\get_email_problem_explanation( $log_item->status, (bool) $log_item->msg_id ) ); ?>
                     </div>
                     <div class="mailhawk-error-details">
                         <span class="mailhawk-error-code"><?php echo esc_html( $log_item->error_code ); ?>:</span>
                         <span class="mailhawk-error-message"><?php echo esc_html( $log_item->error_message ); ?></span>
                     </div>
                 </div>
+
+			<?php elseif ( 'delivered' === $log_item->status ): ?>
+
+                <p><?php _e( 'Delivered. The recipient\'s mail server accepted this email.', 'mailhawk' ); ?></p>
 
 			<?php endif; ?>
 

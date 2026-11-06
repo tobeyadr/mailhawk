@@ -10,6 +10,7 @@ They are marked public, so the [MCP adapter](https://github.com/WordPress/mcp-ad
 - Send an email with text or a subject of their choosing. The test email is fixed, only its address can be chosen.
 - Delete a domain without the domain being typed a second time, or the domain of the default From address.
 - Trust or forget an address that reported email from the site as spam.
+- Send an email from the log again to anyone who would be held for review now, like someone who reported spam or an address that keeps bouncing. Sending again skips that review, so it is refused, and trusting the address is the way to say it is fine.
 - Accept a From address or a domain on a free email provider, like gmail.com, which could never be authenticated.
 
 ## Reference
@@ -46,4 +47,3 @@ Errors come back with a code beginning `mailhawk_`, like `mailhawk_not_connected
 - `mailhawk/abilities/enabled` (filter, default `true`): return `false` to register none of them.
 - `mailhawk/abilities/register_categories` and `mailhawk/abilities/register_abilities` (actions): register your own next to these. Extend `MailHawk\Abilities\Ability` to get the permission check, the annotations and the error helpers.
 - `mailhawk/abilities/max_body_length` (filter, default `50000`): how much of an email `get-email` returns.
-- `mailhawk/quarantine_threshold` (filter, default `5`): how risky a recipient has to be before email to them is held.

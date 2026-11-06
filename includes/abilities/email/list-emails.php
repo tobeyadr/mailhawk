@@ -37,7 +37,7 @@ class List_Emails extends Ability {
 					'status'    => [
 						'type'        => 'string',
 						'enum'        => [ 'sent', 'delivered', 'failed', 'bounced', 'softfail', 'complained', 'quarantine' ],
-						'description' => __( 'Only emails with this status. failed means it never reached MailHawk, bounced and softfail were reported back later, quarantine is held for review.', 'mailhawk' ),
+						'description' => __( 'Only emails with this status. sent was accepted by MailHawk and nothing has been reported back, delivered was accepted by the recipient\'s mail server, softfail is delayed and still being tried, failed could not be sent or delivered, bounced and complained (reported as spam) were reported back later, quarantine is held for review.', 'mailhawk' ),
 					],
 					'recipient' => [
 						'type'        => 'string',

@@ -327,7 +327,7 @@ class Formatter {
 				'from_address'  => [ 'type' => 'string' ],
 				'status'        => [
 					'type'        => 'string',
-					'description' => __( 'sent, delivered, failed, bounced, softfail, complained or quarantine (held for review).', 'mailhawk' ),
+					'description' => __( 'sent, delivered, softfail (delayed), failed, bounced, complained (reported as spam) or quarantine (held for review).', 'mailhawk' ),
 				],
 				'status_label'  => [ 'type' => 'string' ],
 				'error_code'    => [ 'type' => 'string' ],

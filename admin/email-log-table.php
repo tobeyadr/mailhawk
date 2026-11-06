@@ -104,16 +104,42 @@ class Email_Log_Table extends WP_List_Table {
 			[
 				'id'   => 'quarantine',
 				'name' => __( 'Quarantine', 'mailhawk' ),
-			]
+			],
+			// What the MTA reported back, which only shows up when there is some
+			[
+				'id'       => 'delivered',
+				'name'     => __( 'Delivered', 'mailhawk' ),
+				'optional' => true,
+			],
+			[
+				'id'       => 'softfail',
+				'name'     => __( 'Delayed', 'mailhawk' ),
+				'optional' => true,
+			],
+			[
+				'id'       => 'bounced',
+				'name'     => __( 'Bounced', 'mailhawk' ),
+				'optional' => true,
+			],
+			[
+				'id'       => 'complained',
+				'name'     => __( 'Reported as spam', 'mailhawk' ),
+				'optional' => true,
+			],
 		];
 
 		$v = [];
 
 		foreach ( $views as $view ) {
 
-			$count  = Plugin::instance()->log->count( [
+			$count = Plugin::instance()->log->count( [
 				'status' => $view['id']
 			] );
+
+			if ( ! empty( $view['optional'] ) && ! $count ) {
+				continue;
+			}
+
 			$params = array_filter( array_merge( [ 'view' => 'log', 'status' => $view['id'] ] ) );
 			$class  = get_url_var( 'status' ) === $view['id'] ? 'current' : '';
 

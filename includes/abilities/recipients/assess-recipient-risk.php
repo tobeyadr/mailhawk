@@ -9,6 +9,7 @@ use MailHawk\Plugin;
 use function MailHawk\assess_risk;
 use function MailHawk\get_email_address_hostname;
 use function MailHawk\get_inbox_risk;
+use function MailHawk\get_quarantine_threshold;
 use function MailHawk\is_free_email_provider;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -86,7 +87,7 @@ class Assess_Recipient_Risk extends Ability {
 		}
 
 		$risk      = assess_risk( $email );
-		$threshold = intval( apply_filters( 'mailhawk/quarantine_threshold', 5 ) );
+		$threshold = get_quarantine_threshold();
 		$row       = $recipients->get_by_email( $email );
 
 		// The same steps assess_risk() takes, said out loud. Whatever is left over comes from the rules filtered in.

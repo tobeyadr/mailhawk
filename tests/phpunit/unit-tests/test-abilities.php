@@ -853,6 +853,54 @@ class Test_Abilities extends WP_UnitTestCase {
 		$this->assertSame( 'failed', Plugin::instance()->log->get( $id )->status );
 	}
 
+	public function test_an_email_is_not_sent_again_to_someone_who_would_be_held_now() {
+
+		$this->connect();
+		$this->mta( $this->send_succeeds() );
+
+		$this->recipients->record_complaint( 'angry@example.net' );
+		$this->recipients->record_bounce( 'dead@example.net' );
+		$this->recipients->record_bounce( 'dead@example.net' );
+
+		$spam    = $this->add_log_item( 'angry@example.net', 'sent' );
+		$bounced = $this->add_log_item( [ 'fine@example.net', 'dead@example.net' ], 'bounced' );
+
+		$error = $this->refused( 'mailhawk/retry-email', [ 'id' => $spam ], 'mailhawk_recipient_at_risk' );
+		$this->assertStringContainsString( 'angry@example.net', $error->get_error_message() );
+
+		$this->refused( 'mailhawk/retry-email', [ 'id' => $bounced ], 'mailhawk_recipient_at_risk' );
+
+		$this->assertSame( [], $this->calls, 'Nothing was sent' );
+
+		// Trusting somebody is the way to say it is fine
+		$this->recipients->trust( 'dead@example.net' );
+
+		$this->assertTrue( $this->ok( 'mailhawk/retry-email', [ 'id' => $bounced ] )['retried'] );
+	}
+
+	public function test_nothing_a_site_does_can_raise_the_bar_for_holding_an_email() {
+
+		$this->connect();
+		$this->mta( $this->send_succeeds() );
+
+		add_filter( 'mailhawk/quarantine_threshold', function () {
+			return 100000;
+		} );
+
+		$this->recipients->record_bounce( 'dead@example.net' );
+		$this->recipients->record_bounce( 'dead@example.net' );
+
+		$assessed = $this->ok( 'mailhawk/assess-recipient-risk', [ 'email' => 'dead@example.net' ] );
+
+		$this->assertSame( 5, $assessed['threshold'] );
+		$this->assertTrue( $assessed['held'] );
+
+		$sent = $this->ok( 'mailhawk/send-test-email', [ 'to' => 'someone+test-quarantine@example.net' ] );
+
+		$this->assertTrue( $sent['held'] );
+		$this->assertSame( [], $this->endpoints() );
+	}
+
 	public function test_a_held_email_is_not_retried_and_a_missing_one_is_not_found() {
 
 		$this->connect();
