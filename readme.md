@@ -4,7 +4,7 @@
 
 Is your WordPress email not reaching your customer's inbox? **We can help!**
 
-MailHawk is the **FIRST** email solution specializing in WordPress email delivery.
+MailHawk is SMTP and email delivery for WordPress in one plugin. Connect your site, authenticate your domain, and your WordPress email goes out through a service built for it, with the logs, reports, and quarantine protection to see and safeguard everything you send.
 
 With MailHawk you can rest assured that your...
 
