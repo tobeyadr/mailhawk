@@ -164,6 +164,7 @@ class Plugin {
 		new Telemetry();
 		new Quarantine();
 		new Spam_Complaints();
+		new Privacy();
 	}
 
 	/**
