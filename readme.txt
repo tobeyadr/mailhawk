@@ -4,7 +4,7 @@ Donate link: https://mailhawk.io/pricing/
 Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 1.3.5
+Stable tag: 1.4.0
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -142,6 +142,21 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 5. Prevent abusers from tarnishing your sender reputation by blacklisting offenders.
 
 == Changelog ==
+
+= 1.4.0 (2026-11-06) =
+* ADDED Spam complaints are now tracked. Complaints are shown on the overview, marked in the email log, and available to developers through the new `mailhawk/spam_complaint` action.
+* ADDED Choose the date range of the overview graph and cards from a new "Show data for" dropdown with Today, 7, 14, and 30 day options.
+* ADDED The overview now shows when the monthly usage resets.
+* IMPROVED Redesigned the MailHawk admin with a cleaner navigation, cards, tables, status labels, and forms. Destructive buttons are now red.
+* IMPROVED The Delivery Rate on the overview no longer counts bounced emails twice.
+* TWEAKED Webhooks can now be received in batches, which reduces the number of requests the MailHawk service makes to your site.
+* TWEAKED The MailHawk connection is now confirmed with the MailHawk service before the site is counted, and an empty response is treated as a failed connection.
+* SECURITY Fixed an SQL injection in the email log sort order.
+* SECURITY The email preview is now sandboxed so message content can no longer run scripts in the admin.
+* SECURITY Added missing output escaping across the admin views and notices.
+* SECURITY Webhook requests that arrive without a signature are now rejected.
+* FIXED The check that triggers database updates compared the wrong value and now validates the requested action correctly.
+* UPDATED Removed the unused PHPMailer dependency and moved PHPUnit to development dependencies.
 
 = 1.3.5 (2025-09-15) =
 * TWEAKED New webhook verification uses SHA256 since SHA1 is now deprecated on many systems.
