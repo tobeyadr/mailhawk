@@ -620,3 +620,303 @@ th.value {
     text-align: center;
     background: #f9f9f9;
 }
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Design refresh: one set of surfaces, spacing and form controls for every MailHawk screen
+   ------------------------------------------------------------------------------------------------------------------ */
+
+.mailhawk-header h1 {
+    margin: 0;
+    padding: 22px 20px 18px;
+}
+
+.mailhawk-header h1 img {
+    display: block;
+}
+
+/* Navigation: white bar, the current screen underlined in the brand blue */
+#mailhawk-menu {
+    border-width: 1px 0;
+    border-color: #e1e5ea;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+    margin-bottom: 24px;
+    padding-left: 12px;
+}
+
+#mailhawk-menu li a {
+    padding: 15px 18px 12px;
+    border-bottom: 3px solid transparent;
+    color: #50575e;
+    transition: color .15s, border-color .15s, background-color .15s;
+}
+
+#mailhawk-menu li a .dashicons {
+    color: #8c939b;
+    transition: color .15s;
+}
+
+#mailhawk-menu li a:hover:not(.active) {
+    background-color: transparent;
+    color: #1d2327;
+    border-bottom-color: #d0d7de;
+}
+
+#mailhawk-menu li a.active {
+    background-color: transparent;
+    color: #1d2327;
+    font-weight: 600;
+    border-bottom-color: #68A4DA;
+}
+
+#mailhawk-menu li a.active .dashicons,
+#mailhawk-menu li a:hover .dashicons {
+    color: #68A4DA;
+}
+
+/* Cards */
+.mailhawk-content-box {
+    padding: 24px 28px;
+    border-radius: 10px;
+    border-color: #e1e5ea;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, .06);
+    margin: 0 20px 20px;
+}
+
+.mailhawk-content-box.third,
+.mailhawk-content-box.fourth {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.mailhawk-content-box > h2:first-child,
+.mailhawk-content-box > h3:first-child {
+    margin-top: 0;
+}
+
+.mailhawk-content-box h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.mailhawk-content-box.report {
+    padding: 10px 24px 14px;
+}
+
+/* The stat cards: a small muted title above a big number */
+.mailhawk-content-box.report.third h2,
+.mailhawk-content-box.report.fourth h2 {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #646970;
+}
+
+.report .big-number {
+    font-weight: 600;
+    color: #1d2327;
+    letter-spacing: -.02em;
+}
+
+.report .comparison .percentage {
+    font-size: 16px;
+}
+
+.report .comparison .vs {
+    font-size: 12px;
+}
+
+/* Usage */
+.progress-bar-wrap {
+    height: 14px;
+    border: 0;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(104, 164, 218, .18);
+}
+
+.progress-bar-wrap .progress-bar {
+    height: 14px;
+    min-width: 14px;
+    border-radius: 999px;
+}
+
+.usage-resets {
+    color: #646970;
+}
+
+/* Forms */
+.mailhawk-view-content input[type="text"],
+.mailhawk-view-content input[type="email"],
+.mailhawk-view-content input[type="password"],
+.mailhawk-view-content input[type="number"],
+.mailhawk-view-content input[type="url"],
+.mailhawk-view-content select,
+.mailhawk-view-content textarea {
+    border: 1px solid #cfd6de;
+    border-radius: 6px;
+    box-shadow: none;
+    padding: 6px 12px;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+.mailhawk-view-content input[type="text"],
+.mailhawk-view-content input[type="email"],
+.mailhawk-view-content input[type="password"],
+.mailhawk-view-content input[type="number"],
+.mailhawk-view-content input[type="url"] {
+    min-height: 40px;
+}
+
+.mailhawk-view-content input:focus,
+.mailhawk-view-content select:focus,
+.mailhawk-view-content textarea:focus {
+    border-color: #68A4DA;
+    box-shadow: 0 0 0 3px rgba(104, 164, 218, .25);
+    outline: 0;
+}
+
+.mailhawk-view-content .form-table th {
+    padding-top: 24px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.mailhawk-view-content .form-table td {
+    padding-top: 18px;
+}
+
+.mailhawk-view-content .form-table .description,
+.mailhawk-view-content p.description {
+    color: #646970;
+}
+
+/* Buttons */
+.mailhawk-view-content .button,
+.mailhawk-view-content .button-primary,
+.mailhawk-view-content .button-secondary {
+    min-height: 40px;
+    padding: 0 18px;
+    line-height: 38px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.mailhawk-view-content .button:not(.button-primary) {
+    border-color: #68A4DA;
+    color: #2c6fb0;
+    background: #f6faff;
+}
+
+.mailhawk-view-content .button:not(.button-primary):hover {
+    background: #eaf3fc;
+    border-color: #4a8fcf;
+    color: #1d5a98;
+}
+
+.mailhawk-view-content .button-primary {
+    box-shadow: 0 1px 2px rgba(16, 24, 40, .12);
+}
+
+/* Tables */
+.mailhawk-view-content .wp-list-table {
+    border: 1px solid #e1e5ea;
+    border-radius: 10px;
+    overflow: hidden;
+    border-collapse: separate;
+    border-spacing: 0;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, .06);
+}
+
+.mailhawk-view-content .wp-list-table thead th,
+.mailhawk-view-content .wp-list-table tfoot th,
+.mailhawk-view-content .wp-list-table thead td,
+.mailhawk-view-content .wp-list-table tfoot td {
+    background: #f7f9fb;
+    color: #50575e;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    border-color: #e1e5ea;
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+.mailhawk-view-content .wp-list-table tbody td,
+.mailhawk-view-content .wp-list-table tbody th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eef1f4;
+}
+
+.mailhawk-view-content .wp-list-table tbody tr:last-child td,
+.mailhawk-view-content .wp-list-table tbody tr:last-child th {
+    border-bottom: 0;
+}
+
+.mailhawk-view-content .wp-list-table tbody tr:hover td,
+.mailhawk-view-content .wp-list-table tbody tr:hover th {
+    background: #f9fbfd;
+}
+
+.mailhawk-view-content .wp-list-table.striped > tbody > :nth-child(odd) {
+    background-color: transparent;
+}
+
+.mailhawk-view-content .wp-list-table .no-items td {
+    padding: 36px 12px;
+    text-align: center;
+    color: #646970;
+}
+
+/* Status pills */
+.tag {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.domains .tag.yes {
+    color: #146c2e;
+    background: #e3f5e8;
+}
+
+.domains .tag.no {
+    color: #b42318;
+    background: #fde8e6;
+    font-weight: 600;
+}
+
+.mailhawk-table-wrap .email-sent {
+    color: #146c2e;
+}
+
+.mailhawk-table-wrap .email-failed {
+    color: #b42318;
+}
+
+.mailhawk-table-wrap .email-quarantined {
+    color: #b54708;
+}
+
+/* Danger zone */
+.mailhawk-content-box.danger {
+    border-color: #f1c4c2;
+    background-color: #fff6f5;
+}
+
+.mailhawk-content-box.danger h2,
+.mailhawk-content-box.danger h2 * {
+    color: #b42318;
+}
+
+.mailhawk-content-box.danger * {
+    color: #572422;
+}
+
+.not-sure-dns {
+    border-radius: 0 0 10px 10px;
+}

@@ -44,7 +44,7 @@ $menu_items = [
     <ul>
 		<?php foreach ( $menu_items as $item ) : ?>
 
-			<?php $is_active = get_url_var( 'view' ) === $item['view']; ?>
+			<?php $is_active = get_url_var( 'view', 'overview' ) === $item['view']; ?>
 
             <li><a class="<?php echo $is_active ? 'active' : ''; ?>"
                    href="<?php echo esc_url( mailhawk_admin_page( [ 'view' => $item['view'] ] ) ); ?>"><span
