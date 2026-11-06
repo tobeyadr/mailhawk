@@ -5,9 +5,12 @@
  * Plugin URI: https://mailhawk.io
  * Description: Send better email that will reach the inbox with MailHawk.
  * Version: 1.4.0
+ * Requires at least: 6.9
+ * Requires PHP: 7.1
  * Author: MailHawk Inc.
  * Author URI: http://mailhawk.io
- * License: GPLv3
+ * License: GPLv3 or later
+ * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  *
  * MailHawk is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

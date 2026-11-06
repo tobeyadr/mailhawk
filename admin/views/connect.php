@@ -28,7 +28,7 @@ $form_inputs = [
 		<?php do_action( 'mailhawk_notices' ); ?>
     </div>
     <div class="mailhawk-content-box">
-        <p><?php _e( 'Connect to <b>MailHawk</b> and instantly solve your WordPress email delivery problems. Starts at just <b>$14.97</b>/m.', 'mailhawk' ); ?></p>
+        <p><?php _e( 'Connect to <b>MailHawk</b> and instantly solve your WordPress email delivery problems. Starts at just <b>$1</b>/m.', 'mailhawk' ); ?></p>
         <div style="text-align: center">
             <a id="connect" class="button button-primary big-button"
                href="<?php echo esc_url( add_query_arg( urlencode_deep( $form_inputs ), MAILHAWK_LICENSE_SERVER_URL ) ); ?>">
