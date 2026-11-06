@@ -38,11 +38,15 @@ class Webhook_Listener {
 	public function verify( \WP_REST_Request $request ) {
 
 		$body      = file_get_contents( 'php://input' );
-		$signature = $_SERVER['HTTP_X_POSTAL_SIGNATURE_2'];
+		$signature = (string) $request->get_header( 'x_postal_signature_2' );
+
+		// A request without a signature is not from the MTA
+		if ( $signature === '' ) {
+			return new \WP_Error( 'error', 'Unable to verify request.' );
+		}
 
 		// SHA256
 		$verified = $this->verifier->verify( $body, $signature );
-
 
 		if ( ! $verified ) {
 			return new \WP_Error( 'error', 'Unable to verify request.' );
