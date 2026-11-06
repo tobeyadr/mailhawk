@@ -790,6 +790,25 @@ class Admin {
                 <h1><img title="MailHawk Logo" alt="MailHawk Logo"
                          src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/logo.png' ); ?>"></h1>
 				<?php do_action( 'mailhawk_notices' ); ?>
+				<?php if ( get_url_var( 'view', 'overview' ) === 'overview' ) : ?>
+                    <div class="mailhawk-range">
+                        <span class="dashicons dashicons-calendar-alt" aria-hidden="true"></span>
+                        <label for="report-range"><?php _e( 'Show data for', 'mailhawk' ); ?></label>
+                        <select id="report-range">
+							<?php foreach ( \MailHawk\overview_ranges() as $key => $option ) : ?>
+                                <option value="<?php echo esc_attr( $key ); ?>" <?php selected( (string) $key, \MailHawk\overview_range_key() ); ?>><?php echo esc_html( $option['label'] ); ?></option>
+							<?php endforeach; ?>
+                        </select>
+                    </div>
+                    <script>
+                      // The range is a query arg, so changing it reloads the overview with that range.
+                      document.getElementById('report-range').addEventListener('change', function () {
+                        var url = new URL(window.location.href)
+                        url.searchParams.set('range', this.value)
+                        window.location.href = url.toString()
+                      })
+                    </script>
+				<?php endif; ?>
             </div>
 
 			<?php include __DIR__ . '/menu.php'; ?>

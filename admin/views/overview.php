@@ -2,12 +2,17 @@
 
 use MailHawk\Api\Postal\Reporting;
 use function MailHawk\mailhawk_is_suspended;
+use function MailHawk\overview_range_key;
+use function MailHawk\overview_ranges;
 
 wp_enqueue_script( 'chart-js' );
 
-$days = 14;
+// The range is picked with the dropdown in the menu bar
+$range_key = overview_range_key();
+$range     = overview_ranges()[ $range_key ];
+$periods   = $range['periods'];
 
-$data   = Reporting::query( $days, 'daily' );
+$data   = Reporting::query( $periods * 2, $range['type'] );
 $limits = Reporting::limits();
 
 if ( is_wp_error( $limits ) || is_wp_error( $data ) ) {
@@ -25,22 +30,24 @@ if ( is_wp_error( $limits ) || is_wp_error( $data ) ) {
 $monthly_send_limit = $limits[ array_search( 'monthly_send_limit', wp_list_pluck( $limits, 'type' ) ) ];
 
 $end_time     = strtotime( $data->last_date );
-$graph_data   = array_slice( $data->graph_data, 7, 7 );
-$compare_data = array_slice( $data->graph_data, 0, 7 );
+$graph_data   = array_slice( $data->graph_data, - $periods );
+$compare_data = array_slice( $data->graph_data, 0, - $periods );
 
 $labels = [];
 
-for ( $i = 0; $i < 7; $i ++ ) {
-	$labels[] = date_i18n( get_option( 'date_format' ), $end_time );
-	$end_time -= DAY_IN_SECONDS;
+for ( $i = 0; $i < $periods; $i ++ ) {
+	if ( $range['type'] === 'hourly' ) {
+		$labels[] = wp_date( get_option( 'time_format' ), $end_time );
+		$end_time -= HOUR_IN_SECONDS;
+	} else {
+		$labels[] = date_i18n( get_option( 'date_format' ), $end_time );
+		$end_time -= DAY_IN_SECONDS;
+	}
 }
 
-$sent_data                = [];
-$bounce_data              = [];
-$complaint_data           = [];
-$sent_compare_data        = [];
-$bounce_compare_data      = [];
-$complaint_compare_data   = [];
+$sent_data      = [];
+$bounce_data    = [];
+$complaint_data = [];
 
 // Older MTA builds don't report complaints, in which case the graph has no complaint lines instead of a false zero.
 $has_complaints = isset( $data->graph_data[0]->complaints );
@@ -63,56 +70,43 @@ $bounce_rate_of = function ( $bounces, $sent ) {
 	return $sent > 0 ? round( $bounces / $sent * 100, 2 ) : null;
 };
 
-foreach ( $graph_data as $i => $datum ) {
+foreach ( $graph_data as $datum ) {
 
-	$sent    = $datum->outgoing;
-	$bounces = $datum->bounces;
+	$sent_data[]   = $datum->outgoing;
+	$bounce_data[] = $datum->bounces;
 
-	$sent_data[]                = $sent;
-	$sent_compare_data[]        = $compare_data[ $i ]->outgoing;
-	$bounce_data[]              = $bounces;
-	$bounce_compare_data[]      = $compare_data[ $i ]->bounces;
+	$total_sent    += $datum->outgoing;
+	$total_bounced += $datum->bounces;
 
 	if ( $has_complaints ) {
-		$complaint_data[]         = $datum->complaints;
-		$complaint_compare_data[] = $compare_data[ $i ]->complaints;
-
-		$total_complaints         += $datum->complaints;
-		$compare_complaints       += $compare_data[ $i ]->complaints;
+		$complaint_data[]   = $datum->complaints;
+		$total_complaints += $datum->complaints;
 	}
-
-	$total_sent    += $sent;
-	$total_bounced += $bounces;
 }
 
 // Bounces are part of what was sent, not on top of it: the MTA counts every message it accepts as sent.
 $delivery_rate = $total_sent > 0 ? 100 - $bounce_rate_of( $total_bounced, $total_sent ) : 100;
 
 $config = [
-	'labels'                        => array_reverse( $labels ),
-	'sent'                          => $sent_data,
-	'sent_label'                    => __( 'Sent', 'mailhawk' ),
-	'bounces'                       => $bounce_data,
-	'bounces_label'                 => __( 'Bounces', 'mailhawk' ),
-	'sent_previous_7_days'          => $sent_compare_data,
-	'sent_previous_7_days_label'    => __( 'Sent previous 7 days', 'mailhawk' ),
-	'bounces_previous_7_days'       => $bounce_compare_data,
-	'bounces_previous_7_days_label' => __( 'Bounces previous 7 days', 'mailhawk' ),
-	'complaints'                    => $has_complaints ? $complaint_data : null,
-	'complaints_label'              => __( 'Complaints', 'mailhawk' ),
-	'complaints_previous_7_days'    => $has_complaints ? $complaint_compare_data : null,
-	'complaints_previous_7_days_label' => __( 'Complaints previous 7 days', 'mailhawk' ),
+	'labels'           => array_reverse( $labels ),
+	'sent'             => $sent_data,
+	'sent_label'       => __( 'Sent', 'mailhawk' ),
+	'bounces'          => $bounce_data,
+	'bounces_label'    => __( 'Bounces', 'mailhawk' ),
+	'complaints'       => $has_complaints ? $complaint_data : null,
+	'complaints_label' => __( 'Complaints', 'mailhawk' ),
 ];
 
 $compare_sent    = 0;
 $compare_bounced = 0;
 
 foreach ( $compare_data as $compare_datum ) {
-	$sent    = $compare_datum->outgoing;
-	$bounces = $compare_datum->bounces;
+	$compare_sent    += $compare_datum->outgoing;
+	$compare_bounced += $compare_datum->bounces;
 
-	$compare_sent    += $sent;
-	$compare_bounced += $bounces;
+	if ( $has_complaints ) {
+		$compare_complaints += $compare_datum->complaints;
+	}
 }
 
 $comparisons = [];
@@ -133,7 +127,7 @@ $card_class = $has_complaints ? 'fourth' : 'third';
 
 ?>
 <div class="mailhawk-content-box report">
-    <h2><?php _e( 'Last 7 Days' ); ?></h2>
+    <h2><?php echo esc_html( 'today' === $range_key ? $range['label'] : sprintf( __( 'Last %s', 'mailhawk' ), $range['label'] ) ); ?></h2>
     <div id="graphdata">
         <canvas id="canvas"></canvas>
     </div>
@@ -148,7 +142,7 @@ $card_class = $has_complaints ? 'fourth' : 'third';
 			<?php echo number_format_i18n( $comparisons['sent'], 2 ); ?>%
 	    </span>
         <div class="vs">
-            <span><?php _e( 'vs. Previous 7 Days', 'mailhawk' ); ?></span>
+            <span><?php echo esc_html( $range['compare'] ); ?></span>
         </div>
     </div>
 </div>
@@ -161,7 +155,7 @@ $card_class = $has_complaints ? 'fourth' : 'third';
 		<?php echo number_format_i18n( $comparisons['bounced'], 2 ); ?>%
 		</span>
         <div class="vs">
-            <span><?php _e( 'vs. Previous 7 Days', 'mailhawk' ); ?></span>
+            <span><?php echo esc_html( $range['compare'] ); ?></span>
         </div>
     </div>
 </div>
@@ -175,7 +169,7 @@ $card_class = $has_complaints ? 'fourth' : 'third';
 		<?php echo number_format_i18n( $comparisons['complaints'], 2 ); ?>%
 		</span>
         <div class="vs">
-            <span><?php _e( 'vs. Previous 7 Days', 'mailhawk' ); ?></span>
+            <span><?php echo esc_html( $range['compare'] ); ?></span>
         </div>
     </div>
 </div>
@@ -189,7 +183,7 @@ $card_class = $has_complaints ? 'fourth' : 'third';
 		<?php echo number_format_i18n( $comparisons['deliveries_compare'], 2 ); ?>%
 		</span>
         <div class="vs">
-            <span><?php _e( 'vs. Previous 7 Days', 'mailhawk' ); ?></span>
+            <span><?php echo esc_html( $range['compare'] ); ?></span>
         </div>
     </div>
 </div>
@@ -242,32 +236,12 @@ $card_class = $has_complaints ? 'fourth' : 'third';
           pointHoverRadius: 7,
         },
         {
-          label: config.sent_previous_7_days_label,
-          borderColor: '#68A4DA',
-          pointBackgroundColor: '#68A4DA',
-          backgroundColor: 'rgba(104,164,218,0.20)',
-          data: config.sent_previous_7_days,
-          fill: false,
-          borderDash: [5, 5],
-          pointRadius: 5,
-          pointHoverRadius: 7,
-        },
-        {
           label: config.bounces_label,
           borderColor: '#DA3328',
           pointBackgroundColor: '#DA3328',
           backgroundColor: 'rgba(218,51,40,0.10)',
           data: config.bounces,
           fill: true,
-        },
-        {
-          label: config.bounces_previous_7_days_label,
-          borderColor: '#DA3328',
-          pointBackgroundColor: '#DA3328',
-          backgroundColor: 'rgba(218,51,40,0.10)',
-          data: config.bounces_previous_7_days,
-          fill: false,
-          borderDash: [5, 5],
         },
       ],
     },
@@ -312,15 +286,6 @@ $card_class = $has_complaints ? 'fourth' : 'third';
         backgroundColor: 'rgba(142,91,208,0.10)',
         data: config.complaints,
         fill: true,
-      },
-      {
-        label: config.complaints_previous_7_days_label,
-        borderColor: '#8E5BD0',
-        pointBackgroundColor: '#8E5BD0',
-        backgroundColor: 'rgba(142,91,208,0.10)',
-        data: config.complaints_previous_7_days,
-        fill: false,
-        borderDash: [5, 5],
       }
     )
   }

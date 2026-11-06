@@ -230,6 +230,32 @@ function get_url_var( $key = '', $default = false ) {
 }
 
 /**
+ * The ranges the overview graph can show: the number of periods, and whether a period is an hour or a day. Today is the
+ * last 24 hours, hour by hour. Everything is compared with the equally long range before it.
+ *
+ * @return array[]
+ */
+function overview_ranges() {
+	return [
+		'today' => [ 'periods' => 24, 'type' => 'hourly', 'label' => __( 'Today', 'mailhawk' ), 'compare' => __( 'vs. Previous 24 Hours', 'mailhawk' ) ],
+		'7'     => [ 'periods' => 7, 'type' => 'daily', 'label' => __( '7 days', 'mailhawk' ), 'compare' => __( 'vs. Previous 7 Days', 'mailhawk' ) ],
+		'14'    => [ 'periods' => 14, 'type' => 'daily', 'label' => __( '14 days', 'mailhawk' ), 'compare' => __( 'vs. Previous 14 Days', 'mailhawk' ) ],
+		'30'    => [ 'periods' => 30, 'type' => 'daily', 'label' => __( '30 days', 'mailhawk' ), 'compare' => __( 'vs. Previous 30 Days', 'mailhawk' ) ],
+	];
+}
+
+/**
+ * The key of the overview range in the URL, 7 days if it is missing or unknown
+ *
+ * @return string
+ */
+function overview_range_key() {
+	$key = (string) get_url_var( 'range', '7' );
+
+	return isset( overview_ranges()[ $key ] ) ? $key : '7';
+}
+
+/**
  * Convert array to HTML tag attributes
  *
  * @param $atts
