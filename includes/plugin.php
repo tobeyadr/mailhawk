@@ -165,6 +165,7 @@ class Plugin {
 		new Quarantine();
 		new Spam_Complaints();
 		new Privacy();
+		new Abilities\Abilities();
 	}
 
 	/**
