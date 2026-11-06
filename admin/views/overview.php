@@ -35,29 +35,47 @@ for ( $i = 0; $i < 7; $i ++ ) {
 	$end_time -= DAY_IN_SECONDS;
 }
 
-$sent_data           = [];
-$bounce_data         = [];
-$sent_compare_data   = [];
-$bounce_compare_data = [];
+$sent_data                = [];
+$bounce_data              = [];
+$bounce_rate_data         = [];
+$sent_compare_data        = [];
+$bounce_compare_data      = [];
+$bounce_rate_compare_data = [];
 
 $total_sent    = 0;
 $total_bounced = 0;
+
+/**
+ * Bounces as a percentage of the messages sent. null for a day with nothing sent, so the graph leaves a gap there
+ * instead of drawing a false 0%.
+ *
+ * @param int $bounces
+ * @param int $sent
+ *
+ * @return float|null
+ */
+$bounce_rate_of = function ( $bounces, $sent ) {
+	return $sent > 0 ? round( $bounces / $sent * 100, 2 ) : null;
+};
 
 foreach ( $graph_data as $i => $datum ) {
 
 	$sent    = $datum->outgoing;
 	$bounces = $datum->bounces;
 
-	$sent_data[]           = $sent;
-	$sent_compare_data[]   = $compare_data[ $i ]->outgoing;
-	$bounce_data[]         = $bounces;
-	$bounce_compare_data[] = $compare_data[ $i ]->bounces;
+	$sent_data[]                = $sent;
+	$sent_compare_data[]        = $compare_data[ $i ]->outgoing;
+	$bounce_data[]              = $bounces;
+	$bounce_compare_data[]      = $compare_data[ $i ]->bounces;
+	$bounce_rate_data[]         = $bounce_rate_of( $bounces, $sent );
+	$bounce_rate_compare_data[] = $bounce_rate_of( $compare_data[ $i ]->bounces, $compare_data[ $i ]->outgoing );
 
 	$total_sent    += $sent;
 	$total_bounced += $bounces;
 }
 
-$delivery_rate = ( $total_sent / ( $total_bounced + $total_sent ?: 1 ) ) * 100;
+// Bounces are part of what was sent, not on top of it: the MTA counts every message it accepts as sent.
+$delivery_rate = $total_sent > 0 ? 100 - $bounce_rate_of( $total_bounced, $total_sent ) : 100;
 
 $config = [
 	'labels'                        => array_reverse( $labels ),
@@ -69,6 +87,12 @@ $config = [
 	'sent_previous_7_days_label'    => __( 'Sent previous 7 days', 'mailhawk' ),
 	'bounces_previous_7_days'       => $bounce_compare_data,
 	'bounces_previous_7_days_label' => __( 'Bounces previous 7 days', 'mailhawk' ),
+	'bounce_rate'                   => $bounce_rate_data,
+	'bounce_rate_label'             => __( 'Bounce rate', 'mailhawk' ),
+	'bounce_rate_previous_7_days'   => $bounce_rate_compare_data,
+	'bounce_rate_previous_7_days_label' => __( 'Bounce rate previous 7 days', 'mailhawk' ),
+	'messages_axis_label'           => __( 'Messages', 'mailhawk' ),
+	'bounce_rate_axis_label'        => __( 'Bounce rate (%)', 'mailhawk' ),
 ];
 
 $compare_sent    = 0;
@@ -88,7 +112,7 @@ $comparisons['sent']                  = abs( ( $total_sent - $compare_sent ) / (
 $comparisons['sent_is_up']            = $compare_sent < $total_sent;
 $comparisons['bounced']               = abs( ( ( $total_bounced - $compare_bounced ) / ( $total_bounced ?: 1 ) ) * 100 );
 $comparisons['bounced_is_down']       = $total_bounced < $compare_bounced;
-$comparisons['compare_delivery_rate'] = ( $compare_sent / ( $compare_bounced + $compare_sent ?: 1 ) ) * 100;
+$comparisons['compare_delivery_rate'] = $compare_sent > 0 ? 100 - $bounce_rate_of( $compare_bounced, $compare_sent ) : 100;
 $comparisons['deliveries_compare']    = abs( $delivery_rate - $comparisons['compare_delivery_rate'] );
 $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_delivery_rate'];
 
@@ -206,6 +230,28 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
           fill: false,
           borderDash: [5, 5],
         },
+        // The bounce rate is a percentage, so it has its own axis on the right.
+        {
+          label: config.bounce_rate_label,
+          yAxisID: 'rate',
+          borderColor: '#E8A33D',
+          pointBackgroundColor: '#E8A33D',
+          data: config.bounce_rate,
+          fill: false,
+          lineTension: 0,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        },
+        {
+          label: config.bounce_rate_previous_7_days_label,
+          yAxisID: 'rate',
+          borderColor: '#E8A33D',
+          pointBackgroundColor: '#E8A33D',
+          data: config.bounce_rate_previous_7_days,
+          fill: false,
+          lineTension: 0,
+          borderDash: [5, 5],
+        },
       ],
     },
     options: {
@@ -218,6 +264,17 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
       tooltips: {
         mode: 'index',
         intersect: true,
+        callbacks: {
+          label: function (item, data) {
+            var dataset = data.datasets[item.datasetIndex]
+            var value = dataset.data[item.index]
+            if (value === null) {
+              return dataset.label + ': –'
+            }
+            // the rate datasets are the ones on the right hand axis
+            return dataset.label + ': ' + (dataset.yAxisID === 'rate' ? value + '%' : value)
+          },
+        },
       },
       hover: {
         mode: 'nearest',
@@ -231,7 +288,23 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
         ],
         yAxes: [
           {
+            id: 'count',
+            position: 'left',
             display: true,
+            scaleLabel: { display: true, labelString: config.messages_axis_label },
+            ticks: { beginAtZero: true },
+          },
+          {
+            id: 'rate',
+            position: 'right',
+            display: true,
+            scaleLabel: { display: true, labelString: config.bounce_rate_axis_label },
+            ticks: {
+              beginAtZero: true,
+              callback: function (value) { return value + '%' },
+            },
+            // one set of grid lines is enough
+            gridLines: { drawOnChartArea: false },
           },
         ],
       },
