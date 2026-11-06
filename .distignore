@@ -22,3 +22,4 @@ webpack.config.js
 wp-cli.phar
 wp-cli.yml
 
+/docs

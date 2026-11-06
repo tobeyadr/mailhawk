@@ -22,3 +22,4 @@
 /webpack.config.js export-ignore
 /wp-cli.phar export-ignore
 /wp-cli.yml export-ignore
+/docs export-ignore

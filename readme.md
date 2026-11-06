@@ -73,6 +73,10 @@ MailHawk provides SPF and DKIM authentication methods. This will drastically imp
 
 Protect your sender reputation before it gets damaged. MailHawk assesses each recipient before an email is sent, and holds emails that are likely to bounce or be reported as spam in quarantine instead of sending them. You are emailed when something is quarantined, then you can release the email to send it, or reject it so it never sends. [Learn more about email quarantine](https://mailhawk.io/email-quarantine/).
 
+## 🤖 AI ASSISTANTS & AUTOMATION
+
+MailHawk registers its tools with the WordPress Abilities API, so an AI assistant or automation you have connected to your site (for example through the WordPress MCP adapter) can check your sending health, read the reports, add and check domains, search the email log, review the quarantine, and manage recipients and settings, with the same permissions as an administrator. Your API key and license are never exposed, and deleting a domain has to be confirmed. Nothing is available until you connect an assistant, and a filter turns it off. See the [abilities reference](docs/abilities.md).
+
 ## 📫 EMAIL LOGGING
 
 Keep track of your emails and debug email sending failures! You can resend emails, retry failed emails and even see which emails bounced! If you ever need to prove an email was sent you can check the log for up to 14 days after the email was sent! View content, headers and even the raw MIME message if you need to.

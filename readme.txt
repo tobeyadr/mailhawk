@@ -89,6 +89,10 @@ MailHawk provides SPF and DKIM authentication methods. This will drastically imp
 
 Protect your sender reputation before it gets damaged. MailHawk assesses each recipient before an email is sent, and holds emails that are likely to bounce or be reported as spam in quarantine instead of sending them. You are emailed when something is quarantined, then you can release the email to send it, or reject it so it never sends. [Learn more about email quarantine](https://mailhawk.io/email-quarantine/).
 
+## 🤖 AI ASSISTANTS & AUTOMATION
+
+MailHawk registers its tools with the WordPress Abilities API, so an AI assistant or automation you have connected to your site (for example through the WordPress MCP adapter) can check your sending health, read the reports, add and check domains, search the email log, review the quarantine, and manage recipients and settings, with the same permissions as an administrator. Your API key and license are never exposed, and deleting a domain has to be confirmed. Nothing is available until you connect an assistant, and a filter turns it off.
+
 ## 📫 EMAIL LOGGING
 
 Keep track of your emails and debug email sending failures! You can resend emails, retry failed emails and even see which emails bounced! If you ever need to prove an email was sent you can check the log for up to 14 days after the email was sent! View content, headers and even the raw MIME message if you need to.
@@ -168,15 +172,26 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * ADDED When Groundhogg is active, contacts who report an email as spam are marked as complained, and the site owner is emailed a digest of new complaints.
 * ADDED Choose the date range of the overview graph and cards from a new "Show data for" dropdown with Today, 7, 14, and 30 day options.
 * ADDED The overview now shows when the monthly usage resets.
+* ADDED MailHawk remembers the addresses that bounce or report spam, and the addresses you trust. Emails to risky recipients are held in quarantine, and an address you trust is never held.
+* ADDED Release a quarantined email and trust its recipients in one click. People who reported spam are released but never trusted.
+* ADDED A Recipients screen to see, trust, and forget the addresses MailHawk keeps track of.
+* ADDED MailHawk is connected to the WordPress privacy tools. Personal data exports include the emails sent to a person and what MailHawk knows about their address, erasure requests remove them, and suggested text is added to your privacy policy.
+* ADDED 20 abilities for the WordPress Abilities API, so AI assistants and automations can check MailHawk's status and reports, manage sending domains, search the email log, review the quarantine, manage recipients, and change settings. Your API key and license are never exposed.
+* ADDED A card on the overview about Groundhogg for sites that do not use it yet.
 * IMPROVED Redesigned the MailHawk admin with a cleaner navigation, cards, tables, status labels, and forms. Destructive buttons are now red.
 * IMPROVED The Delivery Rate on the overview no longer counts bounced emails twice.
+* IMPROVED The connect and setup screens explain what connecting does, and finish with the DNS records for the domains you registered.
+* IMPROVED Quarantined emails are kept longer than the rest of the log, and the review request is only shown to sites whose email is being delivered well.
 * TWEAKED Webhooks can now be received in batches, which reduces the number of requests the MailHawk service makes to your site. Existing sites are switched over by the database update, so run it when prompted.
 * TWEAKED The MailHawk connection is now confirmed with the MailHawk service before the site is counted, and an empty response is treated as a failed connection.
 * SECURITY Fixed an SQL injection in the email log sort order.
 * SECURITY The email preview is now sandboxed so message content can no longer run scripts in the admin.
 * SECURITY Added missing output escaping across the admin views and notices.
 * SECURITY Webhook requests that arrive without a signature are now rejected.
+* SECURITY The key that connects your site to MailHawk now comes from a secure random source, and the connect request can only be answered once.
 * FIXED The check that triggers database updates compared the wrong value and now validates the requested action correctly.
+* FIXED Counts in the email log could be out of date after a change within the same request.
+* DEV New filters `mailhawk/abilities/enabled` to turn the abilities off, and `mailhawk/quarantine_threshold` to change how risky a recipient has to be before email to them is held. Actions `mailhawk/abilities/register_categories` and `mailhawk/abilities/register_abilities` let add-ons register their own.
 * DEV New `mailhawk/spam_complaint` action, fired with the recipient address, message ID, and complaint details when a recipient reports an email as spam.
 * UPDATED MailHawk now requires WordPress 6.9 and PHP 7.1, and has been tested up to WordPress 7.1.
 * UPDATED Removed the unused PHPMailer dependency and moved PHPUnit to development dependencies.
