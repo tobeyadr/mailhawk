@@ -37,6 +37,23 @@ class Keys {
 	}
 
 	/**
+	 * A random position, unpredictable because these keys protect the connection to MailHawk
+	 *
+	 * @param int $count how many positions there are
+	 *
+	 * @return int
+	 */
+	protected function random_index( $count ) {
+
+		try {
+			return random_int( 0, $count - 1 );
+		} catch ( \Exception $e ) {
+			// No secure source of randomness, WordPress knows the next best thing
+			return wp_rand( 0, $count - 1 );
+		}
+	}
+
+	/**
 	 * Generate a public key
 	 *
 	 * @param int $length
@@ -58,7 +75,7 @@ class Keys {
 		$characters    = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 		$random_string = '';
 		for ( $i = 0; $i < $length; $i ++ ) {
-			$random_string .= $characters[ rand( 0, strlen( $characters ) - 1 ) ];
+			$random_string .= $characters[ $this->random_index( strlen( $characters ) ) ];
 		}
 
 		return $random_string;
@@ -144,7 +161,34 @@ class Keys {
 	 * @return string
 	 */
 	public function state() {
-		return $this->get_temp_key( 'mailhawk_state', HOUR_IN_SECONDS, 10 );
+		return $this->get_temp_key( 'mailhawk_state', HOUR_IN_SECONDS, 32 );
+	}
+
+	/**
+	 * Check the state MailHawk sent back, and use it up so the same return can't be replayed
+	 *
+	 * @param string $state
+	 *
+	 * @return bool
+	 */
+	public function consume_state( $state ) {
+
+		$stored = get_user_meta( get_current_user_id(), 'mailhawk_state', true );
+
+		if ( ! is_string( $state ) || ! is_array( $stored ) ) {
+			return false;
+		}
+
+		$value      = (string) ( $stored['value'] ?? '' );
+		$expiration = (int) ( $stored['expiration'] ?? 0 );
+
+		if ( $value === '' || $expiration <= time() || ! hash_equals( $value, $state ) ) {
+			return false;
+		}
+
+		delete_user_meta( get_current_user_id(), 'mailhawk_state' );
+
+		return true;
 	}
 
 	/**
