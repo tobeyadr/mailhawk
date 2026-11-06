@@ -11,7 +11,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="x-apple-disable-message-reformatting"/>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title><?php esc_html_e( $subject ); ?></title>
+    <title><?php echo esc_html( $subject ); ?></title>
     <base target="_blank">
     <style id="global-styles">
         img {
@@ -146,8 +146,8 @@
                                     <td id="b-04cd15ed-ff22-4d67-8d54-897be6ba9dc2" bgcolor="#ffffff" background="" valign="top"
                                         style="padding: 30px; border-radius: 10px; background-color: rgb(255, 255, 255); overflow: hidden;">
                                         <p>Hello admin!</p>
-                                        <p>To prevent damage to your sender reputation MailHawk has quarantined <b><?php _e( number_format_i18n( $count_quarantined ) ); ?></b> emails
-                                            on <b><a href="<?php echo esc_url( home_url() ) ?>"><?php _e( \MailHawk\home_url_no_scheme() ) ?></a></b>.</p>
+                                        <p>To prevent damage to your sender reputation MailHawk has quarantined <b><?php echo esc_html( number_format_i18n( $count_quarantined ) ); ?></b> <?php echo esc_html( _n( 'email', 'emails', $count_quarantined, 'mailhawk' ) ); ?>
+                                            on <b><a href="<?php echo esc_url( home_url() ) ?>"><?php echo esc_html( \MailHawk\home_url_no_scheme() ) ?></a></b>.</p>
                                         <p>MailHawk <a href="https://mailhawk.io/email-quarantine/">predicts and quarantines emails</a> that <i>if sent</i> may bounce, cause complaints, or otherwise harm your sender reputation.</p>
                                         <p>These emails can be released and sent manually in just a few clicks from the MailHawk dashboard.</p>
                                         <p>Please take the following steps to either release or reject the quarantined emails...</p>
@@ -158,7 +158,7 @@
                                             <li><b style="color: #aa0000;">Reject</b> any emails that seem suspicious or have unverified recipients.</li>
                                         </ol>
                                         <p><a href="<?php echo esc_url( \MailHawk\mailhawk_admin_page( [ 'view' => 'log', 'status' => 'quarantine' ] ) ) ?>">Review quarantined emails now!</a></p>
-                                        <p>Unreleased emails will automatically be deleted within <?php _e( \MailHawk\get_log_retention_days() ) ?> days of being quarantined.</p>
+                                        <p>Unreleased emails will automatically be deleted <?php echo esc_html( \MailHawk\get_quarantine_retention_days() ) ?> days after being quarantined.</p>
                                         <p>If you have any questions or feedback about the quarantine system, please <a href="https://mailhawk.io/contact/">let us know.</a></p>
                                         <p><i>~ The MailHawk Team</i></p>
                                     </td>

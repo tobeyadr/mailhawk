@@ -11,7 +11,6 @@ class Cron_Events {
 		add_action( 'init', [ $this, 'register_events' ] );
 
 		add_action( 'mailhawk_trim_log_entries', [ $this, 'trim_log_entries' ] );
-		add_action( 'mailhawk_trim_blacklist_entries', [ $this, 'trim_blacklist_entries' ] );
 		add_action( 'mailhawk_retry_failed_emails', [ $this, 'retry_failed_emails' ] );
 	}
 
@@ -42,18 +41,14 @@ class Cron_Events {
 
 		global $wpdb;
 
-		$retention_in_days = get_log_retention_days();
-		$log               = Plugin::instance()->log;
-		$compare_date      = date( 'Y-m-d H:i:s', strtotime( $retention_in_days . ' days ago' ) );
+		$table                = Plugin::instance()->log->get_table_name();
+		$compare_date         = date( 'Y-m-d H:i:s', strtotime( get_log_retention_days() . ' days ago' ) );
+		$quarantine_threshold = date( 'Y-m-d H:i:s', strtotime( get_quarantine_retention_days() . ' days ago' ) );
 
-		$wpdb->query( "DELETE from {$log->get_table_name()} WHERE `date_sent` <= '{$compare_date}'" );
-	}
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE `status` != 'quarantine' AND `date_sent` <= %s", $compare_date ) );
 
-	/**
-	 * Trim any old blacklist entries
-	 */
-	public function trim_blacklist_entries() {
-
+		// Quarantined emails are waiting on an admin, so they are kept longer
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE `status` = 'quarantine' AND `date_sent` <= %s", $quarantine_threshold ) );
 	}
 
 	/**

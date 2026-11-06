@@ -53,10 +53,22 @@ class Updater extends \MailHawk\Utils\Updater{
 	}
 
 	/**
-	 * Subscribe to spam complaints, and have the MTA send webhook events in batches
+	 * Subscribe to spam complaints, and have the MTA send webhook events in batches. Add the recipients table, trusted
+	 * addresses and the bounces and complaints reported for them, and drop the old email addresses table, which
+	 * nothing has read or written for a long time
 	 */
 	public function version_1_4_0(){
 		Webhooks::update( get_rest_api_webhook_listener_uri(), false, get_webhook_events(), get_webhook_batch_interval() );
+
+		Plugin::instance()->recipients->create_table();
+
+		global $wpdb;
+
+		$table = ( is_mailhawk_network_active() ? $wpdb->base_prefix : $wpdb->prefix ) . 'mh_email_addresses';
+
+		$wpdb->query( "DROP TABLE IF EXISTS `{$table}`" );
+
+		delete_option( $table . '_db_version' );
 	}
 }
 

@@ -3,6 +3,7 @@
 namespace MailHawk;
 
 use MailHawk\Api\Postal\Reporting;
+use MailHawk\DB\Recipients;
 use WP_Error;
 
 /**
@@ -43,115 +44,8 @@ function get_hostname( $url = '' ) {
 	return wp_parse_url( $url, PHP_URL_HOST );
 }
 
-/**
- * Get the email address status
- *
- * @param $email_address
- *
- * @return bool
- */
-function get_email_status( $email_address ) {
-
-	$email_obj = Plugin::instance()->emails->get_by( 'email', $email_address );
-
-	// If not a valid status, return false;
-	if ( ! $email_obj ) {
-		return false;
-	}
-
-	return $email_obj->status;
-}
-
 function get_email_hostname( $email_address ) {
 	return explode( '@', $email_address )[1];
-}
-
-/**
- * Test whether an email address is valid.
- *
- * @param $email_address string an email address
- *
- * @return bool
- */
-function is_valid_email( $email_address ) {
-
-	if ( ! is_email( $email_address ) ) {
-		return false;
-	}
-
-
-//	if ( get_email_hostname( $email_address ) ) {
-//
-//	}
-
-	$global_email = sprintf( '*@%s', substr( $email_address, strpos( $email_address, '@' ) + 1 ) );
-
-	// If we have previously validated the email address...
-	if ( Plugin::instance()->emails->exists( $email_address ) ) {
-
-		$status = get_email_status( $email_address );
-
-		if ( in_array( $status, get_valid_email_stati() ) ) {
-			// Email status is valid, therefore we are OKAY
-			return true;
-		}
-
-		// If not a valid status, return false;
-		return false;
-
-		// Check global email is available...
-	} else if ( Plugin::instance()->emails->exists( $global_email ) ) {
-
-		$status = get_email_status( $global_email );
-
-		if ( in_array( $status, get_valid_email_stati() ) ) {
-			// Email status is valid, therefore we are OKAY
-			return true;
-		}
-
-		// If not a valid status, return false;
-		return false;
-
-	}
-
-	// Todo: enable this when we have email validation in place.
-//	// If the account supports validating email addresses.
-//	if ( Api_Helper::instance()->is_connected_for_validation() ) {
-//		// Do validation
-//
-//		$result = Api_Helper::instance()->validate_email_address( $email_address );
-//
-//		if ( is_wp_error( $result ) ) {
-//			// API failed, assume email is valid.
-//			return true;
-//		}
-//
-//		$status = $result['status'];
-//
-//		Plugin::instance()->emails->add( [
-//			'email'  => sanitize_email( $email_address ),
-//			'status' => sanitize_key( $status )
-//		] );
-//
-//		if ( ! in_array( $status, get_valid_email_stati() ) ) {
-//			return false;
-//		}
-//
-//	}
-
-	return true;
-}
-
-/**
- * Get any valid email stati
- *
- * @return array
- */
-function get_valid_email_stati() {
-	return [
-		'valid',
-		'whitelist'
-	];
 }
 
 /**
@@ -413,6 +307,353 @@ function set_mailhawk_is_suspended( $suspened = true ) {
 }
 
 /**
+ * Whether the site connected but never finished the setup. Sites that connected before setup was tracked are not
+ * flagged, they have no value saved.
+ *
+ * @return bool
+ */
+function is_mailhawk_setup_incomplete() {
+	return get_option( 'mailhawk_setup_complete' ) === 'no';
+}
+
+/**
+ * Remember that the setup after connecting is done, or that it still has to be
+ *
+ * @param bool $complete
+ *
+ * @return bool
+ */
+function set_mailhawk_setup_complete( $complete = true ) {
+	return update_option( 'mailhawk_setup_complete', $complete ? 'yes' : 'no' );
+}
+
+/**
+ * Why the webhook could not be registered with the MTA. Without it bounces and spam complaints never reach the site.
+ *
+ * @return string empty when the webhook is registered
+ */
+function get_mailhawk_webhook_error() {
+	return (string) get_option( 'mailhawk_webhook_error', '' );
+}
+
+/**
+ * @param string $error the reason registering failed, or empty once it worked
+ *
+ * @return void
+ */
+function set_mailhawk_webhook_error( $error = '' ) {
+
+	if ( $error === '' ) {
+		delete_option( 'mailhawk_webhook_error' );
+
+		return;
+	}
+
+	update_option( 'mailhawk_webhook_error', sanitize_text_field( $error ), false );
+}
+
+/**
+ * The admin notices that can be dismissed for a while
+ *
+ * @return string[]
+ */
+function get_dismissible_notices() {
+	return [ 'connect', 'setup', 'review', 'groundhogg' ];
+}
+
+/**
+ * Hide a notice for the user until the dismissal runs out
+ *
+ * @param string $notice
+ * @param int    $user_id
+ *
+ * @return bool
+ */
+function dismiss_notice( $notice, $user_id = 0 ) {
+
+	if ( ! in_array( $notice, get_dismissible_notices(), true ) ) {
+		return false;
+	}
+
+	return (bool) update_user_meta( $user_id ?: get_current_user_id(), 'mailhawk_dismissed_' . $notice, time() );
+}
+
+/**
+ * Whether the user dismissed the notice. The notices about connecting come back after a week, because a site that is
+ * not connected is not sending the way its owner expects. Asking for a review and suggesting Groundhogg do not come
+ * back, when someone says not to show it again it is final. The days can be changed with the
+ * mailhawk/notice_dismissal_days filter, 0 is for good.
+ *
+ * @param string $notice
+ * @param int    $user_id
+ *
+ * @return bool
+ */
+function is_notice_dismissed( $notice, $user_id = 0 ) {
+
+	$dismissed_at = absint( get_user_meta( $user_id ?: get_current_user_id(), 'mailhawk_dismissed_' . $notice, true ) );
+
+	if ( ! $dismissed_at ) {
+		return false;
+	}
+
+	$days = absint( apply_filters( 'mailhawk/notice_dismissal_days', in_array( $notice, [ 'review', 'groundhogg' ], true ) ? 0 : 7, $notice ) );
+
+	return 0 === $days || $dismissed_at > time() - ( $days * DAY_IN_SECONDS );
+}
+
+/**
+ * Where WordPress shows what Groundhogg is, with a way to install it. It is the modal the Plugins screen opens, so it
+ * is meant for a link with the thickbox and open-plugin-details-modal classes.
+ *
+ * @return string
+ */
+function get_groundhogg_details_url() {
+	return self_admin_url( 'plugin-install.php?tab=plugin-information&plugin=groundhogg&TB_iframe=true&width=772&height=600' );
+}
+
+/**
+ * Whether to suggest Groundhogg to the current user. It only makes sense to someone who can install it, and who does
+ * not have it or said not to show the suggestion again.
+ *
+ * @return bool
+ */
+function should_suggest_groundhogg() {
+	return current_user_can( 'install_plugins' ) && ! is_groundhogg_active() && ! is_notice_dismissed( 'groundhogg' );
+}
+
+/**
+ * How the site sent over the last 30 days, from the MTA's numbers and from the email log. It is checked on every
+ * MailHawk screen, so it is kept for a few hours. When the numbers can't be had that is kept for a few minutes only.
+ *
+ * @param bool $refresh skip the saved numbers
+ *
+ * @return array{sent: int, bounces: int, complaints: int, logged: int, failed: int}|null null when the MTA can't be reached
+ */
+function get_sending_health( $refresh = false ) {
+
+	if ( ! $refresh ) {
+		$cached = get_transient( 'mailhawk_sending_health' );
+
+		if ( is_array( $cached ) ) {
+			return $cached['health'];
+		}
+	}
+
+	$data = Reporting::query( 30, 'daily' );
+
+	if ( is_wp_error( $data ) || ! isset( $data->graph_data ) || ! is_array( $data->graph_data ) ) {
+		set_transient( 'mailhawk_sending_health', [ 'health' => null ], 5 * MINUTE_IN_SECONDS );
+
+		return null;
+	}
+
+	$health = [
+		'sent'       => 0,
+		'bounces'    => 0,
+		'complaints' => 0,
+		'logged'     => 0,
+		'failed'     => 0,
+	];
+
+	foreach ( array_slice( $data->graph_data, - 30 ) as $datum ) {
+		$health['sent']       += absint( $datum->outgoing ?? 0 );
+		$health['bounces']    += absint( $datum->bounces ?? 0 );
+		// Older MTA builds don't report complaints
+		$health['complaints'] += absint( $datum->complaints ?? 0 );
+	}
+
+	// What failed on this site before it ever reached the MTA, those sends never show up in the MTA's numbers
+	global $wpdb;
+
+	$table = Plugin::instance()->log->get_table_name();
+	$since = date( 'Y-m-d H:i:s', strtotime( '30 days ago' ) );
+	$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT `status`, COUNT(*) AS total FROM {$table} WHERE `date_sent` >= %s GROUP BY `status`", $since ) );
+
+	foreach ( (array) $rows as $row ) {
+
+		// Quarantined emails were held back on purpose, they are not a delivery problem
+		if ( 'quarantine' === $row->status ) {
+			continue;
+		}
+
+		$health['logged'] += absint( $row->total );
+
+		if ( 'failed' === $row->status ) {
+			$health['failed'] += absint( $row->total );
+		}
+	}
+
+	set_transient( 'mailhawk_sending_health', [ 'health' => $health ], 6 * HOUR_IN_SECONDS );
+
+	return $health;
+}
+
+/**
+ * Whether the site is using MailHawk well enough to be asked for a review. Someone whose email is bouncing, being
+ * reported as spam or failing to send has no reason to leave a good one, so they are not asked. Neither are sites that
+ * barely send, they have not had the chance to see what MailHawk does. Every limit can be changed with a filter:
+ * mailhawk/review/min_sent, mailhawk/review/max_bounce_rate, mailhawk/review/max_complaint_rate and
+ * mailhawk/review/max_failed_rate, all percentages except the first.
+ *
+ * @return bool
+ */
+function is_review_eligible() {
+
+	if ( ! mailhawk_is_connected() || mailhawk_is_suspended() || is_mailhawk_setup_incomplete() || '' !== get_mailhawk_webhook_error() ) {
+		return false;
+	}
+
+	$health = get_sending_health();
+
+	if ( ! $health || $health['sent'] < absint( apply_filters( 'mailhawk/review/min_sent', 100 ) ) ) {
+		return false;
+	}
+
+	$sent = $health['sent'];
+
+	if ( $health['bounces'] / $sent * 100 > (float) apply_filters( 'mailhawk/review/max_bounce_rate', 5.0 ) ) {
+		return false;
+	}
+
+	if ( $health['complaints'] / $sent * 100 > (float) apply_filters( 'mailhawk/review/max_complaint_rate', 0.1 ) ) {
+		return false;
+	}
+
+	// Without a log there is nothing to judge the failures by
+	if ( $health['logged'] > 0 && $health['failed'] / $health['logged'] * 100 > (float) apply_filters( 'mailhawk/review/max_failed_rate', 5.0 ) ) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * The domains to register while setting up, from the email addresses the customer picked. Free inbox providers
+ * (gmail.com and the like) are left out, nobody can add DNS records to authenticate them.
+ *
+ * @param string[] $emails
+ *
+ * @return array{domains: string[], free: string[]} the domains, and the addresses that were left out
+ */
+function get_setup_domains( array $emails ) {
+
+	$domains = [];
+	$free    = [];
+
+	foreach ( $emails as $email ) {
+
+		$email = sanitize_email( (string) $email );
+
+		if ( ! is_email( $email ) ) {
+			continue;
+		}
+
+		if ( is_free_email_provider( $email ) ) {
+			$free[] = $email;
+			continue;
+		}
+
+		$domain = strtolower( get_email_address_hostname( $email ) );
+
+		if ( ! in_array( $domain, $domains, true ) ) {
+			$domains[] = $domain;
+		}
+	}
+
+	return [
+		'domains' => $domains,
+		'free'    => array_values( array_unique( $free ) ),
+	];
+}
+
+/**
+ * The domains that were registered while setting up, so the next step is about these and not every domain the
+ * account has.
+ *
+ * @return string[]
+ */
+function get_setup_domain_names() {
+	return array_values( array_filter( (array) get_option( 'mailhawk_setup_domains', [] ), 'is_string' ) );
+}
+
+/**
+ * Remember the domains that were registered while setting up
+ *
+ * @param string[] $names an empty list forgets them
+ *
+ * @return bool
+ */
+function set_setup_domain_names( array $names = [] ) {
+
+	if ( empty( $names ) ) {
+		return delete_option( 'mailhawk_setup_domains' );
+	}
+
+	return update_option( 'mailhawk_setup_domains', array_values( array_unique( array_map( 'strtolower', $names ) ) ), false );
+}
+
+/**
+ * Whether the domain has the SPF and DKIM records that make its email trusted
+ *
+ * @param object $domain a domain from the MTA
+ *
+ * @return bool
+ */
+function is_domain_authenticated( $domain ) {
+	return ( $domain->spf->spf_status ?? '' ) === 'OK' && ( $domain->dkim->dkim_status ?? '' ) === 'OK';
+}
+
+/**
+ * Of the domains from the MTA, the ones in the list that still need DNS records
+ *
+ * @param string[]      $names   the domains to look at
+ * @param object[]|mixed $domains the domains from the MTA, anything else is treated as none
+ *
+ * @return object[]
+ */
+function get_domains_needing_dns( array $names, $domains ) {
+
+	$names  = array_map( 'strtolower', $names );
+	$result = [];
+
+	foreach ( is_array( $domains ) ? $domains : [] as $domain ) {
+
+		if ( ! is_object( $domain ) || ! in_array( strtolower( (string) ( $domain->name ?? '' ) ), $names, true ) ) {
+			continue;
+		}
+
+		if ( ! is_domain_authenticated( $domain ) ) {
+			$result[] = $domain;
+		}
+	}
+
+	return $result;
+}
+
+/**
+ * Whether activating the plugin should take the customer straight to connecting. Only for a single activation from
+ * the plugins screen, not for bulk, network, CLI or ajax activations that nobody is watching.
+ *
+ * @param string $plugin  the plugin that was just activated
+ * @param string $request the action of the request, activate for a single activation
+ *
+ * @return bool
+ */
+function should_redirect_to_connect_after_activation( $plugin, $request ) {
+
+	if ( $plugin !== plugin_basename( MAILHAWK__FILE__ ) || 'activate' !== $request ) {
+		return false;
+	}
+
+	if ( is_network_admin() || wp_doing_ajax() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+		return false;
+	}
+
+	return ! mailhawk_is_connected() && current_user_can( 'manage_options' );
+}
+
+/**
  * Get the date/time format
  *
  * @return string
@@ -653,6 +894,16 @@ function build_site_email( $url, $prefix = 'wp' ) {
  */
 function get_log_retention_days() {
 	return absint( get_option( 'mailhawk_log_retention_in_days', 14 ) );
+}
+
+/**
+ * The number of days to keep quarantined emails before they are deleted.
+ * Never shorter than the log retention, and at least 30 days by default, because deleting one drops the email for good.
+ *
+ * @return int
+ */
+function get_quarantine_retention_days() {
+	return max( get_log_retention_days(), absint( apply_filters( 'mailhawk/quarantine_retention_days', 30 ) ) );
 }
 
 /**
@@ -903,6 +1154,34 @@ function get_email_address_hostname( string $email ) {
 }
 
 /**
+ * The risk score of a hostname if it is a free inbox provider.
+ * Entries in the list starting with a dot cover every subdomain, ".ddns.org" matches "me.ddns.org".
+ *
+ * @param $hostname string
+ *
+ * @return int|null null if the hostname is not a free inbox provider
+ */
+function get_free_inbox_provider_risk( string $hostname ) {
+
+	$providers = get_free_inbox_providers();
+	$hostname  = strtolower( $hostname );
+
+	if ( isset( $providers[ $hostname ] ) ) {
+		return intval( $providers[ $hostname ] );
+	}
+
+	foreach ( $providers as $domain => $risk ) {
+		$domain = (string) $domain;
+
+		if ( strpos( $domain, '.' ) === 0 && str_ends_with( $hostname, $domain ) ) {
+			return intval( $risk );
+		}
+	}
+
+	return null;
+}
+
+/**
  * If the given email is from a free inbox provider
  *
  * @param $email string
@@ -915,7 +1194,7 @@ function is_free_email_provider( string $email ): bool {
 		return false;
 	}
 
-	return apply_filters( 'mailhawk/is_free_email_provider', key_exists( get_email_address_hostname( $email ), get_free_inbox_providers() ), $email );
+	return apply_filters( 'mailhawk/is_free_email_provider', get_free_inbox_provider_risk( get_email_address_hostname( $email ) ) !== null, $email );
 }
 
 /**
@@ -931,10 +1210,9 @@ function get_inbox_risk( string $email ): int {
 		return 0;
 	}
 
-	$hostname = get_email_address_hostname( $email );
-	$inboxes  = get_free_inbox_providers();
+	$risk = get_free_inbox_provider_risk( get_email_address_hostname( $email ) );
 
-	return apply_filters( 'mailhawk/get_inbox_risk', $inboxes[ $hostname ], $email );
+	return apply_filters( 'mailhawk/get_inbox_risk', $risk ?? 0, $email );
 }
 
 /**
@@ -962,6 +1240,24 @@ function assess_risk( string $email_address ): int {
 	// Same hostname as the site
 	if ( get_email_address_hostname( $email_address ) === wp_parse_url( home_url(), PHP_URL_HOST ) ) {
 		return 0;
+	}
+
+	// What the admin and the MTA have told us about this recipient
+	$recipient = Plugin::instance()->recipients->get_by_email( $email_address );
+
+	if ( $recipient ) {
+
+		// Trusted by an admin, whatever the provider or history
+		if ( $recipient->status === Recipients::TRUSTED ) {
+			return 0;
+		}
+
+		// Reported a message as spam, always hold it
+		if ( $recipient->status === Recipients::BLOCKED ) {
+			return 999;
+		}
+
+		$risk += Plugin::instance()->recipients->get_bounce_risk( $recipient );
 	}
 
 	// Free email providers get risk increased

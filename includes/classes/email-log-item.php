@@ -10,12 +10,52 @@ use PHPMailer\PHPMailer\PHPMailer;
 class Email_Log_Item extends Base_Object {
 
 	/**
-	 * Just deletes the log item
+	 * Just deletes the log item, only if it is quarantined
 	 *
 	 * @return bool
 	 */
 	public function reject(): bool {
+
+		if ( ! $this->is_quarantined() ) {
+			return false;
+		}
+
 		return Plugin::instance()->log->delete( $this->ID );
+	}
+
+	/**
+	 * Sends a quarantined email, does nothing if it has already been released
+	 *
+	 * @throws \PHPMailer\PHPMailer\Exception
+	 * @return bool
+	 */
+	public function release() {
+
+		if ( ! $this->is_quarantined() ) {
+			return false;
+		}
+
+		return $this->retry();
+	}
+
+	/**
+	 * Sends a quarantined email and trusts the people it went to, so mail to them is not held again.
+	 * An address that has reported spam is released but never trusted.
+	 *
+	 * @throws \PHPMailer\PHPMailer\Exception
+	 * @return bool
+	 */
+	public function release_and_trust() {
+
+		if ( ! $this->release() ) {
+			return false;
+		}
+
+		foreach ( (array) $this->recipients as $recipient ) {
+			Plugin::instance()->recipients->trust( $recipient );
+		}
+
+		return true;
 	}
 
 	/**
@@ -78,19 +118,26 @@ class Email_Log_Item extends Base_Object {
 		add_action( 'wp_mail_failed', [ $this, 'catch_mail_error' ] );
 		add_action( 'phpmailer_init', [ $this, 'maybe_set_alt_body' ] );
 
-		// Mail this thing!
-		$result = mailhawk_mail( $this->recipients, $this->subject, $this->content, $headers );
+		try {
 
-		if ( ! $result ) {
-			// update retries
+			// Mail this thing!
+			$result = mailhawk_mail( $this->recipients, $this->subject, $this->content, $headers );
 
-			$this->update( [
-				'retries' => $this->retries + 1,
-			] );
+			if ( ! $result ) {
+				// update retries
+
+				$this->update( [
+					'retries' => $this->retries + 1,
+				] );
+			}
+
+		} finally {
+			// Otherwise later emails in this request would be logged against this item and skip the risk check
+			Hawk_Mailer::reset_log_item_id();
+
+			remove_action( 'wp_mail_failed', [ $this, 'catch_mail_error' ] );
+			remove_action( 'phpmailer_init', [ $this, 'maybe_set_alt_body' ] );
 		}
-
-		remove_action( 'wp_mail_failed', [ $this, 'catch_mail_error' ] );
-		remove_action( 'phpmailer_init', [ $this, 'maybe_set_alt_body' ] );
 
 		return $result;
 	}

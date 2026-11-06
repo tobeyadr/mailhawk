@@ -5,7 +5,7 @@ namespace MailHawk;
 use MailHawk\Admin\Admin;
 use MailHawk\Api\Webhook_Listener;
 use MailHawk\DB\Email_Log;
-use MailHawk\DB\Emails;
+use MailHawk\DB\Recipients;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -22,11 +22,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Plugin {
 
 	/**
-	 * @var Emails
-	 */
-	public $emails;
-
-	/**
 	 * @var Installer
 	 */
 	public $installer;
@@ -40,6 +35,11 @@ class Plugin {
 	 * @var Email_Log
 	 */
 	public $log;
+
+	/**
+	 * @var Recipients
+	 */
+	public $recipients;
 
 	/**
 	 * Instance.
@@ -138,8 +138,8 @@ class Plugin {
 	 * @access private
 	 */
 	private function init_components() {
-		$this->emails = new Emails();
-		$this->log    = new Email_Log();
+		$this->log        = new Email_Log();
+		$this->recipients = new Recipients();
 		new Cron_Events();
 
 		if ( is_admin() ) {

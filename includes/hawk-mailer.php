@@ -36,6 +36,13 @@ class Hawk_Mailer extends PHPMailer {
 	}
 
 	/**
+	 * Clear the log item ID so the next email is treated as a new one
+	 */
+	public static function reset_log_item_id() {
+		self::$log_item_id = false;
+	}
+
+	/**
 	 * Maybe add/update log data
 	 *
 	 * @param array $log_data
@@ -44,8 +51,8 @@ class Hawk_Mailer extends PHPMailer {
 	 */
 	public static function add_log( $log_data = [], $force = false ) {
 
-		// Logging is disabled
-		if ( ! $force && get_option( 'mailhawk_disable_email_logging' ) ) {
+		// Logging is disabled, but an existing row (a release or a retry) must still be updated or a released email stays quarantined
+		if ( ! $force && ! self::$log_item_id && get_option( 'mailhawk_disable_email_logging' ) ) {
 			return false;
 		}
 
@@ -70,22 +77,24 @@ class Hawk_Mailer extends PHPMailer {
 
 		$message    = $this->getSentMIMEMessage();
 		$recipients = array_keys( $this->all_recipients );
-		$quarantine = false;
+		$held       = [];
 
 		// If a log item ID is set, we're releasing the message
 		if ( ! self::$log_item_id ) {
 
-			// Check the risk factor of the recipients
-			foreach ( $recipients as $recipient ) {
-				$risk_factor = assess_risk( $recipient );
+			// 5 is an automatic quarantine by default
+			$threshold = intval( apply_filters( 'mailhawk/quarantine_threshold', 5 ) );
 
-				// 5 is an automatic quarantine
-				if ( $risk_factor >= 5 ) {
-					$quarantine = true;
-					// Schedule the quarantine notification
-					Quarantine::schedule_quarantine_notice();
-					break;
+			// Check the risk factor of the recipients, only the risky ones are held back
+			foreach ( $recipients as $recipient ) {
+				if ( assess_risk( $recipient ) >= $threshold ) {
+					$held[] = $recipient;
 				}
+			}
+
+			if ( ! empty( $held ) ) {
+				// Schedule the quarantine notification
+				Quarantine::schedule_quarantine_notice();
 			}
 		}
 
@@ -112,16 +121,40 @@ class Hawk_Mailer extends PHPMailer {
 			'msg_id'        => ''
 		];
 
-		// This message is being quarantined...
-		if ( $quarantine ) {
+		// Some or all of the recipients are being quarantined...
+		if ( ! empty( $held ) ) {
 
-			$log_data['status']        = 'quarantine';
-			$log_data['error_code']    = 'held';
-			$log_data['error_message'] = 'Held for review.';
+			$held_log_data = array_merge( $log_data, [
+				'recipients'    => $held,
+				'status'        => 'quarantine',
+				'error_code'    => 'held',
+				'error_message' => 'Held for review.',
+			] );
 
-			self::add_log( $log_data, true );
+			// If the hold can't be recorded the email would be lost without anyone knowing, so fail instead
+			if ( ! self::add_log( $held_log_data, true ) ) {
 
-			return true;
+				$error = new PHPMailerException( 'Could not hold this email for review, it was not sent.', self::STOP_CRITICAL );
+
+				$this->mailHeader = '';
+				$this->setError( $error->getMessage() );
+
+				if ( $this->exceptions ) {
+					throw $error;
+				}
+
+				return false;
+			}
+
+			$recipients = array_values( array_diff( $recipients, $held ) );
+
+			// Everyone was held, nothing to send now
+			if ( empty( $recipients ) ) {
+				return true;
+			}
+
+			// The rest of the recipients are sent as normal
+			$log_data['recipients'] = $recipients;
 		}
 
 		$msg_id = Send::raw( $this->From, $recipients, $message );
