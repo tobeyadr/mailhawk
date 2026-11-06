@@ -144,51 +144,6 @@ class Groundhogg {
 	}
 
 	/**
-	 * Output some quick and dirty inline JS.
-	 *
-	 * @since 3.36.1
-	 *
-	 * @return void
-	 */
-	public function output_js() {
-		?>
-        <script>
-          var btn = document.getElementById('groundhogg-connect')
-          btn.addEventListener('click', function (e) {
-            e.preventDefault()
-            mailhawk_groundhogg_remote_install()
-          })
-
-          /**
-           * Perform AJAX request to install MailHawk plugin.
-           *
-           * @since 3.36.1
-           *
-           * @return void
-           */
-          function mailhawk_groundhogg_remote_install () {
-
-            var data = {
-              'action': 'mailhawk_groundhogg_remote_install',
-              'nonce': '<?php echo wp_create_nonce( 'install_groundhogg' ); ?>',
-            }
-
-            jQuery.post(ajaxurl, data, function (res) {
-              // Redirect to the Groundhogg guided setup
-              window.location = res.redirect_uri
-            }).fail(function (jqxhr) {
-              if (jqxhr.responseJSON && jqxhr.responseJSON.message) {
-                alert('Error: ' + jqxhr.responseJSON.message)
-                console.log(jqxhr)
-              }
-            })
-          }
-        </script>
-		<?php
-
-	}
-
-	/**
 	 * @var Groundhogg;
 	 */
 	public static $instance;
