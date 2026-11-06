@@ -49,7 +49,7 @@ class Quarantine {
 		$retention  = get_quarantine_retention_days();
 
 		// Held emails are rejected once they are older than the retention, so they expire soonest when they are the oldest
-		$expiring_before = date( 'Y-m-d H:i:s', strtotime( max( $retention - absint( $expiring_days ), 0 ) . ' days ago' ) );
+		$expiring_before = get_log_cutoff( max( $retention - absint( $expiring_days ), 0 ) );
 
 		$report = [
 			'waiting'        => absint( $wpdb->get_var( "SELECT COUNT(*) FROM {$log} WHERE `status` = 'quarantine'" ) ),
@@ -66,7 +66,8 @@ class Quarantine {
 
 		foreach ( (array) $rows as $row ) {
 
-			$held_at = strtotime( $row->date_sent );
+			// date_sent is the time of the site
+			$held_at = ( new \DateTime( $row->date_sent, wp_timezone() ) )->getTimestamp();
 
 			$report['items'][] = [
 				'id'         => absint( $row->ID ),

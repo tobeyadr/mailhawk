@@ -59,7 +59,9 @@ class Hawk_Mailer extends PHPMailer {
 		if ( ! self::$log_item_id ) {
 			return Plugin::instance()->log->add( $log_data );
 		} else {
-			return Plugin::instance()->log->update( self::$log_item_id, $log_data );
+			// Sent again, so the cleanup counts from now. Otherwise an email held for 25 days and released would be deleted
+			// that night with the rest of the old entries, and the message ID later events are matched by with it.
+			return Plugin::instance()->log->update( self::$log_item_id, array_merge( $log_data, [ 'date_sent' => current_time( 'mysql' ) ] ) );
 		}
 	}
 
@@ -82,8 +84,7 @@ class Hawk_Mailer extends PHPMailer {
 		// If a log item ID is set, we're releasing the message
 		if ( ! self::$log_item_id ) {
 
-			// 5 is an automatic quarantine by default
-			$threshold = intval( apply_filters( 'mailhawk/quarantine_threshold', 5 ) );
+			$threshold = get_quarantine_threshold();
 
 			// Check the risk factor of the recipients, only the risky ones are held back
 			foreach ( $recipients as $recipient ) {

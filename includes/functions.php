@@ -467,7 +467,7 @@ function get_sending_health( $refresh = false ) {
 	global $wpdb;
 
 	$table = Plugin::instance()->log->get_table_name();
-	$since = date( 'Y-m-d H:i:s', strtotime( '30 days ago' ) );
+	$since = get_log_cutoff( 30 );
 	$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT `status`, COUNT(*) AS total FROM {$table} WHERE `date_sent` >= %s GROUP BY `status`", $since ) );
 
 	foreach ( (array) $rows as $row ) {
@@ -893,7 +893,9 @@ function build_site_email( $url, $prefix = 'wp' ) {
  * @return int
  */
 function get_log_retention_days() {
-	return absint( get_option( 'mailhawk_log_retention_in_days', 14 ) );
+	// Never less than a day. With 0, or something that is not a number, the cutoff is right now and the next cleanup
+	// empties the whole log, including what was sent a minute ago.
+	return max( 1, absint( get_option( 'mailhawk_log_retention_in_days', 14 ) ) );
 }
 
 /**
@@ -904,6 +906,19 @@ function get_log_retention_days() {
  */
 function get_quarantine_retention_days() {
 	return max( get_log_retention_days(), absint( apply_filters( 'mailhawk/quarantine_retention_days', 30 ) ) );
+}
+
+/**
+ * The date and time, as the log stores them, that many days ago.
+ * The log keeps the time of the site (current_time), not UTC, so a cutoff made with date() is hours off on any site that
+ * is not on UTC: held emails would be deleted early on one behind it.
+ *
+ * @param int $days
+ *
+ * @return string
+ */
+function get_log_cutoff( $days ) {
+	return wp_date( 'Y-m-d H:i:s', time() - ( absint( $days ) * DAY_IN_SECONDS ) );
 }
 
 /**
@@ -1002,12 +1017,38 @@ function get_email_status_pretty_name( $status ) {
 		'failed'     => __( 'Failed', 'mailhawk' ),
 		'delivered'  => __( 'Delivered', 'mailhawk' ),
 		'bounced'    => __( 'Bounced', 'mailhawk' ),
-		'softfail'   => __( 'Soft Fail', 'mailhawk' ),
+		'softfail'   => __( 'Delayed', 'mailhawk' ),
 		'quarantine' => __( 'Quarantined', 'mailhawk' ),
 		'complained' => __( 'Reported as spam', 'mailhawk' ),
 	];
 
 	return get_array_var( $stati, $status );
+}
+
+/**
+ * What to tell someone about the problem an email in the log had
+ *
+ * @param string $status   the status of the email in the log
+ * @param bool   $accepted whether MailHawk took the email, which it did when it has an ID for it
+ *
+ * @return string
+ */
+function get_email_problem_explanation( $status, $accepted ) {
+
+	switch ( $status ) {
+		case 'softfail':
+			return __( 'Delivery of this email is delayed. MailHawk keeps trying until it gives up:', 'mailhawk' );
+		case 'bounced':
+			return __( 'This email bounced:', 'mailhawk' );
+		case 'complained':
+			return __( 'The recipient reported this email as spam:', 'mailhawk' );
+		case 'failed':
+			if ( $accepted ) {
+				return __( 'MailHawk took this email, but it could not be delivered:', 'mailhawk' );
+			}
+	}
+
+	return __( 'There was a problem sending this email:', 'mailhawk' );
 }
 
 /**
@@ -1213,6 +1254,18 @@ function get_inbox_risk( string $email ): int {
 	$risk = get_free_inbox_provider_risk( get_email_address_hostname( $email ) );
 
 	return apply_filters( 'mailhawk/get_inbox_risk', $risk ?? 0, $email );
+}
+
+/**
+ * How risky a recipient has to be before email to them is held for review.
+ *
+ * It is not a setting and has no filter. The review protects the reputation of the IPs email is sent from, which every
+ * customer shares, so it is not up to a site how much of it to skip.
+ *
+ * @return int
+ */
+function get_quarantine_threshold(): int {
+	return 5;
 }
 
 /**
