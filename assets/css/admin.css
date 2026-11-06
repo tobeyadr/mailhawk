@@ -50,6 +50,26 @@
     margin-right: 0;
 }
 
+.mailhawk-content-box.fourth {
+    width: calc(25% - 26px);
+    display: inline-block;
+    box-sizing: border-box;
+    float: left;
+    margin-right: 0;
+}
+
+/* Too narrow for the comparison to sit beside the number, so it goes underneath */
+.report.fourth .comparison {
+    position: static;
+    text-align: left;
+    margin-bottom: 10px;
+}
+
+.report.fourth .comparison .vs {
+    display: inline;
+    margin-left: 6px;
+}
+
 #wpbody .mailhawk-content-box button {
     display: block;
     font-weight: bold;

@@ -45,8 +45,11 @@ $complaint_compare_data   = [];
 // Older MTA builds don't report complaints, in which case the graph has no complaint lines instead of a false zero.
 $has_complaints = isset( $data->graph_data[0]->complaints );
 
-$total_sent    = 0;
-$total_bounced = 0;
+$total_sent       = 0;
+$total_bounced    = 0;
+$total_complaints = 0;
+
+$compare_complaints = 0;
 
 /**
  * Bounces as a percentage of the messages sent. null when nothing was sent.
@@ -73,6 +76,9 @@ foreach ( $graph_data as $i => $datum ) {
 	if ( $has_complaints ) {
 		$complaint_data[]         = $datum->complaints;
 		$complaint_compare_data[] = $compare_data[ $i ]->complaints;
+
+		$total_complaints         += $datum->complaints;
+		$compare_complaints       += $compare_data[ $i ]->complaints;
 	}
 
 	$total_sent    += $sent;
@@ -115,9 +121,15 @@ $comparisons['sent']                  = abs( ( $total_sent - $compare_sent ) / (
 $comparisons['sent_is_up']            = $compare_sent < $total_sent;
 $comparisons['bounced']               = abs( ( ( $total_bounced - $compare_bounced ) / ( $total_bounced ?: 1 ) ) * 100 );
 $comparisons['bounced_is_down']       = $total_bounced < $compare_bounced;
+$comparisons['complaints']            = abs( ( $total_complaints - $compare_complaints ) / ( $total_complaints ?: 1 ) ) * 100;
+// No change is not a reason to flag the card red
+$comparisons['complaints_is_down']    = $total_complaints <= $compare_complaints;
 $comparisons['compare_delivery_rate'] = $compare_sent > 0 ? 100 - $bounce_rate_of( $compare_bounced, $compare_sent ) : 100;
 $comparisons['deliveries_compare']    = abs( $delivery_rate - $comparisons['compare_delivery_rate'] );
 $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_delivery_rate'];
+
+// Four cards share the row when the MTA reports complaints, otherwise three
+$card_class = $has_complaints ? 'fourth' : 'third';
 
 ?>
 <div class="mailhawk-content-box report">
@@ -127,7 +139,7 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
     </div>
 </div>
 
-<div class="mailhawk-content-box third report">
+<div class="mailhawk-content-box <?php echo $card_class; ?> report">
     <h2><?php _e( 'Sent', 'mailhawk' ); ?></h2>
     <div class="big-number"><?php echo number_format_i18n( $total_sent ); ?></div>
     <div class="comparison">
@@ -140,7 +152,7 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
         </div>
     </div>
 </div>
-<div class="mailhawk-content-box third report">
+<div class="mailhawk-content-box <?php echo $card_class; ?> report">
     <h2><?php _e( 'Bounces', 'mailhawk' ); ?></h2>
     <div class="big-number"><?php echo number_format_i18n( $total_bounced ); ?></div>
     <div class="comparison">
@@ -153,7 +165,22 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
         </div>
     </div>
 </div>
-<div class="mailhawk-content-box third report">
+<?php if ( $has_complaints ): ?>
+<div class="mailhawk-content-box <?php echo $card_class; ?> report">
+    <h2><?php _e( 'Complaints', 'mailhawk' ); ?></h2>
+    <div class="big-number"><?php echo number_format_i18n( $total_complaints ); ?></div>
+    <div class="comparison">
+		<span class="percentage <?php esc_attr_e( $comparisons['complaints_is_down'] ? 'green' : 'red' ); ?>">
+			<span class="dashicons dashicons-arrow-<?php echo $comparisons['complaints_is_down'] ? 'down' : 'up' ?>-alt"></span>
+		<?php echo number_format_i18n( $comparisons['complaints'], 2 ); ?>%
+		</span>
+        <div class="vs">
+            <span><?php _e( 'vs. Previous 7 Days', 'mailhawk' ); ?></span>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+<div class="mailhawk-content-box <?php echo $card_class; ?> report">
     <h2><?php _e( 'Delivery Rate', 'mailhawk' ); ?></h2>
     <div class="big-number"><?php echo number_format_i18n( $delivery_rate, 2 ); ?>%</div>
     <div class="comparison">
