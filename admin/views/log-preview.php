@@ -27,13 +27,19 @@ $release_url = wp_nonce_url( mailhawk_admin_page( [
 	'view'    => 'log',
 	'status' => 'quarantine',
 	'id'      => $log_item_id
-] ), 'retry_email', '_mailhawk_nonce' );
+] ), 'release_email_' . $log_item_id, '_mailhawk_nonce' );
+
+$release_trust_url = wp_nonce_url( mailhawk_admin_page( [
+	'view'    => 'log',
+	'status' => 'quarantine',
+	'id'      => $log_item_id
+] ), 'release_trust_email_' . $log_item_id, '_mailhawk_nonce' );
 
 $reject_url = wp_nonce_url( mailhawk_admin_page( [
 	'view'    => 'log',
 	'status' => 'quarantine',
 	'id'      => $log_item_id
-] ), 'reject_email', '_mailhawk_nonce' );
+] ), 'reject_email_' . $log_item_id, '_mailhawk_nonce' );
 
 ?>
 <div class="mailhawk-log-preview">
@@ -51,7 +57,7 @@ $reject_url = wp_nonce_url( mailhawk_admin_page( [
                 <div class="mailhawk-warning">
                     <p><?php _e( 'This email was quarantined because sending it might damage your sender reputation.', 'mailhawk' ); ?></p>
                     <p><?php _e( 'MailHawk evaluated the recipient as <b>high risk</b>, meaning a bounce or complaint is likely.', 'mailhawk' ); ?></p>
-                    <p><?php printf( __( 'You can <b><a href="%1$s">release it</a></b> and it will send now, or <b><a href="%2$s">reject it</a></b> so it won\'t send.', 'mailhawk' ), $release_url, $reject_url ); ?></p>
+                    <p><?php printf( __( 'You can <b><a href="%1$s">release it</a></b> and it will send now, <b><a href="%3$s">release it and trust</a></b> the recipients so their emails are not held again, or <b><a href="%2$s">reject it</a></b> so it won\'t send.', 'mailhawk' ), $release_url, $reject_url, $release_trust_url ); ?></p>
                 </div>
 
 			<?php elseif ( $log_item->error_code || $log_item->error_message ): ?>

@@ -126,6 +126,8 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
 $card_class = $has_complaints ? 'fourth' : 'third';
 
 ?>
+<?php include __DIR__ . '/groundhogg-promo.php'; ?>
+<?php include __DIR__ . '/overview-quarantine.php'; ?>
 <div class="mailhawk-content-box report">
     <h2><?php echo esc_html( 'today' === $range_key ? $range['label'] : sprintf( __( 'Last %s', 'mailhawk' ), $range['label'] ) ); ?></h2>
     <div id="graphdata">

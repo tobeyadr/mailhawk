@@ -84,8 +84,98 @@
     height: auto;
 }
 
-#connect.big-button{
-    font-weight: bold;
+/* The connect and reactivate screens: one card, one type scale, one button */
+.mailhawk-connect {
+    max-width: 520px;
+    margin: 0 auto;
+}
+
+.mailhawk-connect .mailhawk-header {
+    text-align: center;
+}
+
+.mailhawk-connect .mailhawk-content-box {
+    margin: 10px 0 20px;
+}
+
+.mailhawk-connect-box {
+    padding: 32px 36px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #3c434a;
+}
+
+.mailhawk-connect-box h2 {
+    margin: 0 0 12px;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: #1d2327;
+}
+
+.mailhawk-connect-box p,
+.mailhawk-connect-box li {
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.mailhawk-connect-box p.mailhawk-lead {
+    margin: 0 0 20px;
+    font-size: 15px;
+}
+
+.mailhawk-connect-points {
+    margin: 0 0 28px;
+    padding: 0;
+    list-style: none;
+}
+
+.mailhawk-connect-points li {
+    display: flex;
+    gap: 10px;
+    margin: 0 0 12px;
+}
+
+.mailhawk-connect-points .dashicons {
+    flex: none;
+    margin-top: 2px;
+    color: #2271b1;
+}
+
+.mailhawk-connect-box p.mailhawk-connect-note {
+    margin: 12px 0 0;
+    font-size: 13px;
+    text-align: center;
+    color: #646970;
+}
+
+#wpbody #connect.big-button,
+#wpbody .mailhawk-cta.big-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 46px;
+    margin: 0;
+    padding: 0 20px;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+#wpbody #connect.big-button .dashicons,
+#wpbody .mailhawk-cta.big-button .dashicons {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    font-size: 20px;
+    line-height: 20px;
+}
+
+#connect.spin .dashicons {
+    animation: spin 2s linear infinite;
 }
 
 #mailhawk-status {
@@ -500,6 +590,43 @@ a.button .dashicons {
     color: #8a8a8a;
 }
 
+.mailhawk-quarantine-report h3 {
+    margin: 20px 0 10px;
+}
+
+.mailhawk-quarantine-report .quarantine-actions {
+    margin: 10px 0 0;
+}
+
+.mailhawk-quarantine-report .quarantine-actions li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    margin: 0 0 8px;
+    border-left: 4px solid #dba617;
+    background: #fcf9e8;
+    border-radius: 3px;
+}
+
+.mailhawk-quarantine-report .quarantine-actions li.error {
+    border-left-color: #DA3328;
+    background: #fcf0ef;
+}
+
+.mailhawk-quarantine-report .quarantine-actions .dashicons {
+    flex: 0 0 auto;
+}
+
+.mailhawk-quarantine-report .quarantine-actions .action-text {
+    flex: 1 1 auto;
+    font-size: 14px;
+}
+
+.mailhawk-quarantine-report .quarantine-links {
+    margin-bottom: 10px;
+}
+
 .progress-bar-wrap {
     background: rgba(104, 164, 218, 0.20);
     height: 30px;
@@ -889,6 +1016,38 @@ th.value {
     font-weight: 600;
 }
 
+.recipients .tag.yes {
+    color: #146c2e;
+    background: #e3f5e8;
+}
+
+.recipients .tag.no {
+    color: #b42318;
+    background: #fde8e6;
+}
+
+.recipients .tag.watching {
+    color: #b54708;
+    background: #fef0c7;
+}
+
+.mailhawk-quarantine-report .wp-list-table th:nth-child(1) {
+    width: 34%;
+}
+
+.mailhawk-quarantine-report .wp-list-table th:nth-child(5) {
+    width: 110px;
+}
+
+.mailhawk-quarantine-report .wp-list-table td {
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+}
+
+.recipients .wp-list-table td {
+    vertical-align: middle;
+}
+
 .mailhawk-table-wrap .email-sent {
     color: #146c2e;
 }
@@ -932,4 +1091,507 @@ th.value {
     border-color: #b32d2e;
     color: #fff;
     background: #d63638;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Screens that stand alone, without the menu: connect, reactivate, setup complete. Last in the file so the shared
+   card and header rules above don't override them.
+   ------------------------------------------------------------------------------------------------------------------ */
+
+.mailhawk-connect .mailhawk-header h1 {
+    padding: 28px 0 20px;
+    text-align: center;
+}
+
+/* The image is a block, so it is centered with its margins. The logo has a little more empty space on its right
+   than on its left, which the offset takes out so it looks centered too. */
+.mailhawk-connect .mailhawk-header h1 img {
+    position: relative;
+    left: 5px;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+}
+
+/* The review button in the menu bar, and the modal it opens */
+#mailhawk-menu {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-right: 16px;
+}
+
+.mailhawk-review-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 12px;
+    border: 1px solid #c5d0f0;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 14px;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: background-color .15s, border-color .15s;
+}
+
+.mailhawk-review-button:hover,
+.mailhawk-review-button:focus {
+    border-color: #3858e9;
+    background: #f6f8ff;
+}
+
+.mailhawk-stars {
+    color: #f0b429;
+    letter-spacing: 1px;
+}
+
+.mailhawk-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(16, 24, 40, .55);
+}
+
+.mailhawk-modal[hidden] {
+    display: none;
+}
+
+.mailhawk-modal-dialog {
+    width: 100%;
+    max-width: 460px;
+    max-height: 100%;
+    overflow: auto;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 20px 50px rgba(16, 24, 40, .35);
+}
+
+.mailhawk-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 18px 24px;
+    font-size: 20px;
+    border-bottom: 1px solid #e1e5ea;
+}
+
+.mailhawk-modal-close {
+    margin-left: auto;
+    padding: 0 4px;
+    border: 0;
+    background: none;
+    font-size: 26px;
+    line-height: 1;
+    color: #1d2327;
+    cursor: pointer;
+}
+
+.mailhawk-modal-body {
+    padding: 22px 24px 24px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #3c434a;
+}
+
+.mailhawk-modal-body h2 {
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1d2327;
+}
+
+.mailhawk-modal-body p {
+    margin: 0 0 14px;
+    font-size: 14px;
+}
+
+.mailhawk-modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 20px 0 16px;
+}
+
+.mailhawk-modal-actions > * {
+    box-sizing: border-box;
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 32px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.mailhawk-review-never {
+    background: #e11d48;
+    color: #fff;
+}
+
+.mailhawk-review-never:hover {
+    background: #be123c;
+}
+
+.mailhawk-review-later {
+    border-color: #3858e9;
+    background: #fff;
+    color: #3858e9;
+}
+
+.mailhawk-review-later:hover {
+    background: #f6f8ff;
+}
+
+.mailhawk-review-now {
+    background: #3858e9;
+    color: #fff;
+}
+
+.mailhawk-review-now:hover,
+.mailhawk-review-now:focus {
+    background: #2a47c4;
+    color: #fff;
+}
+
+.mailhawk-modal-signature {
+    margin: 0;
+    font-style: italic;
+}
+
+/* Notices line up with the card below them */
+.mailhawk-connect .notice {
+    margin: 0 0 16px;
+    text-align: left;
+}
+
+.mailhawk-connect .mailhawk-connect-box {
+    padding: 32px 36px;
+}
+
+.mailhawk-connect .mailhawk-connect-box h2 {
+    font-size: 22px;
+}
+
+.mailhawk-complete {
+    max-width: 600px;
+}
+
+/* Where the customer is in setting up */
+.mailhawk-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    margin: 0 0 28px;
+    padding: 0 0 20px;
+    list-style: none;
+    border-bottom: 1px solid #e1e5ea;
+}
+
+.mailhawk-steps li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 13px;
+    color: #646970;
+}
+
+.mailhawk-steps .dashicons,
+.mailhawk-steps .mailhawk-step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.mailhawk-steps .done .dashicons {
+    background: #2271b1;
+    color: #fff;
+}
+
+.mailhawk-steps .current {
+    font-weight: 600;
+    color: #1d2327;
+}
+
+/* A step that is still to do is a ring, the one being done is in the brand blue */
+.mailhawk-steps .mailhawk-step-number {
+    border: 2px solid #c3c4c7;
+    color: #8c939b;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.mailhawk-steps .current .mailhawk-step-number {
+    border-color: #2271b1;
+    color: #2271b1;
+}
+
+/* The domains that still need DNS records */
+.mailhawk-domain-list {
+    margin: 4px 0 20px;
+    padding: 0;
+    list-style: none;
+    border: 1px solid #e1e5ea;
+    border-radius: 8px;
+}
+
+.mailhawk-domain-list li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    padding: 10px 14px;
+}
+
+.mailhawk-domain-list li + li {
+    border-top: 1px solid #e1e5ea;
+}
+
+.mailhawk-domain-list code {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: none;
+    padding: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.mailhawk-domain-status {
+    display: inline-flex;
+    gap: 6px;
+}
+
+.mailhawk-chip {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .02em;
+}
+
+.mailhawk-chip.todo {
+    background: #fcf0f1;
+    color: #b32d2e;
+}
+
+.mailhawk-chip.ok {
+    background: #edfaef;
+    color: #1e6b2d;
+}
+
+/* The register domains form */
+.mailhawk-setup {
+    max-width: 560px;
+}
+
+.mailhawk-setup form {
+    margin-bottom: 4px;
+}
+
+.mailhawk-field {
+    margin: 0 0 22px;
+    padding: 0;
+    border: 0;
+}
+
+.mailhawk-field label,
+.mailhawk-field legend {
+    display: block;
+    margin: 0 0 6px;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.mailhawk-field input[type="text"],
+.mailhawk-field input[type="email"] {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 40px;
+    padding: 0 12px;
+    border-radius: 6px;
+    border-color: #c3c4c7;
+    font-size: 14px;
+}
+
+.mailhawk-connect-box .mailhawk-field p.description {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: #646970;
+}
+
+.mailhawk-connect-box .mailhawk-field legend + p.description {
+    margin: 0 0 12px;
+}
+
+.mailhawk-field label.mailhawk-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 8px;
+    padding: 10px 14px;
+    border: 1px solid #e1e5ea;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 400;
+    color: #3c434a;
+    cursor: pointer;
+}
+
+.mailhawk-field label.mailhawk-option:hover {
+    border-color: #c3c4c7;
+}
+
+.mailhawk-field label.mailhawk-option:has(input:checked) {
+    border-color: #2271b1;
+    background: #f0f6fc;
+}
+
+.mailhawk-field label.mailhawk-option input {
+    margin: 0;
+}
+
+#wpbody .mailhawk-setup .mailhawk-content-box button.mailhawk-cta {
+    margin-top: 8px;
+}
+
+.mailhawk-connect-box p.mailhawk-skip {
+    margin: 16px 0 0;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+
+    .mailhawk-connect .mailhawk-connect-box {
+        padding: 24px 20px;
+    }
+
+    .mailhawk-domain-list li {
+        flex-wrap: wrap;
+    }
+}
+
+/* The suggestion to set up Groundhogg, under the recipients */
+.mailhawk-content-box.mailhawk-groundhogg-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    border-left: 4px solid #2271b1;
+}
+
+.mailhawk-groundhogg-card p {
+    margin: 0 0 6px;
+}
+
+.mailhawk-groundhogg-card .mailhawk-groundhogg-text {
+    max-width: 680px;
+}
+
+.mailhawk-groundhogg-card .mailhawk-groundhogg-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.mailhawk-groundhogg-card .mailhawk-groundhogg-dismiss,
+.mailhawk-groundhogg-promo .mailhawk-groundhogg-dismiss {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #646970;
+    font-size: 13px;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.mailhawk-groundhogg-card .mailhawk-groundhogg-dismiss:hover,
+.mailhawk-groundhogg-promo .mailhawk-groundhogg-dismiss:hover {
+    color: #1d2327;
+}
+
+/* The same suggestion on the overview, with what Groundhogg does beside it */
+.mailhawk-content-box.mailhawk-groundhogg-promo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+    border-left: 4px solid #2271b1;
+}
+
+.mailhawk-groundhogg-promo .mailhawk-groundhogg-pitch {
+    flex: 1 1 360px;
+}
+
+.mailhawk-groundhogg-promo h2 {
+    margin: 0 0 8px;
+    font-size: 18px;
+}
+
+.mailhawk-groundhogg-promo p {
+    margin: 0 0 16px;
+}
+
+.mailhawk-groundhogg-promo .mailhawk-groundhogg-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.mailhawk-groundhogg-promo .mailhawk-groundhogg-benefits {
+    flex: 1 1 420px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 24px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.mailhawk-groundhogg-promo .mailhawk-groundhogg-benefits li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.mailhawk-groundhogg-promo .mailhawk-groundhogg-benefits .dashicons {
+    flex-shrink: 0;
+    color: #00a32a;
+}
+
+@media (max-width: 782px) {
+
+    .mailhawk-content-box.mailhawk-groundhogg-card,
+    .mailhawk-content-box.mailhawk-groundhogg-promo {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .mailhawk-groundhogg-card .mailhawk-groundhogg-actions {
+        align-items: flex-start;
+    }
+
+    .mailhawk-groundhogg-promo .mailhawk-groundhogg-benefits {
+        grid-template-columns: 1fr;
+    }
 }

@@ -51,7 +51,7 @@ $account_data = maybe_get_from_transient( 'mailhawk_account_info', function () {
                 <th><?php _e( 'Default from email address', 'mailhawk' ); ?></th>
                 <td>
                     <input type="email" name="default_from_email_address" class="regular-text"
-                           value="<?php esc_attr_e( get_option( 'mailhawk_default_from_email_address', build_site_email( 'wordpress' ) ) ); ?>">
+                           value="<?php esc_attr_e( get_option( 'mailhawk_default_from_email_address', build_site_email( site_url(), 'wordpress' ) ) ); ?>">
                     <p class="description">
 						<?php _e( 'Override the default wp_mail from email. Only has an effect if the from email is not specified in the email headers.', 'mailhawk' ); ?>
                     </p>
@@ -79,7 +79,7 @@ $account_data = maybe_get_from_transient( 'mailhawk_account_info', function () {
                                   value="1" <?php checked( 1, get_option( 'mailhawk_disable_email_logging' ) ); ?>> <?php _e( 'Disable', 'mailhawk' ); ?>
                     </label>
                     <p class="description">
-						<?php printf( __( 'Disables the built-in MailHawk email log.', 'mailhawk' ), get_log_retention_days() ); ?>
+						<?php _e( 'Disables the built-in MailHawk email log. Quarantined emails are still logged so they can be reviewed and released.', 'mailhawk' ); ?>
                     </p>
                 </td>
             </tr>

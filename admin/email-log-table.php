@@ -139,8 +139,6 @@ class Email_Log_Table extends WP_List_Table {
 
 		// Resend
 		// Retry
-		// Blacklist?
-		// Whitelist?
 		$actions = [];
 
 		$actions['mpreview'] = "<a data-log-id=\"" . $email->get_id() . "\" href='" . esc_url( mailhawk_admin_page( [
@@ -154,11 +152,23 @@ class Email_Log_Table extends WP_List_Table {
 			'id'     => $email->get_id()
 		] ), 'retry_email', '_mailhawk_nonce' );
 
+		$release_link = wp_nonce_url( mailhawk_admin_page( [
+			'view'   => 'log',
+			'status' => get_url_var( 'status' ),
+			'id'     => $email->get_id()
+		] ), 'release_email_' . $email->get_id(), '_mailhawk_nonce' );
+
+		$release_trust_link = wp_nonce_url( mailhawk_admin_page( [
+			'view'   => 'log',
+			'status' => get_url_var( 'status' ),
+			'id'     => $email->get_id()
+		] ), 'release_trust_email_' . $email->get_id(), '_mailhawk_nonce' );
+
 		$reject_link = wp_nonce_url( mailhawk_admin_page( [
 			'view'   => 'log',
 			'status' => get_url_var( 'status' ),
 			'id'     => $email->get_id()
-		] ), 'reject_email', '_mailhawk_nonce' );
+		] ), 'reject_email_' . $email->get_id(), '_mailhawk_nonce' );
 
 		switch ( $email->status ) {
 
@@ -172,16 +182,18 @@ class Email_Log_Table extends WP_List_Table {
 				$actions['retry'] = "<a href='" . $retry_link . "'>" . __( 'Retry', 'mailhawk' ) . "</a>";
 				break;
 			case 'quarantine':
-				$actions['release'] = "<a href='" . $retry_link . "'>" . __( 'Release', 'mailhawk' ) . "</a>";
+				$actions['release'] = "<a href='" . $release_link . "'>" . __( 'Release', 'mailhawk' ) . "</a>";
+
+				$actions['release_trust'] = "<a href='" . $release_trust_link . "'>" . __( 'Release & Trust', 'mailhawk' ) . "</a>";
 
 				$actions['reject'] = "<a href='" . $reject_link . "'>" . __( 'Reject', 'mailhawk' ) . "</a>";
 
 				if ( is_groundhogg_active() ) {
 					$actions['reject_unsub'] = "<a href='" . wp_nonce_url( mailhawk_admin_page( [
 							'view'   => 'log',
-							'status' => 'status',
+							'status' => get_url_var( 'status' ),
 							'id'     => $email->get_id()
-						] ), 'reject_unsub', '_mailhawk_nonce' ) . "'>" . __( 'Reject & Unsubscribe', 'mailhawk' ) . "</a>";
+						] ), 'reject_unsub_' . $email->get_id(), '_mailhawk_nonce' ) . "'>" . __( 'Reject & Unsubscribe', 'mailhawk' ) . "</a>";
 				}
 
 				break;
@@ -346,8 +358,9 @@ class Email_Log_Table extends WP_List_Table {
 				break;
 			case 'quarantine':
 				$actions = [
-					'release' => __( 'Release', 'mailhawk' ),
-					'reject'  => __( 'Reject', 'mailhawk' ),
+					'release'       => __( 'Release', 'mailhawk' ),
+					'release_trust' => __( 'Release & Trust', 'mailhawk' ),
+					'reject'        => __( 'Reject', 'mailhawk' ),
 				];
 
 				if ( is_groundhogg_active() ) {
@@ -356,10 +369,11 @@ class Email_Log_Table extends WP_List_Table {
 				break;
 			default:
 				$actions = [
-					'retry'   => __( 'Retry', 'mailhawk' ),
-					'resend'  => __( 'Resend', 'mailhawk' ),
-					'release' => __( 'Release', 'mailhawk' ),
-					'reject'  => __( 'Reject', 'mailhawk' ),
+					'retry'         => __( 'Retry', 'mailhawk' ),
+					'resend'        => __( 'Resend', 'mailhawk' ),
+					'release'       => __( 'Release', 'mailhawk' ),
+					'release_trust' => __( 'Release & Trust', 'mailhawk' ),
+					'reject'        => __( 'Reject', 'mailhawk' ),
 				];
 
 				if ( is_groundhogg_active() ) {
