@@ -920,3 +920,17 @@ th.value {
 .not-sure-dns {
     border-radius: 0 0 10px 10px;
 }
+
+/* Destructive actions, like deleting a domain */
+.mailhawk-view-content .button.delete:not(.button-primary) {
+    border-color: #d63638;
+    color: #b32d2e;
+    background: #fff5f5;
+}
+
+.mailhawk-view-content .button.delete:not(.button-primary):hover,
+.mailhawk-view-content .button.delete:not(.button-primary):focus {
+    border-color: #b32d2e;
+    color: #fff;
+    background: #d63638;
+}
