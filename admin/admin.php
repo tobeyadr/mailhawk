@@ -4,6 +4,7 @@ namespace MailHawk\Admin;
 
 use MailHawk\Api\Licensing;
 use MailHawk\Api\Postal\Domains;
+use MailHawk\Api\Postal\Postal;
 use MailHawk\Api\Postal\Webhooks;
 use MailHawk\Classes\Email_Log_Item;
 use MailHawk\Keys;
@@ -34,6 +35,13 @@ use function MailHawk\set_mailhawk_is_suspended;
  * @package MailHawk\Admin
  */
 class Admin {
+
+	/**
+	 * Why the last connection attempt failed, when the customer can do something about it.
+	 *
+	 * @var string
+	 */
+	protected $connection_error = '';
 
 	public function __construct() {
 
@@ -100,6 +108,15 @@ class Admin {
 
 		if ( is_wp_error( $credentials ) ) {
 
+			$this->connection_error = $credentials->get_error_code() === 'activation_limit_reached' ? $credentials->get_error_message() : '';
+			add_action( 'mailhawk_notices', [ $this, 'connection_failed_notice' ] );
+
+			return;
+		}
+
+		// Anything that is not a credential key, for example a page from a firewall in front of MailHawk, is a failed connection.
+		if ( ! is_object( $credentials ) || empty( $credentials->credential_key ) ) {
+
 			add_action( 'mailhawk_notices', [ $this, 'connection_failed_notice' ] );
 
 			return;
@@ -108,6 +125,30 @@ class Admin {
 		$mta_credential_key = sanitize_text_field( $credentials->credential_key );
 
 		set_mailhawk_api_credentials( $mta_credential_key );
+
+		// Make sure the MTA accepts the key before this site is counted. A suspended server still knows the key.
+		Postal::set_api_key( $mta_credential_key );
+		$check = Domains::query_all();
+
+		if ( is_wp_error( $check ) && 'ServerSuspended' !== $check->get_error_code() ) {
+
+			set_mailhawk_api_credentials( '' );
+			add_action( 'mailhawk_notices', [ $this, 'connection_failed_notice' ] );
+
+			return;
+		}
+
+		// Saved and confirmed: now the site counts against the plan.
+		$activated = Licensing::instance()->activate();
+
+		if ( is_wp_error( $activated ) ) {
+
+			set_mailhawk_api_credentials( '' );
+			$this->connection_error = $activated->get_error_code() === 'activation_limit_reached' ? $activated->get_error_message() : '';
+			add_action( 'mailhawk_notices', [ $this, 'connection_failed_notice' ] );
+
+			return;
+		}
 
 		// All checks passed, connect MailHawk!
 		set_mailhawk_is_connected( true );
@@ -894,6 +935,9 @@ class Admin {
 		?>
         <div class="notice notice-error is-dismissible">
             <p><?php _e( 'We failed to connect you to the MailHawk service. Please try connecting again. If the problem persists, get in touch with us!', 'mailhawk' ); ?></p>
+			<?php if ( $this->connection_error ) : ?>
+                <p><?php echo esc_html( $this->connection_error ); ?></p>
+			<?php endif; ?>
         </div>
 		<?php
 	}

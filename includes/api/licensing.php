@@ -85,6 +85,11 @@ class Licensing {
 			return $response;
 		}
 
+		// Not JSON, or JSON without a token (for example a challenge page from a firewall in front of MailHawk).
+		if ( ! is_object( $response ) || empty( $response->token ) ) {
+			return new \WP_Error( 'invalid_response', 'MailHawk did not return a token.' );
+		}
+
 		$token = sanitize_text_field( $response->token );
 
 		// set the token so it can be instantly used to get the credentials.
@@ -99,7 +104,26 @@ class Licensing {
 	 * @return object|\WP_Error
 	 */
 	public function get_credentials() {
-		return $this->request( 'wp-json/mailhawk/credentials', [], 'GET' );
+
+		// confirm=1 tells MailHawk this site will call activate() once it has saved and checked the credentials, so it is not counted before then.
+		return $this->request( 'wp-json/mailhawk/credentials?confirm=1', [], 'GET' );
+	}
+
+	/**
+	 * Tell MailHawk this site saved its credentials and they work, so it counts against the plan's activations.
+	 * A MailHawk that predates this route already counted the site when it handed out the credentials, which is fine.
+	 *
+	 * @return object|\WP_Error
+	 */
+	public function activate() {
+
+		$response = $this->request( 'wp-json/mailhawk/activate', [], 'POST' );
+
+		if ( is_wp_error( $response ) && 'rest_no_route' === $response->get_error_code() ) {
+			return (object) [ 'message' => 'Activated.' ];
+		}
+
+		return $response;
 	}
 
 	/**
