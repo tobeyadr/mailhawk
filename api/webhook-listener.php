@@ -6,6 +6,7 @@ use MailHawk\Plugin;
 use MailHawk\Utils\Signature_Verifier;
 use WP_REST_Response;
 use WP_REST_Server;
+use function MailHawk\get_webhook_batch_interval;
 
 class Webhook_Listener {
 
@@ -73,7 +74,17 @@ class Webhook_Listener {
 				return $result;
 			}
 
-			return new WP_REST_Response( [ 'success' => true ] );
+			$response = new WP_REST_Response( [ 'success' => true ] );
+
+			// This site can take batches. An MTA that sees this switches the webhook to batched delivery, which is how
+			// webhooks created before batching existed catch up. One that doesn't know the header ignores it.
+			$interval = get_webhook_batch_interval();
+
+			if ( $interval > 0 ) {
+				$response->header( 'X-MailHawk-Accept-Batching', (string) $interval );
+			}
+
+			return $response;
 		}
 
 		$events = is_array( $payload ) && isset( $payload['events'] ) && is_array( $payload['events'] ) ? $payload['events'] : [];
