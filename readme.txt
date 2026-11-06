@@ -1,13 +1,13 @@
 === MailHawk — Simple SMTP, Email Delivery, and Email Logging ===
-Contributors: Adrian Tobey, trainingbusinesspros
+Contributors: trainingbusinesspros
 Donate link: https://mailhawk.io/pricing/
 Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
-Requires at least: 5.0
-Tested up to: 6.8
+Requires at least: 6.9
+Tested up to: 7.1
 Stable tag: 1.4.0
-Requires PHP: 7.0
-License: GPLv2 or later
-License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Requires PHP: 7.1
+License: GPLv3 or later
+License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
 An easier SMTP service for WordPress. Improve your WordPress email deliverability!
 
@@ -69,17 +69,17 @@ Our team is made up of people who've spent a long time in the email industry!
 
 > There are many SMTP plugins and SMTP services, but you always have to get BOTH to work. With MailHawk you just sign up and start sending email right away. No extra services, zero complications. No one is as focused on WordPress email deliverability as we are.
 
-👨  **Marc Goldman**, _CEO of Send13 & Klean13_
-
-> I'm super excited to bring my many years of email deliverability experience to the WordPress community so we can help more small business have their WordPress emails reach the inbox!
-
 ## FEATURES
 
 MailHawk is making sending email from WordPress easier and more transparent with these innovative features.
 
 ## 📈 ANALYTICS & DASHBOARD REPORTING
 
-Wondering if your emails are reaching the inbox? You can see your deliverability rate right within the MailHawk dashboard on your WordPress site! Use this information to make adjustments to your emails to improve your deliverability!
+Wondering if your emails are reaching the inbox? You can see your deliverability rate right within the MailHawk dashboard on your WordPress site! Use this information to make adjustments to your emails to improve your deliverability! Switch the report between today, the last 7, 14, or 30 days.
+
+## 🚨 BOUNCE & COMPLAINT REPORTING
+
+See how many of your emails bounced or were reported as spam, right from the MailHawk dashboard and the email log. Compare each period with the one before it to spot problems early, and get a digest by email when recipients report your messages as spam. If you use Groundhogg, contacts who complain are automatically marked so you stop mailing them.
 
 ## 🌎 DOMAIN AUTHENTICATION
 
@@ -101,6 +101,26 @@ Are you using Multisite? MailHawk can be enabled across your entire multisite so
 
 Building a WaaS and not sure how to handle WordPress SMTP? [Choose one of our WaaS plans](https://mailhawk.io/waas/) and use MailHawk for all your customers!
 
+## 🔌 EXTERNAL SERVICES
+
+MailHawk is a hosted email delivery service, so this plugin cannot work without connecting to the MailHawk services below, both operated by MailHawk. Nothing is sent until you click the Connect button. The terms and privacy policy for both services are here: [Terms & Conditions](https://mailhawk.io/terms-and-conditions/) | [Privacy Policy](https://mailhawk.io/privacy-policy/).
+
+**MailHawk account service (https://mailhawk.io)**
+
+Used to connect your site to your MailHawk account, and to check your account and plan.
+
+* When you click Connect, your browser is sent to mailhawk.io along with a one-time state key and the address of your MailHawk admin page to return to.
+* Afterwards the plugin exchanges the code it receives for an API token, and uses that token to fetch your credentials and account details, and to tell MailHawk when your site is activated or disconnected.
+
+**MailHawk email delivery service (https://mta01.mailhawk.io)**
+
+The mail server that delivers your email, and reports back on it.
+
+* Every email sent from your site is sent to it to be delivered. This includes the sender, recipients, subject, headers, message body, and any attachments.
+* The domain names you add to MailHawk are sent to it to be authenticated.
+* Your site asks it for delivery, bounce and complaint reports, and for your plan's sending limits.
+* The plugin registers your site's webhook address with it. It then calls that address to report when an email is delivered, delayed, fails, bounces, or is reported as spam. These calls are signed and verified by the plugin.
+
 == Installation ==
 
 1. Upload the plugin files to the `/wp-content/plugins/mailhawk` directory, or install the plugin through the WordPress plugins screen directly.
@@ -111,15 +131,15 @@ Building a WaaS and not sure how to handle WordPress SMTP? [Choose one of our Wa
 
 = Is MailHawk a free service? =
 
-No, MailHawk requires a paid monthly subscription which starts at $14.97/mo
+No, MailHawk requires a paid subscription which starts at $1/mo. See the [current plans](https://mailhawk.io/pricing/).
 
 = Are there limits to how many emails I can send? =
 
-We have different plans for different volume senders, starting at 40,000 emails/mo
+Yes, each plan has a monthly sending limit. Plans start at 1,000 emails/mo, and go up to 375,000 emails/mo on the Agency plan.
 
 = Can I send email from multiple sites with 1 account? =
 
-Yes, you can connect multiple sites to one account without paying extra!
+Yes, each plan includes a number of sites, from 1 on the Basic plan up to 25 on the Agency plan.
 
 = Can I use MailHawk for my WaaS? =
 
@@ -158,6 +178,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * SECURITY Webhook requests that arrive without a signature are now rejected.
 * FIXED The check that triggers database updates compared the wrong value and now validates the requested action correctly.
 * DEV New `mailhawk/spam_complaint` action, fired with the recipient address, message ID, and complaint details when a recipient reports an email as spam.
+* UPDATED MailHawk now requires WordPress 6.9 and PHP 7.1, and has been tested up to WordPress 7.1.
 * UPDATED Removed the unused PHPMailer dependency and moved PHPUnit to development dependencies.
 
 = 1.3.5 (2025-09-15) =
@@ -196,7 +217,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 = 1.2.1 (2023-05-19) =
 * ADDED Which account the MailHawk plugin is currently connected to in the Danger Zone settings.
 
-= 1.2 (2022-05-04) =
+= 1.2 (2022-11-07) =
 * ADDED Telemetry for notifying admins when they are nearing their send limit
 * FIXED Resend/Retry bulk actions not working in the email log
 
@@ -258,5 +279,5 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * ADDED DNS instructions
 * TWEAKED Some CSS
 
-= 1.0.1 =
+= 1.0.1 (2020-05-21) =
 * Initial release

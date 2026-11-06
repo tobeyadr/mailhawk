@@ -53,18 +53,17 @@ Our team is made up of people who've spent a long time in the email industry!
 👨  **Adrian Tobey**, _CEO & Creator of [Groundhogg](https://www.groundhogg.io/)_
 
 > There are many SMTP plugins and SMTP services, but you always have to get BOTH to work. With MailHawk you just sign up and start sending email right away. No extra services, zero complications. No one is as focused on WordPress email deliverability as we are.
-
-👨  **Marc Goldman**, _CEO of Send13 & Klean13_
-
-> I'm super excited to bring my many years of email deliverability experience to the WordPress community so we can help more small business have their WordPress emails reach the inbox!
-
 ## FEATURES
 
 MailHawk is making sending email from WordPress easier and more transparent with these innovative features.
 
 ## 📈 ANALYTICS & DASHBOARD REPORTING
 
-Wondering if your emails are reaching the inbox? You can see your deliverability rate right within the MailHawk dashboard on your WordPress site! Use this information to make adjustments to your emails to improve your deliverability!
+Wondering if your emails are reaching the inbox? You can see your deliverability rate right within the MailHawk dashboard on your WordPress site! Use this information to make adjustments to your emails to improve your deliverability! Switch the report between today, the last 7, 14, or 30 days.
+
+## 🚨 BOUNCE & COMPLAINT REPORTING
+
+See how many of your emails bounced or were reported as spam, right from the MailHawk dashboard and the email log. Compare each period with the one before it to spot problems early, and get a digest by email when recipients report your messages as spam. If you use Groundhogg, contacts who complain are automatically marked so you stop mailing them.
 
 ## 🌎 DOMAIN AUTHENTICATION
 
@@ -72,7 +71,7 @@ MailHawk provides SPF and DKIM authentication methods. This will drastically imp
 
 ## 🛡️ BLACKLIST/WHITELIST MANAGEMENT
 
-Stop spam from ruining your sender reputation by maintaining a blacklist of emails and domains which are causing you issues. Bounced emails can be automatically added to the blacklist so don’t have to worry about invalid email attacks.
+Stop spam from ruining your sender reputation by maintaining a blacklist of emails and domains which are causing you issues. Bounced emails can be automatically added to the blacklist so you don’t have to worry about invalid email attacks.
 
 ## 📫 EMAIL LOGGING
 
@@ -84,7 +83,27 @@ Are you using Multisite? MailHawk can be enabled across your entire multisite so
 
 ## 🌐 WAAS COMPATIBLE
 
-Building a WaaS an not sure how to handle WordPress SMTP? [Choose one of our WaaS plans](https://mailhawk.io/waas/) and use MailHawk for all your customers!
+Building a WaaS and not sure how to handle WordPress SMTP? [Choose one of our WaaS plans](https://mailhawk.io/waas/) and use MailHawk for all your customers!
+
+## 🔌 EXTERNAL SERVICES
+
+MailHawk is a hosted email delivery service, so this plugin cannot work without connecting to the MailHawk services below, both operated by MailHawk. Nothing is sent until you click the Connect button. The terms and privacy policy for both services are here: [Terms & Conditions](https://mailhawk.io/terms-and-conditions/) | [Privacy Policy](https://mailhawk.io/privacy-policy/).
+
+**MailHawk account service (https://mailhawk.io)**
+
+Used to connect your site to your MailHawk account, and to check your account and plan.
+
+* When you click Connect, your browser is sent to mailhawk.io along with a one-time state key and the address of your MailHawk admin page to return to.
+* Afterwards the plugin exchanges the code it receives for an API token, and uses that token to fetch your credentials and account details, and to tell MailHawk when your site is activated or disconnected.
+
+**MailHawk email delivery service (https://mta01.mailhawk.io)**
+
+The mail server that delivers your email, and reports back on it.
+
+* Every email sent from your site is sent to it to be delivered. This includes the sender, recipients, subject, headers, message body, and any attachments.
+* The domain names you add to MailHawk are sent to it to be authenticated.
+* Your site asks it for delivery, bounce and complaint reports, and for your plan's sending limits.
+* The plugin registers your site's webhook address with it. It then calls that address to report when an email is delivered, delayed, fails, bounces, or is reported as spam. These calls are signed and verified by the plugin.
 
 ## How can I report security bugs?
 
