@@ -87,7 +87,7 @@ MailHawk provides SPF and DKIM authentication methods. This will drastically imp
 
 ## 🛡️ BLACKLIST/WHITELIST MANAGEMENT
 
-Stop spam from ruining your sender reputation by maintaining a blacklist of emails and domains which are causing you issues. Bounced emails can be automatically added to the blacklist so don’t have to worry about invalid email attacks.
+Stop spam from ruining your sender reputation by maintaining a blacklist of emails and domains which are causing you issues. Bounced emails can be automatically added to the blacklist so you don’t have to worry about invalid email attacks.
 
 ## 📫 EMAIL LOGGING
 
@@ -99,7 +99,7 @@ Are you using Multisite? MailHawk can be enabled across your entire multisite so
 
 ## 🌐 WAAS COMPATIBLE
 
-Building a WaaS an not sure how to handle WordPress SMTP? [Choose one of our WaaS plans](https://mailhawk.io/waas/) and use MailHawk for all your customers!
+Building a WaaS and not sure how to handle WordPress SMTP? [Choose one of our WaaS plans](https://mailhawk.io/waas/) and use MailHawk for all your customers!
 
 == Installation ==
 
@@ -135,7 +135,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 == Screenshots ==
 
-1. Pick the plan the best suits your needs!
+1. Pick the plan that best suits your needs!
 2. See your delivery reports right inside your WordPress dashboard.
 3. Keep track of your emails and view issues with our email log.
 4. Authenticate your domain and vastly improve the deliverability of your emails.
@@ -144,18 +144,20 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 == Changelog ==
 
 = 1.4.0 (2026-11-06) =
-* ADDED Spam complaints are now tracked. Complaints are shown on the overview, marked in the email log, and available to developers through the new `mailhawk/spam_complaint` action.
+* ADDED Spam complaints are now tracked. Complaints are shown on the overview and marked as "Reported as spam" in the email log.
+* ADDED When Groundhogg is active, contacts who report an email as spam are marked as complained, and the site owner is emailed a digest of new complaints.
 * ADDED Choose the date range of the overview graph and cards from a new "Show data for" dropdown with Today, 7, 14, and 30 day options.
 * ADDED The overview now shows when the monthly usage resets.
 * IMPROVED Redesigned the MailHawk admin with a cleaner navigation, cards, tables, status labels, and forms. Destructive buttons are now red.
 * IMPROVED The Delivery Rate on the overview no longer counts bounced emails twice.
-* TWEAKED Webhooks can now be received in batches, which reduces the number of requests the MailHawk service makes to your site.
+* TWEAKED Webhooks can now be received in batches, which reduces the number of requests the MailHawk service makes to your site. Existing sites are switched over by the database update, so run it when prompted.
 * TWEAKED The MailHawk connection is now confirmed with the MailHawk service before the site is counted, and an empty response is treated as a failed connection.
 * SECURITY Fixed an SQL injection in the email log sort order.
 * SECURITY The email preview is now sandboxed so message content can no longer run scripts in the admin.
 * SECURITY Added missing output escaping across the admin views and notices.
 * SECURITY Webhook requests that arrive without a signature are now rejected.
 * FIXED The check that triggers database updates compared the wrong value and now validates the requested action correctly.
+* DEV New `mailhawk/spam_complaint` action, fired with the recipient address, message ID, and complaint details when a recipient reports an email as spam.
 * UPDATED Removed the unused PHPMailer dependency and moved PHPUnit to development dependencies.
 
 = 1.3.5 (2025-09-15) =
@@ -172,13 +174,13 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * TWEAKED Use user meta to store state key rather than transients to avoid connection issues when transients aren't working.
 
 = 1.3.2 (2025-03-24) =
-* FIXED Vulnerability responsibly disclosed by Patchstack
+* FIXED Vulnerability responsibly disclosed by Patchstack.
 
-= 1.3.1 (2023-12-04) =
+= 1.3.1 (2024-12-04) =
 * FIXED Retrying and releasing quarantined emails sending with incorrect content-type.
 * FIXED Quarantine release link in email details modal not working.
 
-= 1.3 (2023-01-12) =
+= 1.3 (2024-01-12) =
 * ADDED [New email quarantine system](https://mailhawk.io/email-quarantine) to prevent potentially damaging emails from being sent.
 * FIXED Overview number formatting.
 
@@ -218,7 +220,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * FIXED jQuery deprecation warnings.
 
 = 1.0.13 (2020-11-25) =
-* FIXED Call to `pluggable.php` to early.
+* FIXED Call to `pluggable.php` too early.
 
 = 1.0.12 (2020-11-24) =
 * UPDATED Readme.
@@ -226,7 +228,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * FIXED WooCommerce email address format causing false negatives when validating email addresses.
 
 = 1.0.11 (2020-09-23) =
-* ADDED Better notice with mor context when there is a `wp_mail` conflict.
+* ADDED Better notice with more context when there is a `wp_mail` conflict.
 
 = 1.0.9 (2020-09-21) =
 * FIXED Plugins sending and empty string as an attachment causing emails to fail.
@@ -249,7 +251,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 = 1.0.3 (2020-05-27) =
 * ADDED Automatically generate plain-text version of email if `content-type` is `text/html`
-* TWEAKED Use our own version oh PHPMailer to avoid potential conflicts with other plugins
+* TWEAKED Use our own version of PHPMailer to avoid potential conflicts with other plugins
 
 = 1.0.2 (2020-05-25) =
 * ADDED uninstall file
