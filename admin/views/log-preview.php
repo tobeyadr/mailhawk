@@ -76,7 +76,8 @@ $reject_url = wp_nonce_url( mailhawk_admin_page( [
                         <p class="mh-email-preview-from"><?php esc_html_e( $log_item->get_from_header() ); ?></p>
                     </div>
                 </div>
-                <iframe id="email-body-iframe" height="500"></iframe>
+                <?php // The body is whatever was in the email, so it gets an empty sandbox: no scripts, and no access to the admin ?>
+                <iframe id="email-body-iframe" height="500" sandbox=""></iframe>
                 <script>
                   ( () => {
                     let email = <?php echo wp_json_encode( [ 'content' => $log_item->get_preview_content() ] ); ?>;
