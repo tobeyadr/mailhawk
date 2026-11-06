@@ -27,6 +27,9 @@ abstract class Updater {
 	 */
 	public function __construct() {
 
+		// Run any missing updates automatically, the manual button below is the fallback if that did not finish
+		add_action( 'admin_init', [ $this, 'maybe_do_updates' ], 8 );
+
 		// Show updates are required
 		add_action( 'admin_init', [ $this, 'listen_for_updates' ], 9 );
 		add_action( 'admin_init', [ $this, 'updates_notice' ], 11 );
@@ -227,6 +230,32 @@ abstract class Updater {
 		}
 
 		add_action( 'admin_notices', [ $this, 'updates_required_notice' ] );
+	}
+
+	/**
+	 * Run the missing updates without waiting for the updates button to be clicked.
+	 *
+	 * do_updates() holds a lock while it runs, so check first that there is something to do instead
+	 * of taking the lock on every admin request.
+	 *
+	 * @return void
+	 */
+	public function maybe_do_updates() {
+
+		if ( wp_doing_ajax() || wp_doing_cron() ) {
+			return;
+		}
+
+		$previous_updates = $this->get_previous_versions();
+
+		// No previous updates, this is not an install that can be updated
+		if ( empty( $previous_updates ) || empty( array_diff( $this->get_available_updates(), $previous_updates ) ) ) {
+			return;
+		}
+
+		if ( $this->do_updates() && current_user_can( 'manage_options' ) ) {
+			add_action( 'admin_notices', [ $this, 'updates_successful_notice' ] );
+		}
 	}
 
 	/**
