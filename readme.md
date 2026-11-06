@@ -69,9 +69,9 @@ See how many of your emails bounced or were reported as spam, right from the Mai
 
 MailHawk provides SPF and DKIM authentication methods. This will drastically improve your email deliverability and provide you with a greater chance of skipping the spam folder.
 
-## 🛡️ BLACKLIST/WHITELIST MANAGEMENT
+## 🛡️ EMAIL QUARANTINE
 
-Stop spam from ruining your sender reputation by maintaining a blacklist of emails and domains which are causing you issues. Bounced emails can be automatically added to the blacklist so you don’t have to worry about invalid email attacks.
+Protect your sender reputation before it gets damaged. MailHawk assesses each recipient before an email is sent, and holds emails that are likely to bounce or be reported as spam in quarantine instead of sending them. You are emailed when something is quarantined, then you can release the email to send it, or reject it so it never sends. [Learn more about email quarantine](https://mailhawk.io/email-quarantine/).
 
 ## 📫 EMAIL LOGGING
 
