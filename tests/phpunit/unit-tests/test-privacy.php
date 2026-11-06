@@ -57,8 +57,91 @@ class Test_Privacy extends WP_UnitTestCase {
 		$this->assertIsCallable( $erasers['mailhawk-email-log']['callback'] );
 		$this->assertIsCallable( $erasers['mailhawk-recipients']['callback'] );
 
-		// There is no exporter
-		$this->assertArrayNotHasKey( 'mailhawk-email-log', apply_filters( 'wp_privacy_personal_data_exporters', [] ) );
+		$exporters = apply_filters( 'wp_privacy_personal_data_exporters', [] );
+
+		$this->assertArrayHasKey( 'mailhawk-email-log', $exporters );
+		$this->assertArrayHasKey( 'mailhawk-recipients', $exporters );
+		$this->assertIsCallable( $exporters['mailhawk-email-log']['callback'] );
+		$this->assertIsCallable( $exporters['mailhawk-recipients']['callback'] );
+	}
+
+	public function test_the_emails_sent_to_a_person_are_exported_without_the_other_recipients() {
+
+		$only  = $this->add_log_item( [ 'bob@example.com' ] );
+		$both  = $this->add_log_item( [ 'Bob <BOB@example.com>', 'alice@example.com' ] );
+		$other = $this->add_log_item( [ 'alice@example.com' ] );
+		$this->add_log_item( [ 'notbob@example.com' ] );
+
+		$export = $this->privacy->export_email_log( 'Bob@Example.com' );
+
+		$this->assertTrue( $export['done'] );
+		$this->assertSame( [ 'mailhawk-email-' . $only, 'mailhawk-email-' . $both ], wp_list_pluck( $export['data'], 'item_id' ) );
+
+		$item = array_column( $export['data'][1]['data'], 'value', 'name' );
+
+		$this->assertSame( 'bob@example.com', $item['Sent to'] );
+		$this->assertSame( 'Your order', $item['Subject'] );
+		$this->assertSame( 'Thanks for your order', $item['Content'] );
+		$this->assertStringNotContainsString( 'alice', wp_json_encode( $export ), 'The other recipients are not his to see' );
+		$this->assertTrue( $this->log_has( $only ), 'Exporting removes nothing' );
+	}
+
+	public function test_exported_content_is_text_and_not_the_whole_email() {
+
+		$html = $this->add_log_item( [ 'bob@example.com' ] );
+		Plugin::instance()->log->update( $html, [ 'content' => '<p>Hello <b>Bob</b></p>' . str_repeat( 'long ', 1000 ) ] );
+
+		$item = array_column( $this->privacy->export_email_log( 'bob@example.com' )['data'][0]['data'], 'value', 'name' );
+
+		$this->assertStringStartsWith( 'Hello Bob long', $item['Content'] );
+		$this->assertStringNotContainsString( '<', $item['Content'] );
+		$this->assertLessThanOrEqual( Privacy::EXPORT_CONTENT_LENGTH + 1, mb_strlen( $item['Content'] ) );
+	}
+
+	public function test_the_export_is_done_in_batches() {
+
+		for ( $i = 0; $i < Privacy::BATCH + 5; $i ++ ) {
+			$this->add_log_item( [ 'bob@example.com' ] );
+		}
+
+		$first  = $this->privacy->export_email_log( 'bob@example.com', 1 );
+		$second = $this->privacy->export_email_log( 'bob@example.com', 2 );
+
+		$this->assertFalse( $first['done'] );
+		$this->assertCount( Privacy::BATCH, $first['data'] );
+		$this->assertTrue( $second['done'] );
+		$this->assertCount( 5, $second['data'] );
+	}
+
+	public function test_nothing_is_exported_for_a_stranger_or_something_that_is_not_an_address() {
+
+		$this->add_log_item( [ 'bob@example.com' ] );
+
+		$this->assertSame( [], $this->privacy->export_email_log( 'nobody@example.com' )['data'] );
+		$this->assertSame( [], $this->privacy->export_email_log( 'not an address' )['data'] );
+		$this->assertSame( [], $this->privacy->export_recipient( 'nobody@example.com' )['data'] );
+	}
+
+	public function test_what_is_known_about_an_address_is_exported() {
+
+		$this->recipients->trust( 'bob@example.com' );
+		$this->recipients->record_bounce( 'dead@example.com' );
+		$this->recipients->record_complaint( 'angry@example.com' );
+
+		$values = function ( $email ) {
+			return array_column( $this->privacy->export_recipient( $email )['data'][0]['data'], 'value', 'name' );
+		};
+
+		$this->assertSame( 'Trusted', $values( 'Bob@example.com' )['Status'] );
+		$this->assertArrayNotHasKey( 'Last bounce', $values( 'bob@example.com' ) );
+
+		$dead = $values( 'dead@example.com' );
+		$this->assertSame( 'Some email to the address bounced', $dead['Status'] );
+		$this->assertSame( '1', $dead['Bounces'] );
+		$this->assertArrayHasKey( 'Last bounce', $dead );
+
+		$this->assertSame( 'Reported email from this site as spam', $values( 'angry@example.com' )['Status'] );
+		$this->assertSame( '1', $values( 'angry@example.com' )['Spam reports'] );
 	}
 
 	public function test_emails_sent_only_to_the_person_are_erased() {

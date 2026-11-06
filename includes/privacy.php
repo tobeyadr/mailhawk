@@ -9,9 +9,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * MailHawk in WordPress' privacy tools: erasing a person's data, and the text for the privacy policy.
+ * MailHawk in WordPress' privacy tools: exporting and erasing a person's data, and the text for the privacy policy.
  *
- * There is no exporter. The email log can hold a lot of full emails, and it is purged on its own after a few days.
+ * What is exported is what is kept about the person: the emails in the log that were sent to them, and what has been
+ * learned about their address. The other recipients of an email are not theirs to see, so they are left out.
  */
 class Privacy {
 
@@ -20,9 +21,163 @@ class Privacy {
 	 */
 	const BATCH = 100;
 
+	/**
+	 * The most of an email's text that is exported, the log has the rest
+	 */
+	const EXPORT_CONTENT_LENGTH = 2000;
+
 	public function __construct() {
+		add_filter( 'wp_privacy_personal_data_exporters', [ $this, 'register_exporters' ] );
 		add_filter( 'wp_privacy_personal_data_erasers', [ $this, 'register_erasers' ] );
 		add_action( 'admin_init', [ $this, 'add_policy_content' ] );
+	}
+
+	/**
+	 * @param array $exporters
+	 *
+	 * @return array
+	 */
+	public function register_exporters( $exporters ) {
+
+		$exporters['mailhawk-email-log'] = [
+			'exporter_friendly_name' => __( 'MailHawk email log', 'mailhawk' ),
+			'callback'               => [ $this, 'export_email_log' ],
+		];
+
+		$exporters['mailhawk-recipients'] = [
+			'exporter_friendly_name' => __( 'MailHawk recipients', 'mailhawk' ),
+			'callback'               => [ $this, 'export_recipient' ],
+		];
+
+		return $exporters;
+	}
+
+	/**
+	 * The emails in the log that were sent to this person, in batches. Emails that went to others as well are included,
+	 * with only this person as the recipient.
+	 *
+	 * @param string $email_address
+	 * @param int    $page
+	 *
+	 * @return array
+	 */
+	public function export_email_log( $email_address, $page = 1 ) {
+
+		global $wpdb;
+
+		$response = [ 'data' => [], 'done' => true ];
+
+		$email = Plugin::instance()->recipients->normalize( $email_address );
+
+		if ( ! $email ) {
+			return $response;
+		}
+
+		$table = Plugin::instance()->log->get_table_name();
+		$like  = '%' . $wpdb->esc_like( $email ) . '%';
+		$page  = max( 1, absint( $page ) );
+
+		// Nothing is removed while exporting, so the page can be where the batch starts
+		$rows = $wpdb->get_results( $wpdb->prepare(
+			"SELECT ID, recipients, from_address, subject, content, status, msg_id, error_message, date_sent FROM {$table} WHERE recipients LIKE %s ORDER BY ID ASC LIMIT %d OFFSET %d",
+			$like,
+			self::BATCH,
+			( $page - 1 ) * self::BATCH
+		) );
+
+		foreach ( (array) $rows as $row ) {
+
+			// The address was only part of another one
+			if ( ! in_array( $email, $this->get_addresses( $row->recipients ), true ) ) {
+				continue;
+			}
+
+			// Paragraphs and lines end with a space, so the words around them are not joined
+			$text = preg_replace( '/<\/(p|div|tr|li|h[1-6])>|<br\s*\/?>/i', ' ', (string) $row->content );
+			$text = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $text ) ) );
+
+			if ( mb_strlen( $text ) > self::EXPORT_CONTENT_LENGTH ) {
+				$text = mb_substr( $text, 0, self::EXPORT_CONTENT_LENGTH ) . '…';
+			}
+
+			$data = [
+				[ 'name' => __( 'Sent to', 'mailhawk' ), 'value' => $email ],
+				[ 'name' => __( 'Sent from', 'mailhawk' ), 'value' => (string) $row->from_address ],
+				[ 'name' => __( 'Subject', 'mailhawk' ), 'value' => (string) $row->subject ],
+				[ 'name' => __( 'Date', 'mailhawk' ), 'value' => (string) $row->date_sent ],
+				[ 'name' => __( 'Status', 'mailhawk' ), 'value' => (string) $row->status ],
+				[ 'name' => __( 'Content', 'mailhawk' ), 'value' => $text ],
+			];
+
+			if ( $row->msg_id ) {
+				$data[] = [ 'name' => __( 'Message ID', 'mailhawk' ), 'value' => (string) $row->msg_id ];
+			}
+
+			if ( $row->error_message ) {
+				$data[] = [ 'name' => __( 'Error', 'mailhawk' ), 'value' => (string) $row->error_message ];
+			}
+
+			$response['data'][] = [
+				'group_id'          => 'mailhawk-email-log',
+				'group_label'       => __( 'Emails sent through MailHawk', 'mailhawk' ),
+				'group_description' => __( 'The emails this site sent to the address, as kept in the MailHawk log.', 'mailhawk' ),
+				'item_id'           => 'mailhawk-email-' . absint( $row->ID ),
+				'data'              => $data,
+			];
+		}
+
+		$response['done'] = count( (array) $rows ) < self::BATCH;
+
+		return $response;
+	}
+
+	/**
+	 * What MailHawk has learned about the address
+	 *
+	 * @param string $email_address
+	 * @param int    $page
+	 *
+	 * @return array
+	 */
+	public function export_recipient( $email_address, $page = 1 ) {
+
+		$response = [ 'data' => [], 'done' => true ];
+
+		$row = Plugin::instance()->recipients->get_by_email( $email_address );
+
+		if ( ! $row ) {
+			return $response;
+		}
+
+		if ( Recipients::TRUSTED === $row->status ) {
+			$status = __( 'Trusted', 'mailhawk' );
+		} else if ( Recipients::BLOCKED === $row->status ) {
+			$status = __( 'Reported email from this site as spam', 'mailhawk' );
+		} else {
+			$status = __( 'Some email to the address bounced', 'mailhawk' );
+		}
+
+		$data = [
+			[ 'name' => __( 'Email address', 'mailhawk' ), 'value' => (string) $row->email ],
+			[ 'name' => __( 'Status', 'mailhawk' ), 'value' => $status ],
+			[ 'name' => __( 'Bounces', 'mailhawk' ), 'value' => (string) absint( $row->bounces ) ],
+			[ 'name' => __( 'Spam reports', 'mailhawk' ), 'value' => (string) absint( $row->complaints ) ],
+			[ 'name' => __( 'Added', 'mailhawk' ), 'value' => (string) $row->date_added ],
+		];
+
+		if ( $row->last_bounce && '0000-00-00 00:00:00' !== $row->last_bounce ) {
+			$data[] = [ 'name' => __( 'Last bounce', 'mailhawk' ), 'value' => (string) $row->last_bounce ];
+		}
+
+		$response['data'][] = [
+			'group_id'          => 'mailhawk-recipients',
+			'group_label'       => __( 'MailHawk recipient record', 'mailhawk' ),
+			'group_description' => __( 'What MailHawk remembers about the address to avoid sending email that bounces or is not wanted.', 'mailhawk' ),
+			'item_id'           => 'mailhawk-recipient-' . absint( $row->ID ),
+			'data'              => $data,
+		];
+
+		return $response;
 	}
 
 	/**
