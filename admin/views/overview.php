@@ -38,9 +38,14 @@ for ( $i = 0; $i < 7; $i ++ ) {
 $sent_data                = [];
 $bounce_data              = [];
 $bounce_rate_data         = [];
+$complaint_data           = [];
 $sent_compare_data        = [];
 $bounce_compare_data      = [];
 $bounce_rate_compare_data = [];
+$complaint_compare_data   = [];
+
+// Older MTA builds don't report complaints, in which case the graph has no complaint lines instead of a false zero.
+$has_complaints = isset( $data->graph_data[0]->complaints );
 
 $total_sent    = 0;
 $total_bounced = 0;
@@ -70,6 +75,11 @@ foreach ( $graph_data as $i => $datum ) {
 	$bounce_rate_data[]         = $bounce_rate_of( $bounces, $sent );
 	$bounce_rate_compare_data[] = $bounce_rate_of( $compare_data[ $i ]->bounces, $compare_data[ $i ]->outgoing );
 
+	if ( $has_complaints ) {
+		$complaint_data[]         = $datum->complaints;
+		$complaint_compare_data[] = $compare_data[ $i ]->complaints;
+	}
+
 	$total_sent    += $sent;
 	$total_bounced += $bounces;
 }
@@ -91,6 +101,10 @@ $config = [
 	'bounce_rate_label'             => __( 'Bounce rate', 'mailhawk' ),
 	'bounce_rate_previous_7_days'   => $bounce_rate_compare_data,
 	'bounce_rate_previous_7_days_label' => __( 'Bounce rate previous 7 days', 'mailhawk' ),
+	'complaints'                    => $has_complaints ? $complaint_data : null,
+	'complaints_label'              => __( 'Complaints', 'mailhawk' ),
+	'complaints_previous_7_days'    => $has_complaints ? $complaint_compare_data : null,
+	'complaints_previous_7_days_label' => __( 'Complaints previous 7 days', 'mailhawk' ),
 	'messages_axis_label'           => __( 'Messages', 'mailhawk' ),
 	'bounce_rate_axis_label'        => __( 'Bounce rate (%)', 'mailhawk' ),
 ];
@@ -309,6 +323,29 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
         ],
       },
     },
+  }
+
+  // Complaints are counted like bounces, so they share the left hand axis.
+  if (config.complaints) {
+    graphConfig.data.datasets.push(
+      {
+        label: config.complaints_label,
+        borderColor: '#8E5BD0',
+        pointBackgroundColor: '#8E5BD0',
+        backgroundColor: 'rgba(142,91,208,0.10)',
+        data: config.complaints,
+        fill: true,
+      },
+      {
+        label: config.complaints_previous_7_days_label,
+        borderColor: '#8E5BD0',
+        pointBackgroundColor: '#8E5BD0',
+        backgroundColor: 'rgba(142,91,208,0.10)',
+        data: config.complaints_previous_7_days,
+        fill: false,
+        borderDash: [5, 5],
+      }
+    )
   }
 
   window.onload = function () {
