@@ -190,8 +190,20 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * SECURITY Webhook requests that arrive without a signature are now rejected.
 * SECURITY The key that connects your site to MailHawk now comes from a secure random source, and the connect request can only be answered once.
 * FIXED The check that triggers database updates compared the wrong value and now validates the requested action correctly.
+* IMPROVED The email log shows Delivered, Delayed, Bounced and Reported as spam next to Sent and Failed when there are emails with that status, and the email preview says what went wrong in plain words.
+* FIXED Failed emails that MailHawk had taken but could not deliver, like a mailbox that does not exist, were sent again by the hourly retry. Only emails that never reached MailHawk are retried automatically now.
+* FIXED A delayed or delivered report arriving late no longer replaces a bounce or a spam report on the email in the log.
 * FIXED Counts in the email log could be out of date after a change within the same request.
-* DEV New filters `mailhawk/abilities/enabled` to turn the abilities off, and `mailhawk/quarantine_threshold` to change how risky a recipient has to be before email to them is held. Actions `mailhawk/abilities/register_categories` and `mailhawk/abilities/register_abilities` let add-ons register their own.
+* FIXED An email that was held for review or failed, and was then released or retried, was deleted by the next daily cleanup if it was older than the log retention. The retention now counts from when it was sent again.
+* FIXED The daily cleanup of the email log used UTC instead of the time of the site, so held emails were deleted hours early, or kept hours too long, on sites that are not on UTC.
+* FIXED A log retention that was saved as 0 would have emptied the whole email log at the next cleanup. It is a day at the least.
+* IMPROVED The daily cleanup deletes old entries in batches, and carries on a minute later when it runs out of time, so a large log no longer ties up the database or runs into the time limit.
+* FIXED The scheduled cleanup and retry tasks are removed when MailHawk is deleted, even when its data is kept.
+* IMPROVED Emails that are still waiting at Sent or Delayed in the log are checked with MailHawk every 15 minutes, in batches of 100, so Delivered, Delayed, Failed and Bounced show up even when the report from MailHawk never arrived. If MailHawk can not do that yet, or does not answer, it is left alone for a while and the reports carry on as before.
+* FIXED A bounce could be counted against an address more than once, when MailHawk sent the same event again because the site was slow to answer. The `mailhawk/bounced` action now fires only when the email in the log is moved on by it, so it fires once whether the webhook or the delivery sync gets there first.
+* DEV New filter `mailhawk/log_trim_batch_size` for how many entries the cleanup deletes at a time (default 1000).
+* DEV New filters `mailhawk/delivery_sync_min_age`, `mailhawk/delivery_sync_max_age`, `mailhawk/delivery_sync_max_requests` and `mailhawk/delivery_sync_unsupported_ttl` for the check of the log against MailHawk, and an action `mailhawk/delivery_sync_failed` for when it has to stop.
+* DEV New filter `mailhawk/abilities/enabled` to turn the abilities off. Actions `mailhawk/abilities/register_categories` and `mailhawk/abilities/register_abilities` let add-ons register their own.
 * DEV New `mailhawk/spam_complaint` action, fired with the recipient address, message ID, and complaint details when a recipient reports an email as spam.
 * UPDATED MailHawk now requires WordPress 6.9 and PHP 7.1, and has been tested up to WordPress 7.1.
 * UPDATED Removed the unused PHPMailer dependency and moved PHPUnit to development dependencies.

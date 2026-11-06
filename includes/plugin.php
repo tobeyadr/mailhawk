@@ -141,6 +141,7 @@ class Plugin {
 		$this->log        = new Email_Log();
 		$this->recipients = new Recipients();
 		new Cron_Events();
+		new Delivery_Sync();
 
 		if ( is_admin() ) {
 			new Admin();
