@@ -37,11 +37,9 @@ for ( $i = 0; $i < 7; $i ++ ) {
 
 $sent_data                = [];
 $bounce_data              = [];
-$bounce_rate_data         = [];
 $complaint_data           = [];
 $sent_compare_data        = [];
 $bounce_compare_data      = [];
-$bounce_rate_compare_data = [];
 $complaint_compare_data   = [];
 
 // Older MTA builds don't report complaints, in which case the graph has no complaint lines instead of a false zero.
@@ -51,8 +49,7 @@ $total_sent    = 0;
 $total_bounced = 0;
 
 /**
- * Bounces as a percentage of the messages sent. null for a day with nothing sent, so the graph leaves a gap there
- * instead of drawing a false 0%.
+ * Bounces as a percentage of the messages sent. null when nothing was sent.
  *
  * @param int $bounces
  * @param int $sent
@@ -72,8 +69,6 @@ foreach ( $graph_data as $i => $datum ) {
 	$sent_compare_data[]        = $compare_data[ $i ]->outgoing;
 	$bounce_data[]              = $bounces;
 	$bounce_compare_data[]      = $compare_data[ $i ]->bounces;
-	$bounce_rate_data[]         = $bounce_rate_of( $bounces, $sent );
-	$bounce_rate_compare_data[] = $bounce_rate_of( $compare_data[ $i ]->bounces, $compare_data[ $i ]->outgoing );
 
 	if ( $has_complaints ) {
 		$complaint_data[]         = $datum->complaints;
@@ -97,16 +92,10 @@ $config = [
 	'sent_previous_7_days_label'    => __( 'Sent previous 7 days', 'mailhawk' ),
 	'bounces_previous_7_days'       => $bounce_compare_data,
 	'bounces_previous_7_days_label' => __( 'Bounces previous 7 days', 'mailhawk' ),
-	'bounce_rate'                   => $bounce_rate_data,
-	'bounce_rate_label'             => __( 'Bounce rate', 'mailhawk' ),
-	'bounce_rate_previous_7_days'   => $bounce_rate_compare_data,
-	'bounce_rate_previous_7_days_label' => __( 'Bounce rate previous 7 days', 'mailhawk' ),
 	'complaints'                    => $has_complaints ? $complaint_data : null,
 	'complaints_label'              => __( 'Complaints', 'mailhawk' ),
 	'complaints_previous_7_days'    => $has_complaints ? $complaint_compare_data : null,
 	'complaints_previous_7_days_label' => __( 'Complaints previous 7 days', 'mailhawk' ),
-	'messages_axis_label'           => __( 'Messages', 'mailhawk' ),
-	'bounce_rate_axis_label'        => __( 'Bounce rate (%)', 'mailhawk' ),
 ];
 
 $compare_sent    = 0;
@@ -244,28 +233,6 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
           fill: false,
           borderDash: [5, 5],
         },
-        // The bounce rate is a percentage, so it has its own axis on the right.
-        {
-          label: config.bounce_rate_label,
-          yAxisID: 'rate',
-          borderColor: '#E8A33D',
-          pointBackgroundColor: '#E8A33D',
-          data: config.bounce_rate,
-          fill: false,
-          lineTension: 0,
-          pointRadius: 5,
-          pointHoverRadius: 7,
-        },
-        {
-          label: config.bounce_rate_previous_7_days_label,
-          yAxisID: 'rate',
-          borderColor: '#E8A33D',
-          pointBackgroundColor: '#E8A33D',
-          data: config.bounce_rate_previous_7_days,
-          fill: false,
-          lineTension: 0,
-          borderDash: [5, 5],
-        },
       ],
     },
     options: {
@@ -278,17 +245,6 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
       tooltips: {
         mode: 'index',
         intersect: true,
-        callbacks: {
-          label: function (item, data) {
-            var dataset = data.datasets[item.datasetIndex]
-            var value = dataset.data[item.index]
-            if (value === null) {
-              return dataset.label + ': –'
-            }
-            // the rate datasets are the ones on the right hand axis
-            return dataset.label + ': ' + (dataset.yAxisID === 'rate' ? value + '%' : value)
-          },
-        },
       },
       hover: {
         mode: 'nearest',
@@ -302,30 +258,15 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
         ],
         yAxes: [
           {
-            id: 'count',
-            position: 'left',
             display: true,
-            scaleLabel: { display: true, labelString: config.messages_axis_label },
             ticks: { beginAtZero: true },
-          },
-          {
-            id: 'rate',
-            position: 'right',
-            display: true,
-            scaleLabel: { display: true, labelString: config.bounce_rate_axis_label },
-            ticks: {
-              beginAtZero: true,
-              callback: function (value) { return value + '%' },
-            },
-            // one set of grid lines is enough
-            gridLines: { drawOnChartArea: false },
           },
         ],
       },
     },
   }
 
-  // Complaints are counted like bounces, so they share the left hand axis.
+  // Complaints are only added when the MTA reports them.
   if (config.complaints) {
     graphConfig.data.datasets.push(
       {
