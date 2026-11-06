@@ -16,11 +16,11 @@ foreach ( $log_item->recipients as $recipient ) {
 		continue;
 	}
 
-	$recipients[] = sprintf( '<a class="recipient-link" href="%2$s">%1$s</a>', $recipient, mailhawk_admin_page( [
+	$recipients[] = sprintf( '<a class="recipient-link" href="%2$s">%1$s</a>', esc_html( $recipient ), esc_url( mailhawk_admin_page( [
 		's'             => $recipient,
 		'search_column' => 'recipients',
 		'view'          => 'log'
-	] ) );
+	] ) ) );
 }
 
 $release_url = wp_nonce_url( mailhawk_admin_page( [
@@ -61,8 +61,8 @@ $reject_url = wp_nonce_url( mailhawk_admin_page( [
 						<?php _e( 'There was a problem sending this email:', 'mailhawk' ); ?>
                     </div>
                     <div class="mailhawk-error-details">
-                        <span class="mailhawk-error-code"><?php echo $log_item->error_code; ?>:</span>
-                        <span class="mailhawk-error-message"><?php echo $log_item->error_message; ?></span>
+                        <span class="mailhawk-error-code"><?php echo esc_html( $log_item->error_code ); ?>:</span>
+                        <span class="mailhawk-error-message"><?php echo esc_html( $log_item->error_message ); ?></span>
                     </div>
                 </div>
 

@@ -989,7 +989,7 @@ class Admin {
 
 		?>
         <div class="notice notice-success is-dismissible">
-            <p><?php printf( __( 'Successfully registered %s.', 'mailhawk' ), "<code>" . sanitize_text_field( get_url_var( 'domain' ) ) . "</code>" ); ?></p>
+            <p><?php printf( __( 'Successfully registered %s.', 'mailhawk' ), "<code>" . esc_html( sanitize_text_field( get_url_var( 'domain' ) ) ) . "</code>" ); ?></p>
         </div>
 		<?php
 	}
@@ -1005,7 +1005,7 @@ class Admin {
 
 		?>
         <div class="notice notice-success is-dismissible">
-            <p><?php printf( __( 'Successfully deleted %s.', 'mailhawk' ), "<code>" . sanitize_text_field( get_url_var( 'deleted_domain' ) ) . "</code>" ); ?></p>
+            <p><?php printf( __( 'Successfully deleted %s.', 'mailhawk' ), "<code>" . esc_html( sanitize_text_field( get_url_var( 'deleted_domain' ) ) ) . "</code>" ); ?></p>
         </div>
 		<?php
 	}
@@ -1016,7 +1016,7 @@ class Admin {
 	public function show_address_added_to_blacklist_notice() {
 		?>
         <div class="notice notice-success is-dismissible">
-            <p><?php printf( __( 'Added %s to the blacklist.', 'mailhawk' ), "<code>" . sanitize_email( get_post_var( 'address' ) ) . "</code>" ); ?></p>
+            <p><?php printf( __( 'Added %s to the blacklist.', 'mailhawk' ), "<code>" . esc_html( sanitize_email( get_post_var( 'address' ) ) ) . "</code>" ); ?></p>
         </div>
 		<?php
 	}
@@ -1027,7 +1027,7 @@ class Admin {
 	public function show_address_added_to_whitelist_notice() {
 		?>
         <div class="notice notice-success is-dismissible">
-            <p><?php printf( __( 'Added %s to the whitelist.', 'mailhawk' ), "<code>" . sanitize_email( get_post_var( 'address' ) ) . "</code>" ); ?></p>
+            <p><?php printf( __( 'Added %s to the whitelist.', 'mailhawk' ), "<code>" . esc_html( sanitize_email( get_post_var( 'address' ) ) ) . "</code>" ); ?></p>
         </div>
 		<?php
 	}
@@ -1071,8 +1071,8 @@ class Admin {
 	public function show_test_not_successful_notice() {
 		?>
         <div class="notice notice-error is-dismissible">
-            <p><?php printf( __( 'There was a problem sending the email to %s.', 'mailhawk' ), "<code>" . get_array_var( $this->test_data, 'to' ) . "</code>", "<code>" . $this->send_error->get_error_message() . "</code>" ); ?></p>
-            <p><?php echo "<code>" . $this->send_error->get_error_message() . "</code>"; ?></p>
+            <p><?php printf( __( 'There was a problem sending the email to %s.', 'mailhawk' ), "<code>" . esc_html( get_array_var( $this->test_data, 'to' ) ) . "</code>" ); ?></p>
+            <p><?php echo "<code>" . esc_html( $this->send_error->get_error_message() ) . "</code>"; ?></p>
         </div>
 		<?php
 	}
@@ -1083,7 +1083,7 @@ class Admin {
 	public function show_test_successful_notice() {
 		?>
         <div class="notice notice-success is-dismissible">
-            <p><?php printf( __( 'We sent a test email to %s.', 'mailhawk' ), "<code>" . get_array_var( $this->test_data, 'to' ) . "</code>" ); ?></p>
+            <p><?php printf( __( 'We sent a test email to %s.', 'mailhawk' ), "<code>" . esc_html( get_array_var( $this->test_data, 'to' ) ) . "</code>" ); ?></p>
         </div>
 		<?php
 	}

@@ -117,7 +117,7 @@ class Email_Log_Table extends WP_List_Table {
 			$params = array_filter( array_merge( [ 'view' => 'log', 'status' => $view['id'] ] ) );
 			$class  = get_url_var( 'status' ) === $view['id'] ? 'current' : '';
 
-			$v[] = sprintf( "<a class=\"%s\" href=\"%s\">%s <span class=\"count\">(%s)</span></a>", $class, mailhawk_admin_page( $params ), $view['name'], number_format_i18n( $count ) );
+			$v[] = sprintf( "<a class=\"%s\" href=\"%s\">%s <span class=\"count\">(%s)</span></a>", esc_attr( $class ), esc_url( mailhawk_admin_page( $params ) ), esc_html( $view['name'] ), number_format_i18n( $count ) );
 
 		}
 
@@ -206,12 +206,12 @@ class Email_Log_Table extends WP_List_Table {
 				continue;
 			}
 
-			$links[] = sprintf( '<a href="%2$s">%1$s</a>', $recipient, mailhawk_admin_page( [
+			$links[] = sprintf( '<a href="%2$s">%1$s</a>', esc_html( $recipient ), esc_url( mailhawk_admin_page( [
 				'view'          => 'log',
 				'status'        => get_url_var( 'status' ),
 				's'             => $recipient,
 				'search_column' => 'recipients'
-			] ) );
+			] ) ) );
 
 		}
 

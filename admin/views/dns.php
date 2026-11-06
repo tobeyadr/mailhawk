@@ -52,12 +52,12 @@ if ( is_wp_error( $domains ) || empty( $domains ) ) {
             <h3><?php _e( 'SPF Record' ); ?></h3>
 
 			<?php $short_spf = preg_match( "/include:[^ ]+/", $domain->spf->spf_record, $matches ); ?>
-            <p class="description"><?php printf( __( 'You need to add a TXT record at the apex/root of your domain (@) with the following content. If you already send mail from another service, you may just need to add <code>%s</code> to your existing record.', 'mailhawk' ), $matches[0] ); ?></p>
+            <p class="description"><?php printf( __( 'You need to add a TXT record at the apex/root of your domain (@) with the following content. If you already send mail from another service, you may just need to add <code>%s</code> to your existing record.', 'mailhawk' ), esc_html( $matches[0] ?? '' ) ); ?></p>
             <input class="code" onfocus="this.select()" type="text"
                    value="<?php esc_attr_e( $domain->spf->spf_record ); ?>"
                    readonly>
             <h3><?php _e( 'DKIM Record' ); ?></h3>
-            <p class="description"><?php printf( __( 'You need to add a new TXT record with the name <code>%s</code> with the following content.', 'mailhawk' ), strtolower( $domain->dkim->dkim_record_name ) ); ?></p>
+            <p class="description"><?php printf( __( 'You need to add a new TXT record with the name <code>%s</code> with the following content.', 'mailhawk' ), esc_html( strtolower( $domain->dkim->dkim_record_name ) ) ); ?></p>
             <input class="code" onfocus="this.select()" type="text"
                    value="<?php esc_attr_e( $domain->dkim->dkim_record ); ?>"
                    readonly>

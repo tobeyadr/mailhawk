@@ -42,7 +42,7 @@ if ( get_url_var( 'action' ) === 'is_verified' ) {
         <p><?php _e( 'Your domain has been fully verified! No more action is required.', 'mailhawk' ); ?></p>
 	<?php else: ?>
         <div class="domain-unverified">
-            <p><?php printf( __( 'To improve your email deliverability, you should configure your DNS records for <code>%s</code>.', 'mailhawk' ), esc_attr( $domain->name ) ) ?></p>
+            <p><?php printf( __( 'To improve your email deliverability, you should configure your DNS records for <code>%s</code>.', 'mailhawk' ), esc_html( $domain->name ) ) ?></p>
         </div>
 	<?php endif; ?>
 
