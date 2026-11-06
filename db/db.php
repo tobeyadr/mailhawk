@@ -504,6 +504,8 @@ abstract class DB {
 			return false;
 		}
 
+		$this->set_last_changed();
+
 		do_action( "{$this->get_filter_prefix()}/db/post_mass_update/{$this->get_object_type()}", $data );
 
 		return true;
@@ -530,6 +532,8 @@ abstract class DB {
 		do_action( "{$this->get_filter_prefix()}/db/pre_bulk_delete/{$this->get_object_type()}", $where );
 
 		$result = $wpdb->delete( $this->table_name, $where );
+
+		$this->set_last_changed();
 
 		do_action( "{$this->get_filter_prefix()}/db/post_bulk_delete/{$this->get_object_type()}", $where );
 
@@ -1017,6 +1021,10 @@ abstract class DB {
 	 * @since  2.8
 	 */
 	public function set_last_changed() {
+
+		// What was queried before the change is not what is there now
+		self::flush_cache();
+
 		if ( function_exists( 'wp_cache_set_last_changed' ) ) {
 			return wp_cache_set_last_changed( $this->get_cache_group() );
 		}
