@@ -204,11 +204,20 @@ $card_class = $has_complaints ? 'fourth' : 'third';
 
 	$percent_usage = ceil( ( $usage / $limit ?: 1 ) * 100 );
 
+	// The MTA resets the usage on the monthly anniversary of the server's creation, at midnight UTC. Older MTA builds
+	// don't say when, in which case nothing is shown.
+	$resets_at = ! empty( $monthly_send_limit->resets_at ) ? strtotime( $monthly_send_limit->resets_at ) : false;
+
 	?>
     <div class="progress-bar-wrap">
         <div class="progress-bar" style="width:<?php echo $percent_usage ?>%"></div>
     </div>
-    <p><?php printf( 'Used: <b>%s</b> / %s', number_format_i18n( $usage ), number_format_i18n( $limit ) ); ?></p>
+    <p>
+		<?php printf( 'Used: <b>%s</b> / %s', number_format_i18n( $usage ), number_format_i18n( $limit ) ); ?>
+		<?php if ( $resets_at ): ?>
+            <span class="usage-resets">&middot; <?php printf( __( 'Resets on %s (UTC)', 'mailhawk' ), esc_html( date_i18n( get_option( 'date_format' ), $resets_at, true ) ) ); ?></span>
+		<?php endif; ?>
+    </p>
 </div>
 
 <div class="wp-clearfix"></div>
