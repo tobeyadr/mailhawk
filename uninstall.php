@@ -24,8 +24,11 @@ wp_clear_scheduled_hook( 'mailhawk_sync_delivery_status' );
 
 if( get_option( 'mailhawk_delete_all_data' ) ) {
 
-	Plugin::instance()->log->drop();
-	Plugin::instance()->recipients->drop();
+	// On a version of PHP that is too old the plugin is not loaded, so there is nothing to drop the tables with
+	if ( class_exists( '\MailHawk\Plugin', false ) ) {
+		Plugin::instance()->log->drop();
+		Plugin::instance()->recipients->drop();
+	}
 
     global $wpdb;
 

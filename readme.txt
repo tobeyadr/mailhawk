@@ -5,7 +5,7 @@ Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
 Requires at least: 6.9
 Tested up to: 7.1
 Stable tag: 1.4.0
-Requires PHP: 7.1
+Requires PHP: 7.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -206,7 +206,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * DEV New filters `mailhawk/delivery_sync_min_age`, `mailhawk/delivery_sync_max_age`, `mailhawk/delivery_sync_max_requests` and `mailhawk/delivery_sync_unsupported_ttl` for the check of the log against MailHawk, and an action `mailhawk/delivery_sync_failed` for when it has to stop.
 * DEV New filter `mailhawk/abilities/enabled` to turn the abilities off. Actions `mailhawk/abilities/register_categories` and `mailhawk/abilities/register_abilities` let add-ons register their own.
 * DEV New `mailhawk/spam_complaint` action, fired with the recipient address, message ID, and complaint details when a recipient reports an email as spam.
-* UPDATED MailHawk now requires WordPress 6.9 and PHP 7.1, and has been tested up to WordPress 7.1.
+* UPDATED MailHawk now requires WordPress 6.9 and PHP 7.4, and has been tested up to WordPress 7.1. On a site that is on an older version of PHP, MailHawk does not load, and an admin notice says why.
 * UPDATED Removed the unused PHPMailer dependency and moved PHPUnit to development dependencies.
 
 = 1.3.5 (2025-09-15) =

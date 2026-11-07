@@ -6,7 +6,7 @@
  * Description: Send better email that will reach the inbox with MailHawk.
  * Version: 1.4.0
  * Requires at least: 6.9
- * Requires PHP: 7.1
+ * Requires PHP: 7.4
  * Author: MailHawk Inc.
  * Author URI: http://mailhawk.io
  * License: GPLv3 or later
@@ -42,22 +42,29 @@ add_action( 'plugins_loaded', 'mailhawk_load_plugin_textdomain' );
 
 define( 'MAILHAWK_TEXT_DOMAIN', 'mailhawk' );
 
-if ( ! version_compare( PHP_VERSION, '7.0', '>=' ) ) {
+define( 'MAILHAWK_MINIMUM_PHP_VERSION', '7.4' );
+define( 'MAILHAWK_MINIMUM_WP_VERSION', '6.9' );
+
+// Nothing else is loaded when PHP is too old, the rest of the plugin uses syntax that would be a fatal error there.
+// This file has to stay readable by old versions of PHP for that reason.
+if ( ! version_compare( PHP_VERSION, MAILHAWK_MINIMUM_PHP_VERSION, '>=' ) ) {
     add_action( 'admin_notices', 'mailhawk_fail_php_version' );
-} elseif ( ! version_compare( get_bloginfo( 'version' ), '5.0', '>=' ) ) {
+    add_action( 'network_admin_notices', 'mailhawk_fail_php_version' );
+} elseif ( ! version_compare( get_bloginfo( 'version' ), MAILHAWK_MINIMUM_WP_VERSION, '>=' ) ) {
     add_action( 'admin_notices', 'mailhawk_fail_wp_version' );
+    add_action( 'network_admin_notices', 'mailhawk_fail_wp_version' );
 } else {
     require __DIR__ . '/includes/plugin.php';
-}
 
-/**
- * MailHawk loaded.
- *
- * Fires when MailHawk was fully loaded and instantiated.
- *
- * @since 1.0.0
- */
-do_action( 'mailhawk/loaded' );
+    /**
+     * MailHawk loaded.
+     *
+     * Fires when MailHawk was fully loaded and instantiated.
+     *
+     * @since 1.0.0
+     */
+    do_action( 'mailhawk/loaded' );
+}
 
 /**
  * Load Groundhogg textdomain.
@@ -82,9 +89,14 @@ function mailhawk_load_plugin_textdomain() {
  * @return void
  */
 function mailhawk_fail_php_version() {
-    /* translators: %s: PHP version */
-    $message = sprintf( esc_html__( 'MailHawk requires PHP version %s+, plugin is currently NOT RUNNING.', 'groundhogg' ), '5.6' );
-    $html_message = sprintf( '<div class="error">%s</div>', wpautop( $message ) );
+
+    if ( ! current_user_can( 'activate_plugins' ) ) {
+        return;
+    }
+
+    /* translators: 1: required PHP version, 2: the PHP version of the site */
+    $message = sprintf( esc_html__( 'MailHawk requires PHP version %1$s or newer, and this site is on %2$s. MailHawk is currently NOT RUNNING and your emails are not being sent through it. Ask your host to update PHP.', 'mailhawk' ), esc_html( MAILHAWK_MINIMUM_PHP_VERSION ), esc_html( PHP_VERSION ) );
+    $html_message = sprintf( '<div class="notice notice-error">%s</div>', wpautop( $message ) );
     echo wp_kses_post( $html_message );
 }
 
@@ -98,9 +110,14 @@ function mailhawk_fail_php_version() {
  * @return void
  */
 function mailhawk_fail_wp_version(){
+
+    if ( ! current_user_can( 'activate_plugins' ) ) {
+        return;
+    }
+
     /* translators: %s: WordPress version */
-    $message = sprintf(esc_html__('MailHawk requires WordPress version %s+. Because you are using an earlier version, the plugin is currently NOT RUNNING.', 'groundhogg'), '4.9');
-    $html_message = sprintf('<div class="error">%s</div>', wpautop($message));
-    echo wp_kses_post($html_message);
+    $message = sprintf( esc_html__( 'MailHawk requires WordPress version %s or newer. Because you are using an earlier version, the plugin is currently NOT RUNNING.', 'mailhawk' ), esc_html( MAILHAWK_MINIMUM_WP_VERSION ) );
+    $html_message = sprintf( '<div class="notice notice-error">%s</div>', wpautop( $message ) );
+    echo wp_kses_post( $html_message );
 }
 
