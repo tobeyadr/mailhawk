@@ -192,6 +192,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * FIXED The check that triggers database updates compared the wrong value and now validates the requested action correctly.
 * IMPROVED The email log shows Delivered, Delayed, Bounced and Reported as spam next to Sent and Failed when there are emails with that status, and the email preview says what went wrong in plain words.
 * FIXED Failed emails that MailHawk had taken but could not deliver, like a mailbox that does not exist, were sent again by the hourly retry. Only emails that never reached MailHawk are retried automatically now.
+* FIXED A report that an email could not be delivered for now, and will be tried again, marked the email as Failed. It is shown as Delayed until it is failed for good.
 * FIXED A delayed or delivered report arriving late no longer replaces a bounce or a spam report on the email in the log.
 * FIXED Counts in the email log could be out of date after a change within the same request.
 * FIXED An email that was held for review or failed, and was then released or retried, was deleted by the next daily cleanup if it was older than the log retention. The retention now counts from when it was sent again.
@@ -199,7 +200,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * FIXED A log retention that was saved as 0 would have emptied the whole email log at the next cleanup. It is a day at the least.
 * IMPROVED The daily cleanup deletes old entries in batches, and carries on a minute later when it runs out of time, so a large log no longer ties up the database or runs into the time limit.
 * FIXED The scheduled cleanup and retry tasks are removed when MailHawk is deleted, even when its data is kept.
-* IMPROVED Emails that are still waiting at Sent or Delayed in the log are checked with MailHawk every 15 minutes, in batches of 100, so Delivered, Delayed, Failed and Bounced show up even when the report from MailHawk never arrived. If MailHawk can not do that yet, or does not answer, it is left alone for a while and the reports carry on as before.
+* IMPROVED Emails that are still waiting at Sent or Delayed in the log are checked with MailHawk every 15 minutes, in batches of 100, so Delivered, Delayed, Failed and Bounced show up even when the report from MailHawk never arrived. If MailHawk does not answer, or asks the site to slow down, it is left alone for a while and the reports carry on as before.
 * FIXED A bounce could be counted against an address more than once, when MailHawk sent the same event again because the site was slow to answer. The `mailhawk/bounced` action now fires only when the email in the log is moved on by it, so it fires once whether the webhook or the delivery sync gets there first.
 * DEV New filter `mailhawk/log_trim_batch_size` for how many entries the cleanup deletes at a time (default 1000).
 * DEV New filters `mailhawk/delivery_sync_min_age`, `mailhawk/delivery_sync_max_age`, `mailhawk/delivery_sync_max_requests` and `mailhawk/delivery_sync_unsupported_ttl` for the check of the log against MailHawk, and an action `mailhawk/delivery_sync_failed` for when it has to stop.
