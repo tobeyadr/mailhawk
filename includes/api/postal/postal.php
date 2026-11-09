@@ -5,6 +5,7 @@ namespace MailHawk\Api\Postal;
 use function MailHawk\get_mailhawk_api_key;
 use function MailHawk\isset_not_empty;
 use function MailHawk\set_mailhawk_is_suspended;
+use function MailHawk\set_mailhawk_suspension;
 
 class Postal {
 
@@ -106,10 +107,22 @@ class Postal {
 					$result = $json;
 					break;
 				case 'parameter-error':
-					$result = new \WP_Error( 'parameter-error', $json->data->message );
+					$result = new \WP_Error( 'parameter-error', $json->data->message ?? 'Invalid request.' );
 					break;
 				case 'error':
-					$result = new \WP_Error( $json->data->code, $json->data->message );
+					$data = $json->data ?? null;
+					$code = isset_not_empty( $data, 'code' ) ? (string) $data->code : 'error';
+
+					// Older MTA builds give no message with ServerSuspended. The data is kept, it says why.
+					if ( isset_not_empty( $data, 'message' ) ) {
+						$message = (string) $data->message;
+					} else if ( 'ServerSuspended' === $code ) {
+						$message = __( 'MailHawk has suspended this account.', 'mailhawk' );
+					} else {
+						$message = sprintf( 'MailHawk returned an error: %s', $code );
+					}
+
+					$result = new \WP_Error( $code, $message, $data );
 					break;
 			}
 		}
@@ -117,6 +130,7 @@ class Postal {
 		// Automatically suspend
 		if ( is_wp_error( $result ) && 'ServerSuspended' == $result->get_error_code() ){
 			set_mailhawk_is_suspended( true );
+			set_mailhawk_suspension( $result->get_error_data() );
 		}
 
 		return $result;

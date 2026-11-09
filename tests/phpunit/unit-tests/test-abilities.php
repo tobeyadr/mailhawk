@@ -9,6 +9,7 @@ use function MailHawk\is_groundhogg_active;
 use function MailHawk\set_mailhawk_is_connected;
 use function MailHawk\set_mailhawk_is_suspended;
 use function MailHawk\set_mailhawk_setup_complete;
+use function MailHawk\set_mailhawk_suspension;
 use function MailHawk\set_mailhawk_webhook_error;
 
 /**
@@ -368,6 +369,39 @@ class Test_Abilities extends WP_UnitTestCase {
 		$this->assertTrue( $status['suspended'] );
 		$this->assertContains( 'suspended', wp_list_pluck( $status['issues'], 'code' ) );
 		$this->assertSame( [], $this->calls );
+
+		// An older MTA said nothing but the code
+		$this->assertNull( $status['suspension']['reason'] );
+		$this->assertNull( $status['suspension']['suspended_at'] );
+		$this->assertSame( 'server', $status['suspension']['scope'] );
+		$this->assertSame( 'https://mailhawk.io/account/', $status['suspension']['next_steps'] );
+	}
+
+	public function test_status_says_why_the_account_is_suspended() {
+
+		$this->connect();
+		set_mailhawk_is_suspended( true );
+		set_mailhawk_suspension( [ 'reason' => 'MailHawk: suspended by support.', 'suspended_at' => '2026-11-09T16:20:50Z', 'scope' => 'organization' ] );
+
+		$status = $this->ok( 'mailhawk/get-status' );
+
+		$this->assertSame( [
+			'reason'       => 'MailHawk: suspended by support.',
+			'suspended_at' => '2026-11-09T16:20:50Z',
+			'scope'        => 'organization',
+			'next_steps'   => 'https://mailhawk.io/account/',
+		], $status['suspension'] );
+
+		$issue = wp_list_filter( $status['issues'], [ 'code' => 'suspended' ] );
+		$this->assertStringContainsString( 'MailHawk: suspended by support.', reset( $issue )['message'] );
+	}
+
+	public function test_status_of_an_account_that_is_not_suspended_has_no_suspension() {
+
+		$this->connect();
+		$this->mta( [] );
+
+		$this->assertNull( $this->ok( 'mailhawk/get-status' )['suspension'] );
 	}
 
 	public function test_status_survives_a_service_that_does_not_answer() {

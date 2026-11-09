@@ -138,12 +138,31 @@ class Site_Health {
 		}
 
 		if ( mailhawk_is_suspended() ) {
+
+			$suspension  = get_mailhawk_suspension();
+			$since       = mailhawk_suspended_since();
+			$description = [ __( 'The MailHawk service is not accepting email from this site, so none of it is going out.', 'mailhawk' ) ];
+
+			// Older MTA builds do not say why
+			$description[] = $suspension['reason']
+				? sprintf( __( 'The reason given: %s', 'mailhawk' ), $suspension['reason'] )
+				: __( 'This is usually a problem with the account or the subscription.', 'mailhawk' );
+
+			if ( $since ) {
+				$description[] = sprintf( __( 'Suspended since %s.', 'mailhawk' ), $since );
+			}
+
+			if ( 'organization' === $suspension['scope'] ) {
+				$description[] = __( 'The whole MailHawk account is suspended, so none of its sites can send email.', 'mailhawk' );
+			}
+
 			return $this->result(
 				$test,
 				'critical',
 				__( 'MailHawk has suspended sending for this site', 'mailhawk' ),
-				__( 'The MailHawk service is not accepting email from this site, so none of it is going out. This is usually a problem with the account or the subscription.', 'mailhawk' ),
-				$this->link( 'https://wordpress.org/support/plugin/mailhawk/', __( 'Ask for help', 'mailhawk' ), true )
+				implode( ' ', $description ),
+				$this->link( mailhawk_account_url(), __( 'See what to do next on your MailHawk account', 'mailhawk' ), true )
+				. $this->link( 'https://wordpress.org/support/plugin/mailhawk/', __( 'Ask for help', 'mailhawk' ), true )
 			);
 		}
 
@@ -295,6 +314,18 @@ class Site_Health {
 		$pause           = get_transient( Delivery_Sync::PAUSE );
 		$next_sync       = wp_next_scheduled( Delivery_Sync::HOOK );
 
+		// What the MTA said, as one line for support: reason, since when, and whether it is the whole account
+		$suspension = __( 'None', 'mailhawk' );
+
+		if ( mailhawk_is_suspended() ) {
+			$details    = get_mailhawk_suspension();
+			$suspension = implode( ' | ', array_filter( [
+				$details['reason'] ? $details['reason'] : __( 'Not given', 'mailhawk' ),
+				$details['suspended_at'] ? gmdate( 'Y-m-d H:i:s', $details['suspended_at'] ) . ' UTC' : '',
+				'organization' === $details['scope'] ? __( 'Whole account', 'mailhawk' ) : '',
+			] ) );
+		}
+
 		$yes_no = function ( $value ) {
 			return $value ? __( 'Yes', 'mailhawk' ) : __( 'No', 'mailhawk' );
 		};
@@ -322,6 +353,10 @@ class Site_Health {
 				'suspended'       => [
 					'label' => __( 'Suspended by MailHawk', 'mailhawk' ),
 					'value' => $yes_no( mailhawk_is_suspended() ),
+				],
+				'suspension'      => [
+					'label' => __( 'Suspension reason', 'mailhawk' ),
+					'value' => $suspension,
 				],
 				'throttled'       => [
 					'label' => __( 'Email turned away until', 'mailhawk' ),

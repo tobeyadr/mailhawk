@@ -303,7 +303,73 @@ function mailhawk_is_suspended() {
  * @return bool
  */
 function set_mailhawk_is_suspended( $suspened = true ) {
+
+	// Why it was suspended means nothing once it is not
+	if ( ! $suspened ) {
+		delete_transient( 'mailhawk_suspension' );
+	}
+
 	return set_transient( 'mailhawk_is_suspended', $suspened ? 'yes' : 'no', DAY_IN_SECONDS );
+}
+
+/**
+ * Remember what the MTA said about the suspension, kept as long as the suspended flag. Older MTA builds say nothing
+ * but the code, which leaves everything empty.
+ *
+ * @param object|array $data the data of the ServerSuspended error: reason, suspended_at and scope
+ */
+function set_mailhawk_suspension( $data ) {
+
+	$data = (array) $data;
+
+	$reason       = is_scalar( $data['reason'] ?? null ) ? sanitize_text_field( (string) $data['reason'] ) : '';
+	$suspended_at = is_string( $data['suspended_at'] ?? null ) ? strtotime( $data['suspended_at'] ) : false;
+	$scope        = ( $data['scope'] ?? '' ) === 'organization' ? 'organization' : 'server';
+
+	set_transient( 'mailhawk_suspension', [
+		// Free text from the MTA, shown as it is
+		'reason'       => mb_substr( $reason, 0, 500 ),
+		'suspended_at' => $suspended_at ? $suspended_at : 0,
+		'scope'        => $scope,
+	], DAY_IN_SECONDS );
+}
+
+/**
+ * What the MTA said about the suspension. Text from a remote server, so escape it when it is shown.
+ *
+ * @return array reason (empty when not given), suspended_at (timestamp, 0 when not given) and scope ('server' or 'organization')
+ */
+function get_mailhawk_suspension() {
+
+	$suspension = get_transient( 'mailhawk_suspension' );
+
+	return wp_parse_args( is_array( $suspension ) ? $suspension : [], [
+		'reason'       => '',
+		'suspended_at' => 0,
+		'scope'        => 'server',
+	] );
+}
+
+/**
+ * Where the customer finds out what to do about a suspension: the Servers page says, per server, to renew or to send
+ * an incident report.
+ *
+ * @return string
+ */
+function mailhawk_account_url() {
+	return trailingslashit( MAILHAWK_LICENSE_SERVER_URL ) . 'account/';
+}
+
+/**
+ * When the suspension started, in the site's date and time format
+ *
+ * @return string empty when the MTA did not say
+ */
+function mailhawk_suspended_since() {
+
+	$suspended_at = get_mailhawk_suspension()['suspended_at'];
+
+	return $suspended_at ? wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $suspended_at ) : '';
 }
 
 /**

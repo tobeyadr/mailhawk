@@ -142,6 +142,17 @@
     color: #2271b1;
 }
 
+.mailhawk-suspension-reason {
+    margin: -8px 0 20px;
+    padding: 10px 14px;
+    border-left: 4px solid #d63638;
+    background: #fcf0f1;
+}
+
+.mailhawk-content-box .mailhawk-suspension-reason p {
+    margin: 0;
+}
+
 .mailhawk-connect-box p.mailhawk-connect-note {
     margin: 12px 0 0;
     font-size: 13px;

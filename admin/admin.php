@@ -17,6 +17,7 @@ use function MailHawk\get_array_var;
 use function MailHawk\get_dismissible_notices;
 use function MailHawk\get_hostname;
 use function MailHawk\get_mailhawk_api_key;
+use function MailHawk\get_mailhawk_suspension;
 use function MailHawk\get_mailhawk_webhook_error;
 use function MailHawk\get_post_var;
 use function MailHawk\get_request_var;
@@ -31,10 +32,12 @@ use function MailHawk\is_groundhogg_active;
 use function MailHawk\is_mailhawk_network_active;
 use function MailHawk\is_mailhawk_setup_incomplete;
 use function MailHawk\is_notice_dismissed;
+use function MailHawk\mailhawk_account_url;
 use function MailHawk\mailhawk_admin_page;
 use function MailHawk\mailhawk_is_connected;
 use function MailHawk\mailhawk_is_suspended;
 use function MailHawk\mailhawk_spf_is_set;
+use function MailHawk\mailhawk_suspended_since;
 use function MailHawk\set_mailhawk_api_credentials;
 use function MailHawk\set_mailhawk_is_connected;
 use function MailHawk\set_mailhawk_is_suspended;
@@ -1382,14 +1385,29 @@ class Admin {
 			return;
 		}
 
+		$suspension = get_mailhawk_suspension();
+		$since      = mailhawk_suspended_since();
+
 		?>
         <div class="notice notice-warning is-dismissible">
             <img class="alignleft" height="70" style="margin: 3px 10px 0 0"
                  src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/hawk-head.png' ); ?>" alt="Hawk">
             <p>
-				<?php _e( '<b>Attention:</b> It looks like your account has been suspended. To continue sending email you must reactivate your account.', 'mailhawk' ); ?>
+				<?php if ( $suspension['reason'] ) : ?>
+					<?php printf( __( '<b>Attention:</b> MailHawk has suspended your account, so email from this site is not being sent. The reason given: %s', 'mailhawk' ), esc_html( $suspension['reason'] ) ); ?>
+				<?php else : ?>
+					<?php _e( '<b>Attention:</b> It looks like your account has been suspended. To continue sending email you must reactivate your account.', 'mailhawk' ); ?>
+				<?php endif; ?>
+				<?php if ( $since ) : ?>
+					<?php printf( esc_html__( 'Suspended since %s.', 'mailhawk' ), esc_html( $since ) ); ?>
+				<?php endif; ?>
+				<?php if ( 'organization' === $suspension['scope'] ) : ?>
+					<?php _e( 'The whole MailHawk account is suspended, so none of its sites can send email.', 'mailhawk' ); ?>
+				<?php endif; ?>
             </p>
             <p>
+                <a href="<?php echo esc_url( mailhawk_account_url() ); ?>" target="_blank" rel="noopener"
+                   class="button button-primary"><?php _e( 'See what to do next', 'mailhawk' ); ?></a>
                 <a href="<?php echo esc_url( mailhawk_admin_page() ); ?>"
                    class="button button-secondary"><?php _e( 'Reactivate Now!', 'mailhawk' ); ?></a>
             </p>

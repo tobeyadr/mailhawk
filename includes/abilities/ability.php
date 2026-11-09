@@ -133,7 +133,7 @@ abstract class Ability {
 		}
 
 		if ( mailhawk_is_suspended() ) {
-			return $this->error( 'suspended', __( 'The MailHawk account is suspended. Reactivate it from Tools, MailHawk in wp-admin.', 'mailhawk' ), 409 );
+			return $this->error( 'suspended', __( 'The MailHawk account is suspended, mailhawk/get-status says why and where to go next.', 'mailhawk' ), 409 );
 		}
 
 		return null;

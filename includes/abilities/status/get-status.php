@@ -7,11 +7,13 @@ use MailHawk\Abilities\Formatter;
 use MailHawk\Api\Postal\Domains;
 use MailHawk\Api\Postal\Reporting;
 use MailHawk\Plugin;
+use function MailHawk\get_mailhawk_suspension;
 use function MailHawk\get_mailhawk_webhook_error;
 use function MailHawk\get_sending_health;
 use function MailHawk\is_domain_authenticated;
 use function MailHawk\is_groundhogg_active;
 use function MailHawk\is_mailhawk_setup_incomplete;
+use function MailHawk\mailhawk_account_url;
 use function MailHawk\mailhawk_is_connected;
 use function MailHawk\mailhawk_is_suspended;
 
@@ -61,6 +63,29 @@ class Get_Status extends Ability {
 					'version'           => [ 'type' => 'string' ],
 					'connected'         => [ 'type' => 'boolean' ],
 					'suspended'         => [ 'type' => 'boolean' ],
+					'suspension'        => [
+						'type'        => [ 'object', 'null' ],
+						'description' => __( 'What MailHawk said about the suspension. Null when the account is not suspended.', 'mailhawk' ),
+						'properties'  => [
+							'reason'       => [
+								'type'        => [ 'string', 'null' ],
+								'description' => __( 'Why the account is suspended, as MailHawk wrote it. Null when MailHawk did not say.', 'mailhawk' ),
+							],
+							'suspended_at' => [
+								'type'        => [ 'string', 'null' ],
+								'description' => __( 'When it was suspended, ISO 8601 in UTC. Null when MailHawk did not say.', 'mailhawk' ),
+							],
+							'scope'        => [
+								'type'        => 'string',
+								'enum'        => [ 'server', 'organization' ],
+								'description' => __( 'organization when every site of the MailHawk account is suspended, not only this one.', 'mailhawk' ),
+							],
+							'next_steps'   => [
+								'type'        => 'string',
+								'description' => __( 'The MailHawk account page, which says what to do: renew, or send an incident report. A person has to sign in there.', 'mailhawk' ),
+							],
+						],
+					],
 					'setup_complete'    => [
 						'type'        => 'boolean',
 						'description' => __( 'False when MailHawk is connected but the sending address and domains were never chosen.', 'mailhawk' ),
@@ -128,7 +153,7 @@ class Get_Status extends Ability {
 						],
 					],
 				],
-				'required'   => [ 'version', 'connected', 'suspended', 'setup_complete', 'webhook_error', 'ready_to_send', 'usage', 'domains', 'sending', 'emails_held', 'groundhogg_active', 'issues' ],
+				'required'   => [ 'version', 'connected', 'suspended', 'suspension', 'setup_complete', 'webhook_error', 'ready_to_send', 'usage', 'domains', 'sending', 'emails_held', 'groundhogg_active', 'issues' ],
 			],
 		];
 	}
@@ -199,8 +224,23 @@ class Get_Status extends Ability {
 			$issues[] = [ 'code' => 'not_connected', 'message' => __( 'MailHawk is not connected to an account, so email is sent with the default WordPress mailer. Connecting needs a person to sign in from Tools, MailHawk.', 'mailhawk' ) ];
 		}
 
+		$suspension = null;
+
 		if ( $suspended ) {
-			$issues[] = [ 'code' => 'suspended', 'message' => __( 'The MailHawk account is suspended. It has to be reactivated from Tools, MailHawk.', 'mailhawk' ) ];
+
+			$details    = get_mailhawk_suspension();
+			$suspension = [
+				'reason'       => $details['reason'] ? $details['reason'] : null,
+				'suspended_at' => $details['suspended_at'] ? gmdate( 'Y-m-d\TH:i:s\Z', $details['suspended_at'] ) : null,
+				'scope'        => $details['scope'],
+				'next_steps'   => mailhawk_account_url(),
+			];
+
+			$message = $details['reason']
+				? sprintf( __( 'The MailHawk account is suspended: %s', 'mailhawk' ), $details['reason'] )
+				: __( 'The MailHawk account is suspended.', 'mailhawk' );
+
+			$issues[] = [ 'code' => 'suspended', 'message' => $message . ' ' . sprintf( __( 'What to do next is on the MailHawk account page, %s, where a person has to sign in.', 'mailhawk' ), mailhawk_account_url() ) ];
 		}
 
 		if ( $connected && ! $complete ) {
@@ -239,6 +279,7 @@ class Get_Status extends Ability {
 			'version'           => MAILHAWK_VERSION,
 			'connected'         => $connected,
 			'suspended'         => $suspended,
+			'suspension'        => $suspension,
 			'setup_complete'    => $complete,
 			'webhook_error'     => $webhook,
 			'ready_to_send'     => $connected && ! $suspended && $complete && ( null === $domains || $domains['authenticated'] > 0 ),
