@@ -1122,7 +1122,7 @@ function get_email_usage() {
 	$usage = $monthly_send_limit->usage;
 	$limit = $monthly_send_limit->limit;
 
-	$percent_usage = floor( ( $usage / $limit ?: 1 ) * 100 );
+	$percent_usage = $limit > 0 ? floor( ( $usage / $limit ) * 100 ) : 0;
 
 	$result = [
 		'percent'   => $percent_usage,

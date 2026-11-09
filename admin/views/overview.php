@@ -198,7 +198,7 @@ $card_class = $has_complaints ? 'fourth' : 'third';
 	$usage = $monthly_send_limit->usage;
 	$limit = $monthly_send_limit->limit;
 
-	$percent_usage = ceil( ( $usage / $limit ?: 1 ) * 100 );
+	$percent_usage = $limit > 0 ? min( 100, ceil( ( $usage / $limit ) * 100 ) ) : 0;
 
 	// The MTA resets the usage on the monthly anniversary of the server's creation, at midnight UTC. Older MTA builds
 	// don't say when, in which case nothing is shown.
