@@ -174,7 +174,6 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * IMPROVED When MailHawk asks the site to slow down, which it does once the plan is used up, the email is logged as failed with the reason, and the hourly retry waits for as long as MailHawk asks. Those emails do not use up a retry attempt.
 * FIXED The Usage box on the overview showed 100% when no email had been sent this month.
 * TWEAKED The site no longer counts the emails it sends or reports its usage. The warnings about nearing the monthly limit now come from MailHawk itself.
-* DEV New filter `mailhawk/upgrade_url` for where the upgrade buttons on the overview lead.
 
 = 1.4.0 (2026-11-06) =
 * ADDED Spam complaints are now tracked. Complaints are shown on the overview and marked as "Reported as spam" in the email log.
