@@ -4,7 +4,7 @@ Donate link: https://mailhawk.io/pricing/
 Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
 Requires at least: 6.9
 Tested up to: 7.1
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 Requires PHP: 7.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -166,6 +166,15 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 5. Protect your sender reputation by quarantining risky emails before they are sent.
 
 == Changelog ==
+
+= 1.5.0 (2026-11-09) =
+* ADDED When more than 80% of the month's emails are used, the Usage box on the overview suggests upgrading your plan.
+* ADDED When your plan is used up and MailHawk is turning email away, a notice at the top of the overview says so, and links to the upgrade and to the emails that failed.
+* ADDED MailHawk is part of Site Health. Tests check the connection, whether email is being turned away, whether the email log is kept up to date, and how much of the month's emails are used. The Info tab has a MailHawk section for support, which never includes your API key.
+* IMPROVED When MailHawk asks the site to slow down, which it does once the plan is used up, the email is logged as failed with the reason, and the hourly retry waits for as long as MailHawk asks. Those emails do not use up a retry attempt.
+* FIXED The Usage box on the overview showed 100% when no email had been sent this month.
+* TWEAKED The site no longer counts the emails it sends or reports its usage. The warnings about nearing the monthly limit now come from MailHawk itself.
+* DEV New filter `mailhawk/upgrade_url` for where the upgrade buttons on the overview lead.
 
 = 1.4.0 (2026-11-06) =
 * ADDED Spam complaints are now tracked. Complaints are shown on the overview and marked as "Reported as spam" in the email log.
