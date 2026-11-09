@@ -2,6 +2,10 @@
 
 namespace MailHawk\Api\Postal;
 
+use function MailHawk\clear_mailhawk_is_throttled;
+use function MailHawk\mailhawk_is_throttled;
+use function MailHawk\set_mailhawk_is_throttled;
+
 class Send extends Postal {
 
 	/**
@@ -53,7 +57,19 @@ class Send extends Postal {
 		$response = self::request( 'send/raw', $args );
 
 		if ( is_wp_error( $response ) ) {
+
+			// Throttled. The email is not sent, and what is sent after it should know to leave the MTA alone for a while.
+			if ( 'mailhawk_rate_limited' === $response->get_error_code() ) {
+				$data = (array) $response->get_error_data();
+				set_mailhawk_is_throttled( $data['retry_after'] ?? 0 );
+			}
+
 			return $response;
+		}
+
+		// Email is going through again
+		if ( mailhawk_is_throttled() ) {
+			clear_mailhawk_is_throttled();
 		}
 
 		return sanitize_text_field( $response->data->message_id );

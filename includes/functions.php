@@ -307,6 +307,52 @@ function set_mailhawk_is_suspended( $suspened = true ) {
 }
 
 /**
+ * When the MTA said the site could send again, as a timestamp. The MTA throttles a site that has used up its plan, and
+ * says for how long with a 429. The time is kept until an email goes through again, so it also tells that email has
+ * been turned away lately: it is in the past while the site is allowed another try.
+ *
+ * @return int 0 when email is not being throttled
+ */
+function mailhawk_throttled_until() {
+	return absint( get_transient( 'mailhawk_is_throttled' ) );
+}
+
+/**
+ * Whether the MTA turned email away and nothing has gone through since
+ *
+ * @return bool
+ */
+function mailhawk_is_throttled() {
+	return mailhawk_throttled_until() > 0;
+}
+
+/**
+ * Remember that the MTA is throttling email, so retries leave it alone for as long as it asks
+ *
+ * @param int $retry_after seconds the MTA asked to wait
+ *
+ * @return bool
+ */
+function set_mailhawk_is_throttled( $retry_after = 0 ) {
+
+	$retry_after = absint( $retry_after );
+
+	// A day at most: the answer to the next email that is sent is a better source than a long wait
+	$wait = $retry_after ? min( $retry_after, DAY_IN_SECONDS ) : 5 * MINUTE_IN_SECONDS;
+
+	return set_transient( 'mailhawk_is_throttled', time() + $wait, DAY_IN_SECONDS );
+}
+
+/**
+ * Email is going through again
+ *
+ * @return bool
+ */
+function clear_mailhawk_is_throttled() {
+	return delete_transient( 'mailhawk_is_throttled' );
+}
+
+/**
  * Whether the site connected but never finished the setup. Sites that connected before setup was tracked are not
  * flagged, they have no value saved.
  *

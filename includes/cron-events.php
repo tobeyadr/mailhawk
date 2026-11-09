@@ -123,6 +123,11 @@ class Cron_Events {
 			return;
 		}
 
+		// The MTA asked the site to slow down: trying again now only gets the same answer
+		if ( time() < mailhawk_throttled_until() ) {
+			return;
+		}
+
 		$retry_attempts = get_email_retry_attempts();
 
 		// Only the emails the MTA never took. One with a message ID was accepted, and then failed on its way to the
@@ -157,7 +162,7 @@ class Cron_Events {
 
 			$completed ++;
 
-		} while ( ! empty( $items_to_retry ) && ! Limits::limits_exceeded( $completed ) );
+		} while ( ! empty( $items_to_retry ) && ! Limits::limits_exceeded( $completed ) && ! ( time() < mailhawk_throttled_until() ) );
 
 
 	}

@@ -80,7 +80,21 @@ class Postal {
 
 		$json = json_decode( $body );
 
-//		var_dump( $json );
+		// Not a failure, the MTA is asking the site to slow down, and how long to wait
+		if ( 429 === (int) wp_remote_retrieve_response_code( $response ) ) {
+
+			$retry_after = absint( wp_remote_retrieve_header( $response, 'retry-after' ) );
+
+			if ( ! $retry_after && isset( $json->data->retry_after ) ) {
+				$retry_after = absint( $json->data->retry_after );
+			}
+
+			return new \WP_Error(
+				'mailhawk_rate_limited',
+				__( 'MailHawk is slowing down email from this site, usually because the monthly sending limit of the plan is reached. Upgrade the plan, or wait for the limit to reset.', 'mailhawk' ),
+				[ 'retry_after' => $retry_after ? $retry_after : 5 * MINUTE_IN_SECONDS ]
+			);
+		}
 
 		$result = new \WP_Error( 'error', 'Unable to complete request.' );
 

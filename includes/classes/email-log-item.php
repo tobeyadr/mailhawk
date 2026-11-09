@@ -123,7 +123,7 @@ class Email_Log_Item extends Base_Object {
 			// Mail this thing!
 			$result = mailhawk_mail( $this->recipients, $this->subject, $this->content, $headers );
 
-			if ( ! $result ) {
+			if ( ! $result && ! \MailHawk\mailhawk_is_throttled() ) { // a throttled email never had its try, so it keeps its attempt // a throttled email never had its try, so it keeps its attempt
 				// update retries
 
 				$this->update( [

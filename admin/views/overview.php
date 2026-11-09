@@ -29,6 +29,29 @@ if ( is_wp_error( $limits ) || is_wp_error( $data ) ) {
 /** @var array $limits */
 $monthly_send_limit = $limits[ array_search( 'monthly_send_limit', wp_list_pluck( $limits, 'type' ) ) ];
 
+$usage = $monthly_send_limit->usage;
+$limit = $monthly_send_limit->limit;
+
+$percent_usage = $limit > 0 ? min( 100, ceil( ( $usage / $limit ) * 100 ) ) : 0;
+$used_up       = $limit > 0 && $usage >= $limit;
+
+// The MTA resets the usage on the monthly anniversary of the server's creation, at midnight UTC. Older MTA builds
+// don't say when, in which case nothing is shown.
+$resets_at = ! empty( $monthly_send_limit->resets_at ) ? strtotime( $monthly_send_limit->resets_at ) : false;
+
+// Nudge towards a bigger plan once more than 80% of the month's emails are used
+$show_upgrade = $percent_usage > 80;
+
+/**
+ * Where the upgrade buttons on the overview lead
+ *
+ * @param string $url
+ */
+$upgrade_url = apply_filters( 'mailhawk/upgrade_url', 'https://mailhawk.io/pricing/' );
+
+// The MTA throttles a site that used up its plan: email is turned away with a 429 until it resets, or the plan changes
+$is_throttled = $used_up && \MailHawk\mailhawk_is_throttled();
+
 $end_time     = strtotime( $data->last_date );
 $graph_data   = array_slice( $data->graph_data, - $periods );
 $compare_data = array_slice( $data->graph_data, 0, - $periods );
@@ -126,6 +149,23 @@ $comparisons['deliveries_is_up']      = $delivery_rate > $comparisons['compare_d
 $card_class = $has_complaints ? 'fourth' : 'third';
 
 ?>
+<?php if ( $is_throttled ): ?>
+    <div class="mailhawk-content-box mailhawk-throttle-notice">
+        <h2><?php _e( 'Email is being held back', 'mailhawk' ); ?></h2>
+        <p>
+			<?php _e( "This site has used all of its emails for the month, so MailHawk is turning email away instead of sending it. The emails it turns away are marked as failed in the log.", 'mailhawk' ); ?>
+			<?php if ( $resets_at ): ?>
+				<?php printf( __( 'Sending starts again when the limit resets on %s (UTC), or as soon as the plan is upgraded.', 'mailhawk' ), esc_html( date_i18n( get_option( 'date_format' ), $resets_at, true ) ) ); ?>
+			<?php else: ?>
+				<?php _e( 'Sending starts again when the limit resets, or as soon as the plan is upgraded.', 'mailhawk' ); ?>
+			<?php endif; ?>
+        </p>
+        <p>
+            <a class="button button-primary" href="<?php echo esc_url( $upgrade_url ); ?>" target="_blank" rel="noopener"><?php _e( 'Upgrade your plan', 'mailhawk' ); ?></a>
+            <a class="button button-secondary" href="<?php echo esc_url( \MailHawk\mailhawk_admin_page( [ 'view' => 'log', 'status' => 'failed' ] ) ); ?>"><?php _e( 'See the failed emails', 'mailhawk' ); ?></a>
+        </p>
+    </div>
+<?php endif; ?>
 <?php include __DIR__ . '/groundhogg-promo.php'; ?>
 <?php include __DIR__ . '/overview-quarantine.php'; ?>
 <div class="mailhawk-content-box report">
@@ -193,18 +233,6 @@ $card_class = $has_complaints ? 'fourth' : 'third';
 <div class="mailhawk-content-box report usage">
     <h2><?php _e( 'Usage', 'mailhawk' ); ?></h2>
 
-	<?php
-
-	$usage = $monthly_send_limit->usage;
-	$limit = $monthly_send_limit->limit;
-
-	$percent_usage = $limit > 0 ? min( 100, ceil( ( $usage / $limit ) * 100 ) ) : 0;
-
-	// The MTA resets the usage on the monthly anniversary of the server's creation, at midnight UTC. Older MTA builds
-	// don't say when, in which case nothing is shown.
-	$resets_at = ! empty( $monthly_send_limit->resets_at ) ? strtotime( $monthly_send_limit->resets_at ) : false;
-
-	?>
     <div class="progress-bar-wrap">
         <div class="progress-bar" style="width:<?php echo $percent_usage ?>%"></div>
     </div>
@@ -214,6 +242,20 @@ $card_class = $has_complaints ? 'fourth' : 'third';
             <span class="usage-resets">&middot; <?php printf( __( 'Resets on %s (UTC)', 'mailhawk' ), esc_html( date_i18n( get_option( 'date_format' ), $resets_at, true ) ) ); ?></span>
 		<?php endif; ?>
     </p>
+	<?php if ( $show_upgrade ): ?>
+        <div class="usage-upgrade">
+            <p>
+				<?php if ( $used_up ): ?>
+                    <b><?php _e( "You've used all of this month's emails.", 'mailhawk' ); ?></b>
+					<?php _e( 'Upgrade your plan so your email keeps going out.', 'mailhawk' ); ?>
+				<?php else: ?>
+                    <b><?php printf( __( "You've used %s%% of this month's emails.", 'mailhawk' ), number_format_i18n( $percent_usage ) ); ?></b>
+					<?php _e( 'Upgrade your plan before you run out.', 'mailhawk' ); ?>
+				<?php endif; ?>
+            </p>
+            <a class="button button-primary" href="<?php echo esc_url( $upgrade_url ); ?>" target="_blank" rel="noopener"><?php _e( 'Upgrade your plan', 'mailhawk' ); ?></a>
+        </div>
+	<?php endif; ?>
 </div>
 
 <div class="wp-clearfix"></div>

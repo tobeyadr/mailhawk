@@ -872,6 +872,26 @@ th.value {
     color: #646970;
 }
 
+.usage-upgrade {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    background: rgba(104, 164, 218, .12);
+}
+
+.usage-upgrade p {
+    margin: 0;
+}
+
+.mailhawk-throttle-notice {
+    border-left: 4px solid #d63638;
+}
+
 /* Forms */
 .mailhawk-view-content input[type="text"],
 .mailhawk-view-content input[type="email"],
