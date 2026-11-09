@@ -162,7 +162,6 @@ class Plugin {
 			return 'wp_mail';
 		}, 99 );
 
-		new Telemetry();
 		new Quarantine();
 		new Spam_Complaints();
 		new Privacy();

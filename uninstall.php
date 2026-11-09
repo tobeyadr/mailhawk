@@ -21,6 +21,7 @@ include_once __DIR__ . '/mailhawk.php';
 wp_clear_scheduled_hook( 'mailhawk_trim_log_entries' );
 wp_clear_scheduled_hook( 'mailhawk_retry_failed_emails' );
 wp_clear_scheduled_hook( 'mailhawk_sync_delivery_status' );
+wp_clear_scheduled_hook( 'mailhawk/monthly' );
 
 if( get_option( 'mailhawk_delete_all_data' ) ) {
 
