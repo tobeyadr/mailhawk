@@ -166,6 +166,7 @@ class Plugin {
 		new Spam_Complaints();
 		new Privacy();
 		new Abilities\Abilities();
+		new Site_Health();
 	}
 
 	/**
