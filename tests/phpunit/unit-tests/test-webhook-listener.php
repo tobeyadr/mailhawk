@@ -162,6 +162,103 @@ class Test_Webhook_Listener extends WP_UnitTestCase {
 		$this->assertSame( [ [ 'bob@example.net', 'one@mta' ] ], $bounces );
 	}
 
+	/**
+	 * What the recipient list knows about the address, false when nothing
+	 *
+	 * @param string $email
+	 *
+	 * @return object|false
+	 */
+	protected function recipient( $email ) {
+
+		$recipients = Plugin::instance()->recipients;
+
+		if ( ! $recipients->installed() ) {
+			$recipients->create_table();
+		}
+
+		$recipients->flush_cache();
+
+		return $recipients->get_by_email( $email );
+	}
+
+	/**
+	 * Failures the MTA made itself, as it words them
+	 *
+	 * @return array[]
+	 */
+	public function mta_side_failures() {
+		return [
+			'a cancelled hold'            => [ 'HoldCancelled', 'The hold on this message has been removed without action.', '' ],
+			'its suppression list'        => [ 'HardFail', 'Recipient (bob@example.net) is on the suppression list (reason: too many soft fails)', '' ],
+			'giving up after timeouts'    => [ 'HardFail', 'Maximum number of delivery attempts (3) has been reached. Added bob@example.net to suppression list because delivery has failed 3 times.', '' ],
+			'a timeout as the last word'  => [ 'HardFail', 'An error occurred while sending the message to mx.example.net', 'execution expired' ],
+			'a day of no answer'          => [ 'HardFail', 'Gave up after 24 hours of temporary failures that were not about the recipient (no answer from the receiving mail server). bob@example.net was not added to the suppression list.', '' ],
+			'a day of our IP turned away' => [ 'HardFail', 'Gave up after 24 hours of temporary failures that were not about the recipient (the receiving mail server turned our IP away). bob@example.net was not added to the suppression list.', '554 5.7.1 Service unavailable; bad reputation' ],
+			'a day of slowing down'       => [ 'HardFail', 'Gave up after 24 hours of temporary failures that were not about the recipient (the provider asked us to slow down). bob@example.net was not added to the suppression list.', '' ],
+		];
+	}
+
+	/**
+	 * @dataProvider mta_side_failures
+	 */
+	public function test_a_failure_on_the_mta_side_fails_the_email_but_is_not_held_against_the_recipient( $status, $details, $output ) {
+
+		$this->assertFalse( $this->recipient( 'bob@example.net' ), 'Nothing known about the address to begin with' );
+
+		$id = $this->add_entry( 'one@mta' );
+
+		$bounces = [];
+		add_action( 'mailhawk/bounced', function ( $address, $msg_id ) use ( &$bounces ) {
+			$bounces[] = [ $address, $msg_id ];
+		}, 10, 2 );
+
+		$this->receive( 'MessageDeliveryFailed', $this->message( 'one@mta', [ 'status' => $status, 'details' => $details, 'output' => $output ] ) );
+
+		$entry = $this->entry( $id );
+
+		$this->assertSame( 'failed', $entry->status, 'It was never sent' );
+		$this->assertSame( 'MessageDeliveryFailed', $entry->error_code );
+		$this->assertSame( $details, $entry->error_message );
+
+		$this->assertSame( [], $bounces );
+		$this->assertFalse( $this->recipient( 'bob@example.net' ), 'No bounce counted, and not watched' );
+	}
+
+	public function test_a_5xx_answer_from_the_recipients_server_counts_against_the_address() {
+
+		$this->assertFalse( $this->recipient( 'bob@example.net' ) );
+
+		$id = $this->add_entry( 'one@mta' );
+
+		$this->receive( 'MessageDeliveryFailed', $this->message( 'one@mta', [
+			'status'  => 'HardFail',
+			'details' => 'Permanent SMTP delivery error when sending to mx.example.net. Recipient added to suppression list (too many hard fails).',
+			'output'  => '550 5.1.1 <bob@example.net>: Recipient address rejected: User unknown',
+		] ) );
+
+		$this->assertSame( 'failed', $this->entry( $id )->status );
+
+		$row = $this->recipient( 'bob@example.net' );
+
+		$this->assertNotFalse( $row );
+		$this->assertEquals( 1, $row->bounces );
+		$this->assertSame( '', $row->status, 'Watched' );
+		$this->assertSame( 'webhook', $row->source );
+	}
+
+	public function test_only_an_answer_from_the_recipients_server_is_a_rejection() {
+
+		$this->assertTrue( Webhook_Listener::is_rejected_by_recipient( 'Permanent SMTP delivery error when sending to mx.example.net' ) );
+		$this->assertTrue( Webhook_Listener::is_rejected_by_recipient( 'Something else', '554 5.7.1 Rejected' ) );
+		$this->assertTrue( Webhook_Listener::is_rejected_by_recipient( '550 No such user' ) );
+
+		$this->assertFalse( Webhook_Listener::is_rejected_by_recipient( 'The hold on this message has been removed without action.' ) );
+		$this->assertFalse( Webhook_Listener::is_rejected_by_recipient( 'Recipient (bob@example.net) is on the suppression list (reason: hard fail)' ) );
+		$this->assertFalse( Webhook_Listener::is_rejected_by_recipient( 'Temporary SMTP delivery error when sending to mx.example.net', '421 Try again later' ) );
+		$this->assertFalse( Webhook_Listener::is_rejected_by_recipient( '', '' ) );
+	}
+
 	public function test_a_bounce_and_a_spam_report_are_marked_and_reported() {
 
 		$bounced   = $this->add_entry( 'bounce@mta' );

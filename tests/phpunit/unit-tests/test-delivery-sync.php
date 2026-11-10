@@ -825,6 +825,47 @@ class Test_Delivery_Sync extends WP_UnitTestCase {
 		$this->assertSame( [ [ 'gone@example.net', 'moved@mta' ] ], $bounces->getArrayCopy() );
 	}
 
+	public function test_what_the_mta_failed_on_its_own_side_fails_the_email_but_is_not_a_bounce() {
+
+		$bounces = $this->listen_for_bounces();
+
+		$this->mta( function () {
+			return $this->messages( [
+				'cancelled@mta'   => [ $this->entry( 'held@example.net', 'failed', 'The hold on this message has been removed without action.' ) ],
+				'suppressed@mta'  => [ $this->entry( 'held@example.net', 'failed', 'Recipient (held@example.net) is on the suppression list (reason: too many soft fails)' ) ],
+				'gave-up@mta'     => [ $this->entry( 'slow@example.net', 'failed', 'Maximum number of delivery attempts (3) has been reached. Added slow@example.net to suppression list because delivery has failed 3 times.' ) ],
+				'gave-up-day@mta' => [ $this->entry( 'slow@example.net', 'failed', 'Gave up after 24 hours of temporary failures that were not about the recipient (no answer from the receiving mail server). slow@example.net was not added to the suppression list.' ) ],
+				'rejected@mta'    => [ $this->entry( 'dead@example.net', 'failed', 'Permanent SMTP delivery error when sending to mx.example.net' ) ],
+				'mixed@mta'       => [
+					$this->entry( 'gone@example.net', 'bounced' ),
+					$this->entry( 'held@example.net', 'failed', 'The hold on this message has been removed without action.' ),
+				],
+			] );
+		} );
+
+		$ids = [];
+
+		foreach ( [ 'cancelled' => 'held', 'suppressed' => 'held', 'gave-up' => 'slow', 'gave-up-day' => 'slow', 'rejected' => 'dead' ] as $msg => $who ) {
+			$ids[ $msg ] = $this->add_row( $msg . '@mta', [ $who . '@example.net' ] );
+		}
+
+		$mixed = $this->add_row( 'mixed@mta', [ 'gone@example.net', 'held@example.net' ] );
+
+		$this->sync_with()->sync();
+
+		foreach ( $ids as $msg => $id ) {
+			$this->assertSame( 'failed', $this->row( $id )->status, $msg );
+		}
+
+		$this->assertSame( 'The hold on this message has been removed without action.', $this->row( $ids['cancelled'] )->error_message );
+		$this->assertSame( 'bounced', $this->row( $mixed )->status );
+
+		$this->assertEqualsCanonicalizing( [
+			[ 'dead@example.net', 'rejected@mta' ],
+			[ 'gone@example.net', 'mixed@mta' ],
+		], $bounces->getArrayCopy(), 'Only what the recipient\'s server turned down' );
+	}
+
 	public function test_a_bounce_without_an_id_is_always_announced() {
 
 		$bounces = $this->listen_for_bounces();

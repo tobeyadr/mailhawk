@@ -204,6 +204,49 @@ class Webhook_Listener {
 	}
 
 	/**
+	 * How the MTA words a failure that was on its side, never the recipient's
+	 *
+	 * @var string[]
+	 */
+	const MTA_SIDE_FAILURES = [
+		// Gave up after a day of timeouts, refused connections, rate limits or our IP being turned away
+		'that were not about the recipient',
+		// Held because of its own suppression list
+		'is on the suppression list',
+		// A held email nobody released
+		'The hold on this message has been removed without action',
+	];
+
+	/**
+	 * Whether a failure the MTA reported was the recipient's mail server turning the email down for good, an SMTP 5xx
+	 * answer. Only that says something about the address. The MTA also fails emails for reasons of its own (see
+	 * MTA_SIDE_FAILURES) and gives up after timeouts. Those must not count against the recipient, or an outage at the
+	 * MTA puts good addresses in quarantine.
+	 *
+	 * @param string $details what the MTA made of it
+	 * @param string $output  what the recipient's server answered, which the status lookup of the sync does not have
+	 *
+	 * @return bool
+	 */
+	public static function is_rejected_by_recipient( $details, $output = '' ) {
+
+		foreach ( self::MTA_SIDE_FAILURES as $phrase ) {
+			if ( false !== strpos( (string) $details, $phrase ) ) {
+				return false;
+			}
+		}
+
+		foreach ( [ $output, $details ] as $text ) {
+			if ( preg_match( '/^\s*5\d\d\b/', (string) $text ) ) {
+				return true;
+			}
+		}
+
+		// The MTA's own words for a 5xx answer, which is all there is to go on without the answer itself
+		return 0 === strpos( (string) $details, 'Permanent SMTP delivery error' );
+	}
+
+	/**
 	 * Handle a single event
 	 *
 	 * @param string $event_type
@@ -261,15 +304,18 @@ class Webhook_Listener {
 				// Get the message ID
 				$msg_id    = sanitize_text_field( $payload['message']['message_id'] ?? '' );
 				$error_msg = sanitize_text_field( $payload['details'] ?? '' );
+				$status    = $payload['status'] ?? '';
 
-				$hard = ( $payload['status'] ?? '' ) === 'HardFail';
+				// A held email whose hold was cancelled is never sent either
+				$hard = in_array( $status, [ 'HardFail', 'HoldCancelled' ], true );
 
 				// If the message was sent from this site, update the status to failed. A soft failure is not the end of it, the
-				// MTA tries again, so it only holds it up. If it was failed for good, it can still be, and that is what is announced.
+				// MTA tries again, so it only holds it up.
 				$moved = $this->record_delivery( $msg_id, $hard ? 'failed' : 'softfail', 'MessageDeliveryFailed', $error_msg );
 
-				// Only if the sync, or an event sent twice, has not got to it first
-				if ( $hard && false !== $moved ) {
+				// Only a failure that came from the recipient's server is a bounce, and only if the sync, or an event sent
+				// twice, has not got to it first
+				if ( 'HardFail' === $status && false !== $moved && self::is_rejected_by_recipient( $error_msg, sanitize_text_field( $payload['output'] ?? '' ) ) ) {
 
 					// Get the recipient address
 					$to_address = sanitize_email( $payload['message']['to'] ?? '' );

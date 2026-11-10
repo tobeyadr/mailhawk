@@ -309,8 +309,8 @@ class Delivery_Sync {
 	 * @param string[] $recipients who the entry is for, lower case
 	 * @param array[]  $entries    what the MTA said, one for each recipient ( rcpt_to, status, time, details )
 	 *
-	 * @return array|null status, code and message to put in the log, and the addresses that did not take the email, or
-	 *                    null when there is nothing to put in the log
+	 * @return array|null status, code and message to put in the log, and the addresses whose server would not take the
+	 *                    email, or null when there is nothing to put in the log
 	 */
 	public static function summarize( array $recipients, array $entries ) {
 
@@ -347,12 +347,17 @@ class Delivery_Sync {
 		$failed  = $with( 'failed' );
 		$delayed = $with( 'delayed' );
 
+		// Failed also covers what the MTA gave up on itself, like a cancelled hold, which says nothing about the address
+		$rejected = array_filter( $failed, function ( $entry ) {
+			return Webhook_Listener::is_rejected_by_recipient( $entry['details'] );
+		} );
+
 		if ( $bounced ) {
 			return [
 				'status'  => 'bounced',
 				'code'    => 'Bounced',
 				'message' => __( 'This email could not be delivered and bounced back.', 'mailhawk' ),
-				'hard'    => array_keys( $bounced + $failed ),
+				'hard'    => array_keys( $bounced + $rejected ),
 			];
 		}
 
@@ -361,7 +366,7 @@ class Delivery_Sync {
 				'status'  => 'failed',
 				'code'    => 'MessageDeliveryFailed',
 				'message' => reset( $failed )['details'],
-				'hard'    => array_keys( $failed ),
+				'hard'    => array_keys( $rejected ),
 			];
 		}
 
