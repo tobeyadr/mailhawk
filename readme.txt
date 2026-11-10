@@ -187,7 +187,6 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * IMPROVED When MailHawk asks the site to slow down, which it does once the plan is used up, the email is logged as failed with the reason, and the hourly retry waits for as long as MailHawk asks. Those emails do not use up a retry attempt.
 * FIXED The Usage box on the overview showed 100% when no email had been sent this month.
 * TWEAKED The plugin no longer counts sent emails or reports usage to mailhawk.io. Warnings about nearing the monthly limit now come from MailHawk itself.
-* DEV New filter `mailhawk/upgrade_url` changes where the upgrade buttons lead.
 * DEV The `mailhawk/get-status` ability returns a `suspension` object (reason, suspended_at, scope, next_steps), and the `suspended` error of every ability points to it.
 
 = 1.4.0 (2026-11-06) =

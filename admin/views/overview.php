@@ -43,12 +43,7 @@ $resets_at = ! empty( $monthly_send_limit['resets_at'] ) ? strtotime( $monthly_s
 // Nudge towards a bigger plan once more than 80% of the month's emails are used, the same rule as Site Health
 $show_upgrade = $limit > 0 && $usage / $limit > \MailHawk\Site_Health::USAGE_WARNING;
 
-/**
- * Where the upgrade buttons on the overview lead
- *
- * @param string $url
- */
-$upgrade_url = apply_filters( 'mailhawk/upgrade_url', 'https://mailhawk.io/pricing/' );
+$upgrade_url = 'https://mailhawk.io/pricing/';
 
 // The MTA throttles a site that used up its plan: email is turned away with a 429 until it resets, or the plan changes
 $is_throttled = $used_up && \MailHawk\mailhawk_is_throttled();

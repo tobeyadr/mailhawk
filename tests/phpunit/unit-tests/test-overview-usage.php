@@ -22,7 +22,6 @@ class Test_Overview_Usage extends WP_UnitTestCase {
 		Postal::set_api_key( '' );
 		set_mailhawk_is_connected( false );
 		remove_all_filters( 'pre_http_request' );
-		remove_all_filters( 'mailhawk/upgrade_url' );
 		\MailHawk\clear_mailhawk_is_throttled();
 		parent::tear_down();
 	}
@@ -158,14 +157,5 @@ class Test_Overview_Usage extends WP_UnitTestCase {
 		\MailHawk\clear_mailhawk_is_throttled();
 
 		$this->assertStringNotContainsString( 'mailhawk-throttle-notice', $this->render_overview( 1000, 1000 ) );
-	}
-
-	public function test_upgrade_link_can_be_changed() {
-
-		add_filter( 'mailhawk/upgrade_url', function () {
-			return 'https://example.com/plans/';
-		} );
-
-		$this->assertStringContainsString( 'href="https://example.com/plans/"', $this->render_overview( 900, 1000 ) );
 	}
 }

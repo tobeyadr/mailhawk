@@ -114,8 +114,7 @@ class Site_Health {
 	 * @return string
 	 */
 	protected function upgrade_link() {
-		/** This filter is documented in admin/views/overview.php */
-		return $this->link( apply_filters( 'mailhawk/upgrade_url', 'https://mailhawk.io/pricing/' ), __( 'Upgrade your plan', 'mailhawk' ), true );
+		return $this->link( 'https://mailhawk.io/pricing/', __( 'Upgrade your plan', 'mailhawk' ), true );
 	}
 
 	/**
