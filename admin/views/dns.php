@@ -3,6 +3,7 @@
 // Todo get domains from API
 use MailHawk\Api\Postal\Domains;
 use function MailHawk\get_dns_record_names;
+use function MailHawk\is_maybe_subdomain;
 use function MailHawk\mailhawk_admin_page;
 
 $domains = Domains::query_all();
@@ -61,10 +62,13 @@ if ( is_wp_error( $domains ) || empty( $domains ) ) {
 			<?php $dkim_names = get_dns_record_names( $domain->dkim->dkim_record_name, $domain->name ); ?>
             <p class="description"><?php printf(
 					/* translators: 1: the record host, relative to the domain, 2: the full hostname */
-					__( 'You need to add a new TXT record with the host <code>%1$s</code> (full hostname <code>%2$s</code>) with the following content. If you add it in the DNS of a parent domain, add the subdomain to the host.', 'mailhawk' ),
+					__( 'You need to add a new TXT record with the host <code>%1$s</code> (full hostname <code>%2$s</code>) with the following content.', 'mailhawk' ),
 					esc_html( $dkim_names['host'] ),
 					esc_html( $dkim_names['hostname'] )
-				); ?></p>
+				); ?>
+				<?php if ( is_maybe_subdomain( $domain->name ) ) : ?>
+					<?php _e( 'If you add it in the DNS of a parent domain, add the subdomain to the host.', 'mailhawk' ); ?>
+				<?php endif; ?></p>
             <input class="code" onfocus="this.select()" type="text"
                    value="<?php esc_attr_e( $domain->dkim->dkim_record ); ?>"
                    readonly>

@@ -898,6 +898,134 @@ function get_dns_record_names( $name, $domain ) {
 }
 
 /**
+ * Whether the domain may be a subdomain, so its records may have to go in the DNS of a parent domain. A domain of two
+ * parts never is. One of three parts is not when the last two are a suffix people register domains under, like
+ * co.uk. Anything else may be, it is better to say too much than to leave someone without the note they need.
+ *
+ * @param string $domain
+ *
+ * @return bool
+ */
+function is_maybe_subdomain( $domain ) {
+
+	$labels = explode( '.', strtolower( trim( (string) $domain, '. ' ) ) );
+
+	if ( count( $labels ) <= 2 ) {
+		return false;
+	}
+
+	/**
+	 * Suffixes of two parts that domains are registered under, like co.uk, so example.co.uk is not taken for a subdomain
+	 *
+	 * @param string[] $suffixes
+	 */
+	$suffixes = apply_filters( 'mailhawk/second_level_suffixes', [
+		'co.uk', 'org.uk', 'me.uk', 'ltd.uk', 'plc.uk', 'net.uk', 'ac.uk', 'gov.uk', 'sch.uk',
+		'com.au', 'net.au', 'org.au', 'edu.au', 'gov.au', 'id.au', 'asn.au',
+		'co.nz', 'net.nz', 'org.nz', 'ac.nz', 'govt.nz',
+		'co.za', 'org.za', 'net.za',
+		'co.in', 'net.in', 'org.in', 'firm.in', 'gen.in', 'ind.in',
+		'co.jp', 'ne.jp', 'or.jp', 'ac.jp', 'go.jp',
+		'co.kr', 'or.kr', 'co.il', 'org.il', 'co.id', 'or.id', 'co.th', 'in.th',
+		'com.br', 'net.br', 'org.br', 'com.mx', 'org.mx', 'com.ar', 'com.co', 'com.pe', 'com.ve', 'com.ec', 'com.uy',
+		'com.cn', 'net.cn', 'org.cn', 'com.hk', 'org.hk', 'com.tw', 'org.tw', 'com.sg', 'org.sg', 'com.my', 'org.my',
+		'com.ph', 'com.vn', 'com.pk', 'com.bd', 'com.tr', 'org.tr', 'com.sa', 'com.eg', 'com.ng', 'com.gh', 'co.ke',
+		'com.ua', 'org.ua', 'com.pl', 'org.pl', 'com.es', 'org.es', 'com.pt', 'com.gr', 'co.at', 'or.at', 'com.cy',
+	] );
+
+	return ! ( 3 === count( $labels ) && in_array( $labels[1] . '.' . $labels[2], (array) $suffixes, true ) );
+}
+
+/**
+ * Plain text instructions for adding a domain's records to its DNS, for whoever does it: an agency, the site's
+ * developer or an AI agent. Everything needed is in the text, nobody has to see the DNS screen.
+ *
+ * @param object $domain a domain from the MTA
+ *
+ * @return string
+ */
+function get_dns_instructions( $domain ) {
+
+	$name    = strtolower( (string) $domain->name );
+	$dns     = \MailHawk\Abilities\Formatter::dns_records( $domain );
+	$records = $dns['records'];
+
+	$labels = [
+		'dkim'        => __( 'DKIM, which signs the email so receivers can tell it really came from this domain', 'mailhawk' ),
+		'return_path' => __( 'Return path, where bounces go', 'mailhawk' ),
+		'spf'         => __( 'SPF, which says MailHawk may send email for this domain', 'mailhawk' ),
+	];
+
+	$to_add = array_filter( $records, function ( $record ) {
+		return ! $record['verified'];
+	} );
+
+	$lines = [];
+
+	/* translators: %s: the sending domain */
+	$lines[] = sprintf( __( 'DNS records for %s', 'mailhawk' ), $name );
+	$lines[] = '';
+	/* translators: %s: the sending domain */
+	$lines[] = sprintf( __( 'The WordPress site sends its email through MailHawk (mailhawk.io). Add the records below at the DNS provider of %s so that email is authenticated with SPF, DKIM and a return path, and reaches the inbox.', 'mailhawk' ), $name );
+
+	if ( empty( $to_add ) ) {
+		$lines[] = __( 'All of them are already in place and verified, nothing needs to change.', 'mailhawk' );
+	} else if ( count( $to_add ) < count( $records ) ) {
+		$lines[] = __( 'Records marked "already verified" are in place already and can be left alone.', 'mailhawk' );
+	}
+
+	$lines[] = '';
+	$lines[] = __( 'How to enter the names:', 'mailhawk' );
+	/* translators: %s: the sending domain */
+	$lines[] = '- ' . sprintf( __( 'Each record has a Host, the part of the name before %s, and a Full hostname. Most DNS providers ask for the Host in a field called Host or Name. Use the Full hostname only if the provider asks for the whole name.', 'mailhawk' ), $name );
+	$lines[] = '- ' . __( 'If the provider adds the domain to the name by itself, enter the Host, or the domain ends up in the name twice.', 'mailhawk' );
+	if ( is_maybe_subdomain( $name ) ) {
+		/* translators: %s: the sending domain */
+		$lines[] = '- ' . sprintf( __( 'If %s is a subdomain and its records are kept in the DNS of a parent domain, the Host is the Full hostname without that parent domain. For example, for academy.example.com in the DNS of example.com, postal-abc._domainkey becomes postal-abc._domainkey.academy.', 'mailhawk' ), $name );
+	}
+
+	$lines[] = '- ' . __( 'An @ as the Host means the domain itself. Some providers want the field left empty for that.', 'mailhawk' );
+
+	foreach ( $records as $i => $record ) {
+
+		$lines[] = '';
+		$lines[] = sprintf( '%d. %s%s', $i + 1, $labels[ $record['purpose'] ] ?? $record['purpose'], $record['verified'] ? ' ' . __( '(already verified)', 'mailhawk' ) : '' );
+		/* translators: %s: DNS record type, like TXT or CNAME */
+		$lines[] = '   ' . sprintf( __( 'Type: %s', 'mailhawk' ), $record['type'] );
+		/* translators: %s: the host of the DNS record */
+		$lines[] = '   ' . sprintf( __( 'Host: %s', 'mailhawk' ), $record['host'] );
+		/* translators: %s: the full hostname of the DNS record */
+		$lines[] = '   ' . sprintf( __( 'Full hostname: %s', 'mailhawk' ), $record['hostname'] );
+		/* translators: %s: the value of the DNS record */
+		$lines[] = '   ' . sprintf( __( 'Value: %s', 'mailhawk' ), $record['value'] );
+		/* translators: %d: time to live of the DNS record, in seconds */
+		$lines[] = '   ' . sprintf( __( 'TTL: %d (or the provider\'s default)', 'mailhawk' ), $record['ttl'] );
+
+		if ( 'return_path' === $record['purpose'] ) {
+			$lines[] = '   ' . __( 'A CNAME can not share its name with any other record. If the provider proxies DNS records (like Cloudflare), set this one to DNS only.', 'mailhawk' );
+		}
+
+		if ( 'spf' === $record['purpose'] && ! $record['verified'] ) {
+
+			if ( $dns['existing_spf_record'] ) {
+				/* translators: %s: the SPF record the domain has now */
+				$lines[] = '   ' . sprintf( __( 'The domain already has an SPF record: %s. A name can only have one, so do not add a second TXT record starting with v=spf1. Replace the existing one with the value above, which is the same record with MailHawk added.', 'mailhawk' ), $dns['existing_spf_record'] );
+			} else {
+				$lines[] = '   ' . __( 'A name can only have one SPF record. If a TXT record starting with v=spf1 is there already, add the include: part of the value above to it, before the last part (like ~all), instead of adding a second one.', 'mailhawk' );
+			}
+		}
+	}
+
+	$lines[] = '';
+	$lines[] = __( 'When the records are added:', 'mailhawk' );
+	$lines[] = '- ' . __( 'DNS changes usually show up within minutes, but can take up to 24 hours.', 'mailhawk' );
+	/* translators: %s: URL of the DNS screen of this domain in wp-admin */
+	$lines[] = '- ' . sprintf( __( 'Then click Verify on the MailHawk DNS screen in WordPress: %s', 'mailhawk' ), mailhawk_admin_page( [ 'view' => 'domains', 'domain' => $name ] ) );
+
+	return implode( "\n", $lines );
+}
+
+/**
  * Get the value of the SPF record or false if it doesn't exist.
  *
  * @param $hostname

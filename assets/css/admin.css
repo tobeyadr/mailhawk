@@ -1107,7 +1107,45 @@ th.value {
 }
 
 .not-sure-dns {
+    border-color: #e1e5ea;
     border-radius: 0 0 10px 10px;
+}
+
+/* Handing the DNS records to someone else */
+.not-sure-dns .mailhawk-dns-handoff {
+    margin: 0;
+    padding: 12px 0;
+    border-top: 1px solid #e1e5ea;
+    color: #50575e;
+}
+
+/* The ID matches the rule that makes every button in a content box a block */
+#wpbody .mailhawk-content-box .mailhawk-copy-button.button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.mailhawk-copy-button .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.mailhawk-copy-button.button.copied,
+.mailhawk-copy-button.button.copied:hover,
+.mailhawk-copy-button.button.copied:focus {
+    border-color: #2ba123;
+    background: #e3f5e8;
+    color: #146c2e;
+}
+
+/* The DNS table and the help under it are one card, so the table only rounds its top corners */
+.mailhawk-view-content .wp-list-table.dns-list {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
 /* Destructive actions, like deleting a domain */
@@ -1625,4 +1663,119 @@ th.value {
     .mailhawk-groundhogg-promo .mailhawk-groundhogg-benefits {
         grid-template-columns: 1fr;
     }
+}
+
+/* DNS record names: the full hostname as a pill, with the host as a pill inside it */
+.mailhawk-dns-name {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 40px;
+    padding: 4px 10px 4px 4px;
+    border: 1px solid #cfd6de;
+    border-radius: 6px;
+    background: #f6f7f7;
+    color: #1d2327;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    cursor: copy;
+    word-break: break-all;
+    transition: border-color .15s, background-color .15s;
+}
+
+.mailhawk-dns-name:hover,
+.mailhawk-dns-name:focus-visible {
+    border-color: #2271b1;
+    background: #f0f6fc;
+    outline: none;
+}
+
+.mailhawk-dns-name .mailhawk-dns-host {
+    padding: 3px 7px;
+    border: 1px solid #2271b1;
+    border-radius: 4px;
+    background: #fff;
+    color: #2271b1;
+    font: inherit;
+    cursor: copy;
+    transition: background-color .15s, color .15s;
+}
+
+.mailhawk-dns-name .mailhawk-dns-host:hover,
+.mailhawk-dns-name .mailhawk-dns-host:focus-visible {
+    background: #2271b1;
+    color: #fff;
+    outline: none;
+}
+
+.mailhawk-dns-name .mailhawk-dns-rest {
+    padding-left: 1px;
+    color: #50575e;
+}
+
+/* The domain itself, shown after the @ */
+.mailhawk-dns-name .mailhawk-dns-rest.is-domain {
+    padding-left: 8px;
+}
+
+.mailhawk-dns-name .dashicons {
+    margin-left: auto;
+    padding-left: 8px;
+    color: #8c8f94;
+    font-size: 16px;
+    line-height: 20px;
+}
+
+.mailhawk-dns-name:hover .dashicons {
+    color: #2271b1;
+}
+
+.mailhawk-dns-name .mailhawk-dns-copied {
+    margin-left: auto;
+    padding-left: 8px;
+    color: #146c2e;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.mailhawk-dns-name .mailhawk-dns-copied:empty {
+    display: none;
+}
+
+/* Copied: the icon makes way for what was copied, and the part that was copied shows it */
+.mailhawk-dns-name.copied-host .dashicons,
+.mailhawk-dns-name.copied-hostname .dashicons {
+    display: none;
+}
+
+.mailhawk-dns-name.copied-hostname {
+    border-color: #2ba123;
+    background: #e3f5e8;
+}
+
+.mailhawk-dns-name.copied-host .mailhawk-dns-host {
+    border-color: #2ba123;
+    background: #2ba123;
+    color: #fff;
+}
+
+/* The TTL and value: one line, a long value is cut short on screen but copied whole */
+.mailhawk-dns-name.mailhawk-copy-value {
+    flex-wrap: nowrap;
+    padding-left: 10px;
+    text-align: left;
+    word-break: normal;
+}
+
+.mailhawk-copy-value .mailhawk-copy-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

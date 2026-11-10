@@ -3,7 +3,9 @@
 // Todo get domains from API
 use MailHawk\Api\Postal\Domains;
 use function MailHawk\mailhawk_admin_page;
+use function MailHawk\get_dns_instructions;
 use function MailHawk\get_dns_record_names;
+use function MailHawk\is_maybe_subdomain;
 use function MailHawk\get_spf_record;
 use function MailHawk\get_url_var;
 use function MailHawk\mailhawk_spf_is_set;
@@ -55,33 +57,74 @@ if ( get_url_var( 'action' ) === 'is_verified' ) {
 	$spf_names         = get_dns_record_names( '@', $domain->name );
 
 	/**
-	 * The Host field, then the full hostname under it, so it is clear which one each copy field holds
+	 * The full hostname in one pill, with the host inside it as a pill of its own. The host copies just the host, the
+	 * rest of it copies the full hostname.
 	 *
 	 * @param array $names
 	 */
-	$name_fields = function ( $names ) {
+	$name_fields = function ( $names ) use ( $domain ) {
+
+		// The domain itself has no part before the domain, so it is shown after the @
+		$rest = '@' === $names['host'] ? strtolower( $domain->name ) : substr( $names['hostname'], strlen( $names['host'] ) );
+
 		?>
-        <input class="code" onfocus="this.select()" type="text" value="<?php echo esc_attr( $names['host'] ); ?>" readonly
-               aria-label="<?php esc_attr_e( 'Host', 'mailhawk' ); ?>">
-        <p class="description"><?php _e( 'Full hostname:', 'mailhawk' ); ?></p>
-        <input class="code" onfocus="this.select()" type="text" value="<?php echo esc_attr( $names['hostname'] ); ?>" readonly
-               aria-label="<?php esc_attr_e( 'Full hostname', 'mailhawk' ); ?>">
+        <div class="mailhawk-dns-name code" role="button" tabindex="0"
+             data-copy="<?php echo esc_attr( $names['hostname'] ); ?>"
+             title="<?php esc_attr_e( 'Copy the full hostname', 'mailhawk' ); ?>"
+             aria-label="<?php echo esc_attr( sprintf(
+				 /* translators: %s: the full hostname of a DNS record */
+				 __( 'Copy the full hostname %s', 'mailhawk' ), $names['hostname'] ) ); ?>">
+            <button type="button" class="mailhawk-dns-host"
+                    data-copy="<?php echo esc_attr( $names['host'] ); ?>"
+                    title="<?php esc_attr_e( 'Copy the host', 'mailhawk' ); ?>"
+                    aria-label="<?php echo esc_attr( sprintf(
+						/* translators: %s: the host of a DNS record, relative to the domain */
+						__( 'Copy the host %s', 'mailhawk' ), $names['host'] ) ); ?>"><?php echo esc_html( $names['host'] ); ?></button>
+            <span class="mailhawk-dns-rest<?php echo '@' === $names['host'] ? ' is-domain' : ''; ?>"><?php echo esc_html( $rest ); ?></span>
+            <span class="mailhawk-dns-copied" aria-live="polite"></span>
+            <span class="dashicons dashicons-admin-page" aria-hidden="true"></span>
+        </div>
 		<?php
 	};
 
+	/**
+	 * A pill like the name, without a part of its own: the whole of it copies the value
+	 *
+	 * @param string $value
+	 * @param string $label what the value is, for a screen reader
+	 */
+	$copy_field = function ( $value, $label ) {
+		?>
+        <div class="mailhawk-dns-name mailhawk-copy-value code" role="button" tabindex="0"
+             data-copy="<?php echo esc_attr( $value ); ?>"
+             data-copied="<?php esc_attr_e( 'Copied', 'mailhawk' ); ?>"
+             title="<?php echo esc_attr( $value ); ?>"
+             aria-label="<?php echo esc_attr( sprintf(
+				 /* translators: 1: what is copied, like TTL or value, 2: the text that is copied */
+				 __( 'Copy the %1$s %2$s', 'mailhawk' ), $label, $value ) ); ?>">
+            <span class="mailhawk-copy-text"><?php echo esc_html( $value ); ?></span>
+            <span class="mailhawk-dns-copied" aria-live="polite"></span>
+            <span class="dashicons dashicons-admin-page" aria-hidden="true"></span>
+        </div>
+		<?php
+	};
+
+	$ttl_label   = __( 'TTL', 'mailhawk' );
+	$value_label = __( 'value', 'mailhawk' );
+
 	?>
-    <p class="description"><?php printf(
-			/* translators: %s: the sending domain */
-			__( 'Most DNS providers ask for the <b>Host</b>, the part before <code>%s</code>. Some ask for the <b>full hostname</b> instead. If yours adds the domain by itself, use the Host, or the domain ends up in the name twice.', 'mailhawk' ),
-			esc_html( $domain->name )
-		); ?></p>
-    <p class="description"><?php _e( 'For a subdomain whose records you add in the DNS of its parent domain, add the subdomain to the Host. For example, for <code>academy.example.com</code> in the DNS of <code>example.com</code>, the host <code>postal-abc._domainkey</code> becomes <code>postal-abc._domainkey.academy</code>. The full hostname is the same either way.', 'mailhawk' ); ?></p>
+    <p class="description">
+		<?php _e( 'Click the highlighted <b>host</b> to copy just that part, which is what most DNS providers ask for, or anywhere else on the name to copy the <b>full hostname</b>.', 'mailhawk' ); ?>
+		<?php if ( is_maybe_subdomain( $domain->name ) ) : ?>
+			<?php _e( 'If the records of a subdomain go in the DNS of its parent domain, add the subdomain to the host: for <code>academy.example.com</code> in the DNS of <code>example.com</code>, <code>postal-abc._domainkey</code> becomes <code>postal-abc._domainkey.academy</code>.', 'mailhawk' ); ?>
+		<?php endif; ?>
+    </p>
 
     <table class="wp-list-table widefat fixed striped dns-list">
         <thead>
         <tr>
             <th class="type"><?php _e( 'Type', 'mailhawk' ) ?></th>
-            <th class="name"><?php _e( 'Host', 'mailhawk' ) ?></th>
+            <th class="name"><?php _e( 'Name', 'mailhawk' ) ?></th>
             <th class="ttl"><?php _e( 'TTL', 'mailhawk' ) ?></th>
             <th class="value"><?php _e( 'Value', 'mailhawk' ) ?></th>
             <th class="status"><?php _e( 'Status', 'mailhawk' ) ?></th>
@@ -91,33 +134,23 @@ if ( get_url_var( 'action' ) === 'is_verified' ) {
         <tr>
             <td><?php _e( '<code>TXT</code> (DKIM)' ) ?></td>
             <td><?php $name_fields( $dkim_names ); ?></td>
-            <td><input class="code" onfocus="this.select()" type="text"
-                       value="3600"
-                       readonly></td>
-            <td><input class="code" onfocus="this.select()" type="text"
-                       value="<?php esc_attr_e( $domain->dkim->dkim_record ); ?>"
-                       readonly></td>
+            <td><?php $copy_field( '3600', $ttl_label ); ?></td>
+            <td><?php $copy_field( (string) $domain->dkim->dkim_record, $value_label ); ?></td>
             <td><?php echo $domain->dkim->dkim_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified', 'mailhawk' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>"; ?>
             </td>
         </tr>
         <tr>
             <td><?php _e( '<code>CNAME</code>' ) ?></td>
             <td><?php $name_fields( $return_path_names ); ?></td>
-            <td><input class="code" onfocus="this.select()" type="text"
-                       value="3600"
-                       readonly></td>
-            <td><input class="code" onfocus="this.select()" type="text"
-                       value="rp.mta01.mailhawk.io"
-                       readonly></td>
+            <td><?php $copy_field( '3600', $ttl_label ); ?></td>
+            <td><?php $copy_field( 'rp.mta01.mailhawk.io', $value_label ); ?></td>
             <td><?php echo $domain->return_path->return_path_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified', 'mailhawk' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>"; ?>
             </td>
         </tr>
         <tr>
             <td><?php _e( '<code>TXT</code> (SPF)' ) ?></td>
             <td><?php $name_fields( $spf_names ); ?></td>
-            <td><input class="code" onfocus="this.select()" type="text"
-                       value="3600"
-                       readonly></td>
+            <td><?php $copy_field( '3600', $ttl_label ); ?></td>
             <td>
 
 		        <?php
@@ -133,9 +166,7 @@ if ( get_url_var( 'action' ) === 'is_verified' ) {
 			        $spf_record = $domain->spf->spf_record;
 		        endif; ?>
 
-                <input class="code" onfocus="this.select()" type="text"
-                       value="<?php esc_attr_e( $spf_record ); ?>"
-                       readonly></td>
+				<?php $copy_field( (string) $spf_record, $value_label ); ?></td>
             <td><?php echo $domain->spf->spf_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified', 'mailhawk' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>"; ?>
             </td>
         </tr>
@@ -146,6 +177,15 @@ if ( get_url_var( 'action' ) === 'is_verified' ) {
             <span class="dashicons dashicons-sos"></span> <?php _e( "Don't know how to configure DNS records?", 'mailhawk' ) ?>
             <a href="https://mailhawk.io/configure-dns/"
                target="_blank"><?php _e( 'Learn how to configure your DNS', 'mailhawk' ); ?></a></p>
+        <p class="mailhawk-dns-handoff">
+			<?php _e( 'Someone else manages your DNS, like an agency, a developer or an AI assistant?', 'mailhawk' ); ?>
+            <button type="button" class="button button-secondary mailhawk-copy-button"
+                    data-copy="<?php echo esc_attr( get_dns_instructions( $domain ) ); ?>"
+                    data-copied="<?php esc_attr_e( 'Instructions copied', 'mailhawk' ); ?>">
+                <span class="dashicons dashicons-clipboard" aria-hidden="true"></span>
+                <span class="mailhawk-copy-button-label"><?php _e( 'Copy instructions', 'mailhawk' ); ?></span>
+            </button>
+        </p>
     </div>
     <p>
         <a href="<?php echo esc_url( mailhawk_admin_page( [ 'view' => 'domains' ] ) ); ?>">&larr; <?php _e( 'Back', 'mailhawk' ); ?></a>

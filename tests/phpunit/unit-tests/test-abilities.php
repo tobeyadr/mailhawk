@@ -626,11 +626,24 @@ class Test_Abilities extends WP_UnitTestCase {
 
 		unset( $_GET['domain'] );
 
+		// The pill copies the full hostname, the host inside it just the host
 		foreach ( [ 'postal-abc123._domainkey', 'postal-abc123._domainkey.academy.example.com', 'psrp', 'psrp.academy.example.com', '@', 'academy.example.com' ] as $value ) {
-			$this->assertStringContainsString( 'value="' . $value . '"', $html, $value );
+			$this->assertStringContainsString( 'data-copy="' . $value . '"', $html, $value );
 		}
 
-		$this->assertStringContainsString( 'Full hostname', $html );
+		$this->assertStringContainsString( '>.academy.example.com</span>', $html, 'The rest of the full hostname follows the host' );
+
+		// The TTL and the values copy the same way
+		foreach ( [ '3600', 'v=DKIM1; p=abc', 'rp.mta01.mailhawk.io', 'v=spf1 a mx include:spf.mailhawk.io ~all' ] as $value ) {
+			$this->assertStringContainsString( 'data-copy="' . esc_attr( $value ) . '"', $html, $value );
+		}
+
+		$this->assertStringNotContainsString( 'onfocus="this.select()"', $html, 'No plain fields left' );
+
+		// The instructions for whoever adds the records, in the button that copies them
+		$this->assertStringContainsString( 'mailhawk-copy-button', $html );
+		$this->assertStringContainsString( 'Copy instructions', $html );
+		$this->assertStringContainsString( esc_attr( 'Full hostname: postal-abc123._domainkey.academy.example.com' ), $html );
 		$this->assertStringContainsString( 'postal-abc._domainkey.academy', $html, 'The parent domain case is explained' );
 	}
 

@@ -1101,6 +1101,12 @@ class Admin {
 			'connecting_text' => '<span class="dashicons dashicons-admin-generic"></span>' . __( 'Connecting You To MailHawk...', 'mailhawk' )
 		] );
 
+		// What the DNS screen says when a name is copied
+		wp_localize_script( 'mailhawk-admin', 'MailHawkDns', [
+			'host_copied'     => __( 'Host copied', 'mailhawk' ),
+			'hostname_copied' => __( 'Full hostname copied', 'mailhawk' ),
+		] );
+
 		// Not asking for a review again once the customer said so
 		wp_localize_script( 'mailhawk-admin', 'MailHawkReview', [
 			'ajax_url' => admin_url( 'admin-ajax.php' ),
