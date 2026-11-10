@@ -115,6 +115,18 @@ class Recipients extends DB {
 	}
 
 	/**
+	 * Whether the address reported email as spam. That record is kept: forgetting it would put the address back among
+	 * the ones that can be emailed and trusted.
+	 *
+	 * @param object|null $row a row of the recipients table
+	 *
+	 * @return bool
+	 */
+	public function has_reported_spam( $row ) {
+		return is_object( $row ) && ( absint( $row->complaints ?? 0 ) > 0 || ( $row->status ?? '' ) === self::BLOCKED );
+	}
+
+	/**
 	 * Trust an address so mail to it is never quarantined. Refused for an address that has reported spam.
 	 *
 	 * @param string $email
@@ -133,7 +145,7 @@ class Recipients extends DB {
 		$row = $this->get_by_email( $email );
 
 		// Someone who reported spam has said they don't want mail from this site
-		if ( $row && absint( $row->complaints ) > 0 ) {
+		if ( $this->has_reported_spam( $row ) ) {
 			return false;
 		}
 

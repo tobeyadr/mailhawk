@@ -67,7 +67,7 @@ class Remove_Recipient extends Ability {
 			return [ 'removed' => false, 'email' => $email ];
 		}
 
-		if ( absint( $row->complaints ) > 0 ) {
+		if ( $recipients->has_reported_spam( $row ) ) {
 			return $this->error( 'reported_spam', __( 'That person reported email from this site as spam. The record is kept so they are not emailed again.', 'mailhawk' ), 409 );
 		}
 

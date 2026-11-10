@@ -827,7 +827,16 @@ class Admin {
 			return;
 		}
 
-		if ( Plugin::instance()->recipients->delete( $id ) ) {
+		$recipients = Plugin::instance()->recipients;
+
+		// The record of someone who reported spam is what keeps them from being emailed or trusted
+		if ( $recipients->has_reported_spam( $recipients->get( $id ) ) ) {
+			add_action( 'mailhawk_notices', [ $this, 'show_recipient_kept_notice' ] );
+
+			return;
+		}
+
+		if ( $recipients->delete( $id ) ) {
 			add_action( 'mailhawk_notices', [ $this, 'show_recipient_forgotten_notice' ] );
 		}
 	}
@@ -1606,6 +1615,17 @@ class Admin {
 		?>
         <div class="notice notice-error is-dismissible">
             <p><?php printf( __( '%s could not be trusted. Check the address is valid, and that the recipient has not reported your email as spam.', 'mailhawk' ), "<code>" . esc_html( sanitize_email( get_post_var( 'address' ) ) ) . "</code>" ); ?></p>
+        </div>
+		<?php
+	}
+
+	/**
+	 * Notice when a recipient was not forgotten, because they reported email as spam
+	 */
+	public function show_recipient_kept_notice() {
+		?>
+        <div class="notice notice-error is-dismissible">
+            <p><?php _e( 'That person reported email from this site as spam. The record is kept so they are not emailed again.', 'mailhawk' ); ?></p>
         </div>
 		<?php
 	}

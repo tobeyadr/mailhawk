@@ -30,6 +30,30 @@ class Updater extends \MailHawk\Utils\Updater{
 	}
 
 	/**
+	 * Subscribe the webhook to the events the plugin listens for. A failure is remembered, so the customer is told and
+	 * can try again, bounces and spam complaints never arrive without it.
+	 *
+	 * @return void
+	 */
+	protected function update_webhook() {
+
+		// Nothing to update until the site connects, which registers the webhook itself
+		if ( ! mailhawk_is_connected() ) {
+			return;
+		}
+
+		$response = Webhooks::update( get_rest_api_webhook_listener_uri(), false, get_webhook_events(), get_webhook_batch_interval() );
+
+		if ( is_wp_error( $response ) ) {
+			set_mailhawk_webhook_error( $response->get_error_message() ?: $response->get_error_code() );
+
+			return;
+		}
+
+		set_mailhawk_webhook_error( '' );
+	}
+
+	/**
 	 * Create the email log
 	 */
 	public function version_1_0_1_1(){
@@ -59,7 +83,7 @@ class Updater extends \MailHawk\Utils\Updater{
 	 * nothing has read or written for a long time
 	 */
 	public function version_1_4_0(){
-		Webhooks::update( get_rest_api_webhook_listener_uri(), false, get_webhook_events(), get_webhook_batch_interval() );
+		$this->update_webhook();
 
 		Plugin::instance()->recipients->create_table();
 
@@ -77,6 +101,9 @@ class Updater extends \MailHawk\Utils\Updater{
 	 * about nearing the monthly limit come from MailHawk itself.
 	 */
 	public function version_1_5_0(){
+
+		// The update to 1.4.0 did not say when this failed, so a site that is still on the old events is told now
+		$this->update_webhook();
 
 		// Scheduled per site, so cleared on each site as it updates
 		wp_clear_scheduled_hook( 'mailhawk/monthly' );

@@ -350,7 +350,7 @@ class Privacy {
 			return $response;
 		}
 
-		if ( Recipients::BLOCKED === $row->status ) {
+		if ( $recipients->has_reported_spam( $row ) ) {
 			$response['items_retained'] = true;
 			$response['messages'][]     = __( 'MailHawk kept the record that this address reported email as spam, so that it is not emailed again.', 'mailhawk' );
 

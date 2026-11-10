@@ -760,6 +760,63 @@ class Test_Connection extends WP_UnitTestCase {
 		return ob_get_clean();
 	}
 
+	/**
+	 * Press Remove for a recipient, as the link on the recipients screen does
+	 *
+	 * @param int $id
+	 *
+	 * @return string what the notices say
+	 */
+	protected function forget_recipient( $id ) {
+
+		$_GET['recipient']      = $id;
+		$_GET['_mailhawk_nonce'] = wp_create_nonce( 'forget_recipient_' . $id );
+
+		$admin  = new Admin();
+		$method = new ReflectionMethod( Admin::class, 'maybe_forget_recipient' );
+		$method->setAccessible( true );
+		$method->invoke( $admin );
+
+		unset( $_GET['recipient'], $_GET['_mailhawk_nonce'] );
+
+		ob_start();
+		do_action( 'mailhawk_notices' );
+
+		return ob_get_clean();
+	}
+
+	public function test_a_recipient_can_be_removed_from_the_recipients_screen() {
+
+		$recipients = \MailHawk\Plugin::instance()->recipients;
+		$recipients->record_bounce( 'gone@example.com' );
+		$row = $recipients->get_by_email( 'gone@example.com' );
+
+		$this->assertStringContainsString( 'recipient=' . $row->ID, $this->render_recipients() );
+
+		$this->assertStringContainsString( 'Recipient removed', $this->forget_recipient( $row->ID ) );
+		$this->assertEmpty( $recipients->get_by_email( 'gone@example.com' ) );
+	}
+
+	public function test_a_recipient_who_reported_spam_can_not_be_removed_or_trusted_afterwards() {
+
+		$recipients = \MailHawk\Plugin::instance()->recipients;
+		$recipients->record_complaint( 'angry@example.net' );
+		$row = $recipients->get_by_email( 'angry@example.net' );
+
+		// No Remove button for them
+		$this->assertStringContainsString( 'angry@example.net', $this->render_recipients() );
+		$this->assertStringNotContainsString( 'recipient=' . $row->ID, $this->render_recipients() );
+
+		// Not even with the link made by hand
+		$this->assertStringContainsString( 'reported email from this site as spam', $this->forget_recipient( $row->ID ) );
+
+		$kept = $recipients->get_by_email( 'angry@example.net' );
+
+		$this->assertNotFalse( $kept );
+		$this->assertSame( \MailHawk\DB\Recipients::BLOCKED, $kept->status );
+		$this->assertFalse( $recipients->trust( 'angry@example.net', 'manual' ) );
+	}
+
 	protected function skip_when_groundhogg_is_running() {
 		if ( is_groundhogg_active() ) {
 			$this->markTestSkipped( 'Groundhogg is running in this environment.' );

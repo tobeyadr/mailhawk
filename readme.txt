@@ -168,12 +168,15 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 == Changelog ==
 
 = 1.5.0 (2026-11-09) =
+* IMPROVED When MailHawk suspends an account, the suspended screen and the admin notice show the reason MailHawk gave, since when, and whether the whole account is affected, with a "See what to do next" link to your MailHawk account page.
 * ADDED When more than 80% of the month's emails are used, the Usage box on the overview suggests upgrading your plan.
 * ADDED When your plan is used up and MailHawk is turning email away, a notice at the top of the overview says so, and links to the upgrade and to the emails that failed.
-* ADDED MailHawk is part of Site Health. Tests check the connection, whether email is being turned away, whether the email log is kept up to date, and how much of the month's emails are used. The Info tab has a MailHawk section for support, which never includes your API key.
+* ADDED MailHawk now adds checks to Site Health for the connection, whether email is being turned away, whether the email log is kept up to date, and how much of the month's emails are used. The Info tab has a MailHawk section for support, which never includes your API key.
 * IMPROVED When MailHawk asks the site to slow down, which it does once the plan is used up, the email is logged as failed with the reason, and the hourly retry waits for as long as MailHawk asks. Those emails do not use up a retry attempt.
 * FIXED The Usage box on the overview showed 100% when no email had been sent this month.
-* TWEAKED The site no longer counts the emails it sends or reports its usage. The warnings about nearing the monthly limit now come from MailHawk itself.
+* TWEAKED The plugin no longer counts sent emails or reports usage to mailhawk.io. Warnings about nearing the monthly limit now come from MailHawk itself.
+* DEV New filter `mailhawk/upgrade_url` changes where the upgrade buttons lead.
+* DEV The `mailhawk/get-status` ability returns a `suspension` object (reason, suspended_at, scope, next_steps), and the `suspended` error of every ability points to it.
 
 = 1.4.0 (2026-11-06) =
 * ADDED Spam complaints are now tracked. Complaints are shown on the overview and marked as "Reported as spam" in the email log.

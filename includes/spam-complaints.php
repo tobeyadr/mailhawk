@@ -82,6 +82,16 @@ class Spam_Complaints {
 			$pending = [];
 		}
 
+		// The MTA can deliver the same report more than once. Reports without a message ID can not be told apart.
+		if ( '' !== (string) $msg_id ) {
+
+			foreach ( $pending as $entry ) {
+				if ( ( $entry['msg_id'] ?? '' ) === $msg_id && strtolower( $entry['email'] ?? '' ) === strtolower( $email_address ) ) {
+					return;
+				}
+			}
+		}
+
 		$pending[] = [
 			'email'    => $email_address,
 			'msg_id'   => $msg_id,

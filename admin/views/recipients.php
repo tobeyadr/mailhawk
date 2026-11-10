@@ -104,7 +104,11 @@ foreach ( $rows as $row ) {
                     <td><?php echo esc_html( number_format_i18n( absint( $row->bounces ) ) ); ?></td>
                     <td><?php echo esc_html( number_format_i18n( absint( $row->complaints ) ) ); ?></td>
                     <td><?php echo esc_html( $row->date_updated ); ?></td>
-                    <td><a class="button button-secondary" href="<?php echo esc_url( $forget_url ); ?>"><?php _e( 'Remove', 'mailhawk' ); ?></a></td>
+                    <td>
+						<?php if ( ! $recipients_db->has_reported_spam( $row ) ): ?>
+                            <a class="button button-secondary" href="<?php echo esc_url( $forget_url ); ?>"><?php _e( 'Remove', 'mailhawk' ); ?></a>
+						<?php endif; ?>
+                    </td>
                 </tr>
 			<?php endforeach; ?>
             </tbody>
