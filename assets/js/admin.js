@@ -57,6 +57,63 @@
         });
     });
 
+    // The test email: say so when the address it is sent from is on a domain that is not verified, or not MailHawk's
+    $(function () {
+        var $from = $('#mailhawk-test-from');
+        var $warning = $('.mailhawk-test-from-warning');
+
+        if (!$from.length || !$warning.length) {
+            return;
+        }
+
+        var domains = $from.data('domains') || {};
+        var $link = $warning.find('.mailhawk-test-from-warning-link');
+        var $select = $('#mailhawk-test-from-select');
+
+        // The select picks a suggested address, its last choice opens the field for any other
+        function pick() {
+            var value = $select.val();
+
+            $from.prop('hidden', value !== '');
+
+            if (value !== '') {
+                $from.val(value);
+            } else if ($select.find('option[value="' + $from.val() + '"]').length) {
+                // Coming from a suggestion, start the other address empty
+                $from.val('').trigger('focus');
+            }
+
+            check();
+        }
+
+        $select.prop('hidden', false).on('change', pick);
+
+        function check() {
+            var email = $.trim($from.val()).toLowerCase();
+            var at = email.lastIndexOf('@');
+            var domain = at > 0 ? email.slice(at + 1) : '';
+
+            // Nothing to say until there is an address to say it about, or when its domain is verified
+            if (!domain || domain.indexOf('.') === -1 || domains[domain] === true) {
+                $warning.prop('hidden', true);
+                return;
+            }
+
+            var known = Object.prototype.hasOwnProperty.call(domains, domain);
+            var kind = known ? 'unverified' : 'unknown';
+
+            $warning.find('.mailhawk-test-from-warning-text').text($warning.attr('data-' + kind).replace('%s', domain));
+            $link.text($link.attr('data-' + kind)).attr('href', known
+                ? $warning.attr('data-dns-url').replace('%s', encodeURIComponent(domain))
+                : $warning.attr('data-domains-url'));
+
+            $warning.prop('hidden', false);
+        }
+
+        $from.on('input change', check);
+        pick();
+    });
+
     // The pill is not a button element, it holds one, so Enter and Space are handled here
     $(document).on('keydown', '.mailhawk-dns-name', function (e) {
         if (e.target === this && (e.key === 'Enter' || e.key === ' ')) {

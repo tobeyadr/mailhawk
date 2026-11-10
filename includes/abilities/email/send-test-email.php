@@ -5,6 +5,8 @@ namespace MailHawk\Abilities\Email;
 use MailHawk\Abilities\Ability;
 use MailHawk\Plugin;
 use WP_Error;
+use function MailHawk\get_test_email;
+use function MailHawk\set_next_alt_body;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -82,9 +84,9 @@ class Send_Test_Email extends Ability {
 			return $this->error( 'invalid_email', __( 'That is not an email address.', 'mailhawk' ) );
 		}
 
-		$site    = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
-		$subject = sprintf( __( 'MailHawk test email from %s', 'mailhawk' ), $site );
-		$message = sprintf( __( "This is a test email from %s, sent through MailHawk to check that email is delivered.\n\nYou can ignore it.", 'mailhawk' ), $site );
+		// The same email the Test screen sends
+		$email   = get_test_email( $to );
+		$subject = $email['subject'];
 
 		$table = Plugin::instance()->log->get_table_name();
 		$last  = absint( $wpdb->get_var( "SELECT MAX(`ID`) FROM {$table}" ) );
@@ -97,15 +99,18 @@ class Send_Test_Email extends Ability {
 
 		add_action( 'wp_mail_failed', $catch );
 
+		$alt_body = set_next_alt_body( $email['text'] );
+
 		// Straight to MailHawk's mailer, which is what wp_mail() is while the site is connected. A test that went through
 		// whatever else is hooked in would not say anything about MailHawk.
 		try {
-			$sent = mailhawk_mail( $to, $subject, $message );
+			$sent = mailhawk_mail( $to, $subject, $email['html'], [ 'Content-Type: text/html' ] );
 		} catch ( \Exception $e ) {
 			$sent    = false;
 			$failure = new WP_Error( 'mailhawk_test_failed', $e->getMessage() );
 		} finally {
 			remove_action( 'wp_mail_failed', $catch );
+			remove_action( 'phpmailer_init', $alt_body, 99 );
 		}
 
 		if ( ! $sent ) {

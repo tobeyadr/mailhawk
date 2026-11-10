@@ -168,6 +168,8 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 == Changelog ==
 
 = 1.5.2 (2026-11-10) =
+* ADDED The test email can be sent from any address. A dropdown suggests the default from address and the same name at each of your domains, and a warning says when the domain of the address you pick is not verified, or not one of your MailHawk domains.
+* IMPROVED The test email is now a branded email that says what it means for where it landed: the inbox, Gmail's Updates or Promotions tabs, Outlook's Other folder, or spam. The Test screen has the same tips, and what to do when it did not arrive at all.
 * ADDED A "Copy instructions" button on the DNS screen copies everything someone else needs to add the records, like an agency, a developer or an AI assistant: every record with its host, full hostname, value and TTL, what to do with an SPF record that is already there, and where to verify.
 * IMPROVED Record names on the DNS screen copy with one click: the highlighted host copies just the host, anywhere else copies the full hostname. The screen also explains what to enter when the records of a subdomain go in the DNS of its parent domain, and the host of the return path no longer includes your domain, so DNS providers that add it themselves don't end up with it twice.
 * TWEAKED Clearer wording on the overview, in Site Health, and on the suspended screen and notice. When the monthly limit is reached, the notice on the overview is titled "Your monthly email limit is reached".

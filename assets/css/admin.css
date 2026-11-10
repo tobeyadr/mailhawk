@@ -1111,6 +1111,52 @@ th.value {
     border-radius: 0 0 10px 10px;
 }
 
+/* The test email */
+.mailhawk-test-email label {
+    font-weight: 600;
+}
+
+.mailhawk-test-email .mailhawk-test-from-warning {
+    max-width: 25em;
+    margin: -4px 0 12px;
+}
+
+.mailhawk-test-email .mailhawk-test-from-warning[hidden],
+.mailhawk-test-email [hidden] {
+    display: none;
+}
+
+/* The field for another address sits under the select */
+.mailhawk-test-email #mailhawk-test-from-select + #mailhawk-test-from {
+    display: block;
+    margin-top: 8px;
+}
+
+.mailhawk-test-email #mailhawk-test-from-select + #mailhawk-test-from[hidden] {
+    display: none;
+}
+
+/* Where the test email landed, one question open at a time is plenty */
+.mailhawk-test-faq details {
+    border-top: 1px solid #e1e5ea;
+}
+
+.mailhawk-test-faq details:last-child {
+    border-bottom: 1px solid #e1e5ea;
+}
+
+.mailhawk-test-faq summary {
+    padding: 12px 0;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.mailhawk-test-faq details p {
+    max-width: 50em;
+    margin: 0 0 14px;
+    color: #50575e;
+}
+
 /* Handing the DNS records to someone else */
 .not-sure-dns .mailhawk-dns-handoff {
     margin: 0;

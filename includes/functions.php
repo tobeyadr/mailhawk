@@ -1208,6 +1208,193 @@ function get_default_from_email_address() {
 	return get_option( 'mailhawk_default_from_email_address' );
 }
 
+/**
+ * The addresses to suggest sending a test email from: the default from address first, then the same name at each of
+ * the domains registered with MailHawk, and the current user's and the site's own address when their domain is one of
+ * them. Each says whether its domain is authenticated, so a test from it can be expected to reach the inbox.
+ *
+ * @param object[]|mixed $domains the domains from the MTA, anything else is treated as none
+ *
+ * @return array{addresses: array[], domains: bool[]} addresses with email, default and authenticated (null when the
+ *                                                    domain is not registered), and each registered domain with whether
+ *                                                    it is authenticated
+ */
+function get_test_from_addresses( $domains ) {
+
+	$authenticated = [];
+
+	foreach ( is_array( $domains ) ? $domains : [] as $domain ) {
+		if ( is_object( $domain ) && ! empty( $domain->name ) ) {
+			$authenticated[ strtolower( (string) $domain->name ) ] = is_domain_authenticated( $domain );
+		}
+	}
+
+	// Authenticated domains first, then by name
+	$flags = $authenticated;
+
+	uksort( $authenticated, function ( $a, $b ) use ( $flags ) {
+		return [ ! $flags[ $a ], $a ] <=> [ ! $flags[ $b ], $b ];
+	} );
+
+	$default = strtolower( (string) get_default_from_email_address() );
+	$local   = is_email( $default ) ? strstr( $default, '@', true ) : 'wordpress';
+
+	$emails = [ $default ];
+
+	foreach ( array_keys( $authenticated ) as $name ) {
+		$emails[] = $local . '@' . $name;
+	}
+
+	// People's own addresses, only on a domain MailHawk can send for
+	foreach ( [ wp_get_current_user()->user_email, get_option( 'admin_email' ) ] as $email ) {
+		$email = strtolower( (string) $email );
+
+		if ( is_email( $email ) && isset( $authenticated[ substr( strrchr( $email, '@' ), 1 ) ] ) ) {
+			$emails[] = $email;
+		}
+	}
+
+	$addresses = [];
+
+	foreach ( array_unique( array_filter( $emails, 'is_email' ) ) as $email ) {
+
+		$domain = substr( strrchr( $email, '@' ), 1 );
+
+		$addresses[] = [
+			'email'         => $email,
+			'default'       => $email === $default,
+			'authenticated' => $authenticated[ $domain ] ?? null,
+		];
+	}
+
+	return [ 'addresses' => $addresses, 'domains' => $authenticated ];
+}
+
+/**
+ * Where a test email can end up and what to make of it, for the test email itself and for the Test screen. Answers are
+ * HTML with only links and emphasis.
+ *
+ * @param bool $not_arrived whether to include what to do when it never arrived, which only makes sense on the screen
+ *
+ * @return array[] each with key, question and answer
+ */
+function get_test_email_faq( $not_arrived = false ) {
+
+	$domains = mailhawk_admin_page( [ 'view' => 'domains' ] );
+	$log     = mailhawk_admin_page( [ 'view' => 'log' ] );
+
+	$faq = [
+		[
+			'key'      => 'inbox',
+			'question' => __( 'It landed in the inbox', 'mailhawk' ),
+			'answer'   => __( 'MailHawk is working, and the mailbox trusts email from this site. There is nothing else to do.', 'mailhawk' ),
+		],
+		[
+			'key'      => 'updates',
+			'question' => __( 'Gmail put it in Updates', 'mailhawk' ),
+			'answer'   => __( 'That is normal. Gmail puts receipts, password resets and other notifications in Updates, and they still arrive. To keep email from this address in Primary, drag it to the Primary tab and choose to do the same for future messages.', 'mailhawk' ),
+		],
+		[
+			'key'      => 'promotions',
+			'question' => __( 'Gmail put it in Promotions', 'mailhawk' ),
+			'answer'   => __( 'That is normal too, and not a delivery problem. Gmail sorts email into tabs by what it looks like, and branded emails with images often go to Promotions. Your newsletters probably will as well. Order and account emails that are plain and personal usually end up in Primary or Updates. You can drag it to Primary to teach your own inbox.', 'mailhawk' ),
+		],
+		[
+			'key'      => 'other',
+			'question' => __( 'Outlook put it in Other', 'mailhawk' ),
+			'answer'   => __( 'That is normal. Outlook\'s Focused Inbox puts email from senders it has not seen before in Other. Move it to Focused and choose to always move email from this address there.', 'mailhawk' ),
+		],
+		[
+			'key'      => 'spam',
+			'question' => __( 'It landed in spam', 'mailhawk' ),
+			'answer'   => sprintf(
+			/* translators: %s: URL of the Domains screen in wp-admin */
+				__( 'Check that the domain of the address it came from has all its DNS records verified on the <a href="%s">Domains screen</a>. An address on a domain that is not verified, or on a free provider like gmail.com, can not be authenticated and is often treated as spam. Then mark the email as not spam, which teaches your mailbox to trust it. A new domain can take a few days of sending to build trust. If it keeps happening, let MailHawk support know.', 'mailhawk' ),
+				esc_url( $domains )
+			),
+		],
+	];
+
+	if ( $not_arrived ) {
+		$faq[] = [
+			'key'      => 'missing',
+			'question' => __( 'It did not arrive at all', 'mailhawk' ),
+			'answer'   => sprintf(
+			/* translators: %s: URL of the Email Log screen in wp-admin */
+				__( 'Give it a minute, then look in spam and in every tab or folder. The <a href="%s">Email Log</a> says what happened to it: failed emails say why, and an email held for review can be released from there. Also check the address it was sent to for typos.', 'mailhawk' ),
+				esc_url( $log )
+			),
+		];
+	}
+
+	return $faq;
+}
+
+/**
+ * The test email: its subject, a branded HTML version and the same in plain text. Its text is fixed, the test is to see
+ * that email arrives and where, and an email anyone could put any text in would be a way to send spam.
+ *
+ * @param string $to   who it is sent to
+ * @param string $from the address it is sent from, the default from address when empty
+ *
+ * @return array{subject: string, html: string, text: string}
+ */
+function get_test_email( $to, $from = '' ) {
+
+	$site    = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+	$from    = $from ?: (string) get_default_from_email_address();
+	$sent_at = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) );
+	$faq     = get_test_email_faq();
+
+	/* translators: %s: the name of the site */
+	$subject = sprintf( __( 'MailHawk test email from %s', 'mailhawk' ), $site );
+
+	ob_start();
+	include dirname( __DIR__ ) . '/templates/emails/test-email.php';
+	$html = ob_get_clean();
+
+	$text = [
+		__( 'It works!', 'mailhawk' ),
+		'',
+		/* translators: 1: the name of the site, 2: the address it was sent from, 3: the address it was sent to, 4: date and time it was sent */
+		sprintf( __( 'This test email from %1$s went out through MailHawk, from %2$s to %3$s on %4$s.', 'mailhawk' ), $site, $from, $to, $sent_at ),
+		'',
+		__( 'Where did it land?', 'mailhawk' ),
+	];
+
+	foreach ( $faq as $item ) {
+		$text[] = '';
+		$text[] = $item['question'];
+		// Links keep their address in plain text
+		$text[] = html_entity_decode( wp_strip_all_tags( preg_replace( '/<a [^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/', '$2 ($1)', $item['answer'] ) ), ENT_QUOTES, 'UTF-8' );
+	}
+
+	$text[] = '';
+	/* translators: %s: the address of the site */
+	$text[] = sprintf( __( 'Sent by the MailHawk plugin on %s. You can ignore this email.', 'mailhawk' ), home_url_no_scheme() );
+
+	return [ 'subject' => $subject, 'html' => $html, 'text' => implode( "\n", $text ) ];
+}
+
+/**
+ * Give the next email that is sent this plain text version, for an HTML email whose own text would read badly
+ *
+ * @param string $text
+ *
+ * @return \Closure the hook, to remove when the email failed before it got to it, so the next email does not get it
+ */
+function set_next_alt_body( $text ) {
+
+	$set = function ( $phpmailer ) use ( $text, &$set ) {
+		$phpmailer->AltBody = $text;
+		remove_action( 'phpmailer_init', $set, 99 );
+	};
+
+	add_action( 'phpmailer_init', $set, 99 );
+
+	return $set;
+}
+
 function home_url_no_scheme() {
 	return preg_replace( '#^https?://#i', '', home_url() );
 }

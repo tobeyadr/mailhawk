@@ -14,6 +14,8 @@ use function Groundhogg\get_contactdata;
 use function Groundhogg\is_a_contact;
 use function MailHawk\dismiss_notice;
 use function MailHawk\get_array_var;
+use function MailHawk\get_test_email;
+use function MailHawk\set_next_alt_body;
 use function MailHawk\get_dismissible_notices;
 use function MailHawk\get_hostname;
 use function MailHawk\get_mailhawk_api_key;
@@ -578,13 +580,11 @@ class Admin {
 			return;
 		}
 
-		$to      = sanitize_email( get_post_var( 'to_address' ) );
-		$subject = sanitize_text_field( get_post_var( 'subject' ) );
-		$body    = sanitize_textarea_field( get_post_var( 'content' ) );
+		$to   = sanitize_email( get_post_var( 'to_address' ) );
+		$from = sanitize_email( get_post_var( 'from_address' ) );
 
-		$this->test_data['to']      = $to;
-		$this->test_data['subject'] = $subject;
-		$this->test_data['body']    = $body;
+		$this->test_data['to']   = $to;
+		$this->test_data['from'] = $from;
 
 		if ( ! $to ) {
 			return;
@@ -592,9 +592,21 @@ class Admin {
 
 		add_action( 'wp_mail_failed', [ $this, 'maybe_email_failed' ] );
 
-		$success = wp_mail( $to, $subject, $body, [
-			'sender' => 'app@mailhawk.io'
-		] );
+		// Always the same email, what is being tested is whether it arrives and where
+		$email   = get_test_email( $to, $from );
+		$headers = [ 'Content-Type: text/html' ];
+
+		// From the address that was picked, with the default from name. Without one it is the default from address.
+		if ( $from ) {
+			$name      = (string) get_option( 'mailhawk_default_from_name' );
+			$headers[] = $name ? sprintf( 'From: %s <%s>', $name, $from ) : sprintf( 'From: %s', $from );
+		}
+
+		$alt_body = set_next_alt_body( $email['text'] );
+
+		$success = wp_mail( $to, $email['subject'], $email['html'], $headers );
+
+		remove_action( 'phpmailer_init', $alt_body, 99 );
 
 		if ( $success ) {
 			add_action( 'mailhawk_notices', [ $this, 'show_test_successful_notice' ] );
@@ -1564,7 +1576,15 @@ class Admin {
 	public function show_test_successful_notice() {
 		?>
         <div class="notice notice-success is-dismissible">
-            <p><?php printf( __( 'We sent a test email to %s.', 'mailhawk' ), "<code>" . esc_html( get_array_var( $this->test_data, 'to' ) ) . "</code>" ); ?></p>
+            <p><?php
+				if ( get_array_var( $this->test_data, 'from' ) ) {
+					/* translators: 1: recipient of the test email, 2: the address it was sent from */
+					printf( __( 'We sent a test email to %1$s from %2$s.', 'mailhawk' ), "<code>" . esc_html( get_array_var( $this->test_data, 'to' ) ) . "</code>", "<code>" . esc_html( get_array_var( $this->test_data, 'from' ) ) . "</code>" );
+				} else {
+					/* translators: %s: recipient of the test email */
+					printf( __( 'We sent a test email to %s.', 'mailhawk' ), "<code>" . esc_html( get_array_var( $this->test_data, 'to' ) ) . "</code>" );
+				}
+				?></p>
         </div>
 		<?php
 	}
