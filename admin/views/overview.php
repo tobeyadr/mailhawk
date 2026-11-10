@@ -147,11 +147,14 @@ $card_class = $has_complaints ? 'fourth' : 'third';
 ?>
 <?php if ( $is_throttled ): ?>
     <div class="mailhawk-content-box mailhawk-throttle-notice">
-        <h2><?php _e( 'Email is being held back', 'mailhawk' ); ?></h2>
+        <h2><?php _e( 'Your monthly email limit is reached', 'mailhawk' ); ?></h2>
         <p>
 			<?php _e( "This site has used all of its emails for the month, so MailHawk is turning email away instead of sending it. The emails it turns away are marked as failed in the log.", 'mailhawk' ); ?>
 			<?php if ( $resets_at ): ?>
-				<?php printf( __( 'Sending starts again when the limit resets on %s (UTC), or as soon as the plan is upgraded.', 'mailhawk' ), esc_html( date_i18n( get_option( 'date_format' ), $resets_at, true ) ) ); ?>
+				<?php
+				/* translators: %s: date the monthly limit resets */
+				printf( __( 'Sending starts again when the limit resets on %s (UTC), or as soon as the plan is upgraded.', 'mailhawk' ), esc_html( date_i18n( get_option( 'date_format' ), $resets_at, true ) ) );
+				?>
 			<?php else: ?>
 				<?php _e( 'Sending starts again when the limit resets, or as soon as the plan is upgraded.', 'mailhawk' ); ?>
 			<?php endif; ?>
@@ -233,9 +236,15 @@ $card_class = $has_complaints ? 'fourth' : 'third';
         <div class="progress-bar" style="width:<?php echo $percent_usage ?>%"></div>
     </div>
     <p>
-		<?php printf( 'Used: <b>%s</b> / %s', number_format_i18n( $usage ), number_format_i18n( $limit ) ); ?>
+		<?php
+		/* translators: 1: emails used this month, 2: monthly limit */
+		printf( __( 'Used: %1$s / %2$s', 'mailhawk' ), '<b>' . number_format_i18n( $usage ) . '</b>', number_format_i18n( $limit ) );
+		?>
 		<?php if ( $resets_at ): ?>
-            <span class="usage-resets">&middot; <?php printf( __( 'Resets on %s (UTC)', 'mailhawk' ), esc_html( date_i18n( get_option( 'date_format' ), $resets_at, true ) ) ); ?></span>
+            <span class="usage-resets">&middot; <?php
+				/* translators: %s: date the monthly limit resets */
+				printf( __( 'Resets on %s (UTC)', 'mailhawk' ), esc_html( date_i18n( get_option( 'date_format' ), $resets_at, true ) ) );
+				?></span>
 		<?php endif; ?>
     </p>
 	<?php if ( $show_upgrade ): ?>
@@ -245,7 +254,10 @@ $card_class = $has_complaints ? 'fourth' : 'third';
                     <b><?php _e( "You've used all of this month's emails.", 'mailhawk' ); ?></b>
 					<?php _e( 'Upgrade your plan so your email keeps going out.', 'mailhawk' ); ?>
 				<?php else: ?>
-                    <b><?php printf( __( "You've used %s%% of this month's emails.", 'mailhawk' ), number_format_i18n( $percent_usage ) ); ?></b>
+                    <b><?php
+						/* translators: %s: percentage of this month's emails used */
+						printf( __( "You've used %s%% of this month's emails.", 'mailhawk' ), number_format_i18n( $percent_usage ) );
+						?></b>
 					<?php _e( 'Upgrade your plan before you run out.', 'mailhawk' ); ?>
 				<?php endif; ?>
             </p>

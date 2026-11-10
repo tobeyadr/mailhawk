@@ -1402,17 +1402,27 @@ class Admin {
                  src="<?php echo esc_url( MAILHAWK_ASSETS_URL . 'images/hawk-head.png' ); ?>" alt="Hawk">
             <p>
 				<?php if ( $suspension['reason'] ) : ?>
-					<?php printf( __( '<b>Attention:</b> MailHawk has suspended your account, so email from this site is not being sent. The reason given: %s', 'mailhawk' ), esc_html( $suspension['reason'] ) ); ?>
+					<?php
+					/* translators: %s: the reason MailHawk gave for suspending the account */
+					printf( __( '<b>Attention:</b> MailHawk has suspended your account, so email from this site is not being sent. Reason: %s', 'mailhawk' ), esc_html( $suspension['reason'] ) );
+					?>
 				<?php else : ?>
 					<?php _e( '<b>Attention:</b> It looks like your account has been suspended. To continue sending email you must reactivate your account.', 'mailhawk' ); ?>
 				<?php endif; ?>
-				<?php if ( $since ) : ?>
-					<?php printf( esc_html__( 'Suspended since %s.', 'mailhawk' ), esc_html( $since ) ); ?>
-				<?php endif; ?>
-				<?php if ( 'organization' === $suspension['scope'] ) : ?>
-					<?php _e( 'The whole MailHawk account is suspended, so none of its sites can send email.', 'mailhawk' ); ?>
-				<?php endif; ?>
             </p>
+			<?php if ( $since || 'organization' === $suspension['scope'] ) : ?>
+                <p>
+					<?php if ( $since ) : ?>
+						<?php
+						/* translators: %s: date and time the account was suspended */
+						printf( esc_html__( 'Suspended since %s.', 'mailhawk' ), esc_html( $since ) );
+						?>
+					<?php endif; ?>
+					<?php if ( 'organization' === $suspension['scope'] ) : ?>
+						<?php _e( 'The whole MailHawk account is suspended, so none of its sites can send email.', 'mailhawk' ); ?>
+					<?php endif; ?>
+                </p>
+			<?php endif; ?>
             <p>
                 <a href="<?php echo esc_url( mailhawk_account_url() ); ?>" target="_blank" rel="noopener"
                    class="button button-primary"><?php _e( 'See what to do next', 'mailhawk' ); ?></a>

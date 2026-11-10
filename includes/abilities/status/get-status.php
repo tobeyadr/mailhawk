@@ -237,9 +237,11 @@ class Get_Status extends Ability {
 			];
 
 			$message = $details['reason']
+				/* translators: %s: the reason MailHawk gave for suspending the account */
 				? sprintf( __( 'The MailHawk account is suspended: %s', 'mailhawk' ), $details['reason'] )
 				: __( 'The MailHawk account is suspended.', 'mailhawk' );
 
+			/* translators: %s: URL of the MailHawk account page */
 			$issues[] = [ 'code' => 'suspended', 'message' => $message . ' ' . sprintf( __( 'What to do next is on the MailHawk account page, %s, where a person has to sign in.', 'mailhawk' ), mailhawk_account_url() ) ];
 		}
 
@@ -256,6 +258,7 @@ class Get_Status extends Ability {
 		}
 
 		if ( $usage && $usage['percent'] >= 90 ) {
+			/* translators: 1: percentage of the monthly allowance used, 2: emails left */
 			$issues[] = [ 'code' => 'usage_high', 'message' => sprintf( __( '%1$s%% of the monthly sending allowance is used, %2$s emails are left.', 'mailhawk' ), $usage['percent'], number_format_i18n( $usage['remaining'] ) ) ];
 		}
 

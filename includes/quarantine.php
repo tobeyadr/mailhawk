@@ -103,7 +103,7 @@ class Quarantine {
 			'status' => 'quarantine'
 		] );
 
-		// Someone must have take care of it already
+		// Someone must have taken care of it already
 		if ( $count_quarantined === 0 ) {
 			return;
 		}

@@ -52,7 +52,7 @@ class Postal {
 			$api_key = get_mailhawk_api_key();
 
 			if ( ! $api_key ){
-				return new \WP_Error( 'error', 'Invalid API key.' );
+				return new \WP_Error( 'error', __( 'Invalid API key.', 'mailhawk' ) );
 			}
 
 			self::set_api_key( $api_key );
@@ -92,12 +92,12 @@ class Postal {
 
 			return new \WP_Error(
 				'mailhawk_rate_limited',
-				__( 'MailHawk is slowing down email from this site, usually because the monthly sending limit of the plan is reached. Upgrade the plan, or wait for the limit to reset.', 'mailhawk' ),
+				__( "MailHawk is slowing down email from this site, usually because the plan's monthly sending limit has been reached. Upgrade the plan, or wait for the limit to reset.", 'mailhawk' ),
 				[ 'retry_after' => $retry_after ? $retry_after : 5 * MINUTE_IN_SECONDS ]
 			);
 		}
 
-		$result = new \WP_Error( 'error', 'Unable to complete request.' );
+		$result = new \WP_Error( 'error', __( 'Unable to complete request.', 'mailhawk' ) );
 
 		// Postal
 		if ( isset_not_empty( $json, 'status' ) ) {
@@ -107,7 +107,7 @@ class Postal {
 					$result = $json;
 					break;
 				case 'parameter-error':
-					$result = new \WP_Error( 'parameter-error', $json->data->message ?? 'Invalid request.' );
+					$result = new \WP_Error( 'parameter-error', $json->data->message ?? __( 'Invalid request.', 'mailhawk' ) );
 					break;
 				case 'error':
 					$data = $json->data ?? null;
@@ -119,7 +119,8 @@ class Postal {
 					} else if ( 'ServerSuspended' === $code ) {
 						$message = __( 'MailHawk has suspended this account.', 'mailhawk' );
 					} else {
-						$message = sprintf( 'MailHawk returned an error: %s', $code );
+						/* translators: %s: error code returned by MailHawk */
+						$message = sprintf( __( 'MailHawk returned an error: %s', 'mailhawk' ), $code );
 					}
 
 					$result = new \WP_Error( $code, $message, $data );

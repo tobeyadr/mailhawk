@@ -61,7 +61,7 @@ class Messages extends Postal {
 			$api_key = get_mailhawk_api_key();
 
 			if ( ! $api_key ) {
-				return new \WP_Error( 'mailhawk_rejected', 'Invalid API key.' );
+				return new \WP_Error( 'mailhawk_rejected', __( 'Invalid API key.', 'mailhawk' ) );
 			}
 
 			self::set_api_key( $api_key );

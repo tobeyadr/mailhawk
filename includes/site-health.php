@@ -131,7 +131,7 @@ class Site_Health {
 				$test,
 				'recommended',
 				__( 'MailHawk is not connected', 'mailhawk' ),
-				__( 'Email from this site is not going out through MailHawk, so it is sent the way WordPress does it by default, and it may not reach the inbox.', 'mailhawk' ),
+				__( 'Email from this site is not going out through MailHawk, so it is sent with the default WordPress mailer and may not reach the inbox.', 'mailhawk' ),
 				$this->link( mailhawk_admin_page(), __( 'Connect MailHawk', 'mailhawk' ) )
 			);
 		}
@@ -142,12 +142,14 @@ class Site_Health {
 			$since       = mailhawk_suspended_since();
 			$description = [ __( 'The MailHawk service is not accepting email from this site, so none of it is going out.', 'mailhawk' ) ];
 
-			// Older MTA builds do not say why
+			// Older MTA builds do not say why. The reason may not end in a period, so it gets its own.
 			$description[] = $suspension['reason']
-				? sprintf( __( 'The reason given: %s', 'mailhawk' ), $suspension['reason'] )
+				/* translators: %s: the reason MailHawk gave for suspending the account */
+				? sprintf( __( 'Reason: %s.', 'mailhawk' ), rtrim( $suspension['reason'], '. ' ) )
 				: __( 'This is usually a problem with the account or the subscription.', 'mailhawk' );
 
 			if ( $since ) {
+				/* translators: %s: date and time the account was suspended */
 				$description[] = sprintf( __( 'Suspended since %s.', 'mailhawk' ), $since );
 			}
 
@@ -199,7 +201,7 @@ class Site_Health {
 				$test,
 				'critical',
 				__( 'MailHawk is turning email away', 'mailhawk' ),
-				__( "This site has used all of its emails for the month, so MailHawk is not sending what it is asked to. The emails it turned away are marked as failed in the log. Sending starts again when the limit resets, or as soon as the plan is upgraded.", 'mailhawk' ),
+				__( "This site has used all of its emails for the month, so MailHawk is not sending new email. The emails it turned away are marked as failed in the log. Sending starts again when the limit resets, or as soon as the plan is upgraded.", 'mailhawk' ),
 				$this->upgrade_link() . $this->link( mailhawk_admin_page( [ 'view' => 'log', 'status' => 'failed' ] ), __( 'See the failed emails', 'mailhawk' ) )
 			);
 		}
@@ -308,6 +310,7 @@ class Site_Health {
 				$test,
 				'critical',
 				__( 'This site used all of its emails for the month', 'mailhawk' ),
+				/* translators: 1: emails sent this month, 2: emails in the plan */
 				sprintf( __( 'This site sent %1$s of the %2$s emails in its plan. MailHawk turns email away until the limit resets.', 'mailhawk' ), number_format_i18n( $used ), number_format_i18n( $limit ) ),
 				$this->upgrade_link()
 			);
@@ -318,6 +321,7 @@ class Site_Health {
 				$test,
 				'recommended',
 				__( 'This site is close to the limit of its plan', 'mailhawk' ),
+				/* translators: 1: emails sent this month, 2: emails in the plan */
 				sprintf( __( 'This site sent %1$s of the %2$s emails in its plan this month. When they are used up, MailHawk turns email away until the limit resets.', 'mailhawk' ), number_format_i18n( $used ), number_format_i18n( $limit ) ),
 				$this->upgrade_link()
 			);
@@ -327,6 +331,7 @@ class Site_Health {
 			$test,
 			'good',
 			__( 'This site has emails left this month', 'mailhawk' ),
+			/* translators: 1: emails sent this month, 2: emails in the plan */
 			sprintf( __( 'This site sent %1$s of the %2$s emails in its plan this month.', 'mailhawk' ), number_format_i18n( $used ), number_format_i18n( $limit ) )
 		);
 	}

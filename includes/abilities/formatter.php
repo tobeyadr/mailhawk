@@ -3,6 +3,7 @@
 namespace MailHawk\Abilities;
 
 use MailHawk\DB\Recipients;
+use function MailHawk\get_dns_record_names;
 use function MailHawk\get_email_status_pretty_name;
 use function MailHawk\get_spf_record;
 use function MailHawk\is_domain_authenticated;
@@ -186,11 +187,18 @@ class Formatter {
 			}
 		}
 
+		// What goes in the Host field, relative to the domain, and the full hostname, as the DNS screen shows them
+		$dkim_names        = get_dns_record_names( $domain->dkim->dkim_record_name ?? '', (string) $domain->name );
+		$return_path_names = get_dns_record_names( $domain->return_path->return_path_domain ?? '', (string) $domain->name );
+		$spf_names         = get_dns_record_names( '@', (string) $domain->name );
+
 		return [
 			'records'             => [
 				[
 					'purpose'  => 'dkim',
 					'type'     => 'TXT',
+					'host'     => $dkim_names['host'],
+					'hostname' => $dkim_names['hostname'],
 					'name'     => strtolower( (string) ( $domain->dkim->dkim_record_name ?? '' ) ),
 					'value'    => (string) ( $domain->dkim->dkim_record ?? '' ),
 					'ttl'      => 3600,
@@ -200,6 +208,8 @@ class Formatter {
 				[
 					'purpose'  => 'return_path',
 					'type'     => 'CNAME',
+					'host'     => $return_path_names['host'],
+					'hostname' => $return_path_names['hostname'],
 					'name'     => strtolower( (string) ( $domain->return_path->return_path_domain ?? '' ) ),
 					'value'    => self::RETURN_PATH_TARGET,
 					'ttl'      => 3600,
@@ -209,6 +219,8 @@ class Formatter {
 				[
 					'purpose'  => 'spf',
 					'type'     => 'TXT',
+					'host'     => $spf_names['host'],
+					'hostname' => $spf_names['hostname'],
 					'name'     => '@',
 					'value'    => $spf_record,
 					'ttl'      => 3600,
@@ -230,7 +242,7 @@ class Formatter {
 				'domain'              => self::domain_schema(),
 				'records'             => [
 					'type'        => 'array',
-					'description' => __( 'The records to add at the DNS host of the domain, as they are shown on the MailHawk DNS screen. A name of @ is the domain itself.', 'mailhawk' ),
+					'description' => __( 'The records to add at the DNS host of the domain, as they are shown on the MailHawk DNS screen. host is what goes in the Host or Name field, relative to the domain, and @ is the domain itself. hostname is the full name. For a subdomain whose records are added in the DNS of its parent domain, the subdomain is added to host. name is kept for compatibility: the DKIM name is relative and the return path name is full.', 'mailhawk' ),
 					'items'       => [
 						'type'       => 'object',
 						'properties' => [
@@ -242,13 +254,15 @@ class Formatter {
 								'type' => 'string',
 								'enum' => [ 'TXT', 'CNAME' ],
 							],
+							'host'     => [ 'type' => 'string' ],
+							'hostname' => [ 'type' => 'string' ],
 							'name'     => [ 'type' => 'string' ],
 							'value'    => [ 'type' => 'string' ],
 							'ttl'      => [ 'type' => 'integer' ],
 							'status'   => [ 'type' => [ 'string', 'null' ] ],
 							'verified' => [ 'type' => 'boolean' ],
 						],
-						'required'   => [ 'purpose', 'type', 'name', 'value', 'ttl', 'status', 'verified' ],
+						'required'   => [ 'purpose', 'type', 'host', 'hostname', 'name', 'value', 'ttl', 'status', 'verified' ],
 					],
 				],
 				'existing_spf_record' => [

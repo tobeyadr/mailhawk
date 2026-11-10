@@ -569,6 +569,12 @@ class Test_Abilities extends WP_UnitTestCase {
 
 		$this->assertSame( 'TXT', $dkim['type'] );
 		$this->assertSame( 'mh._domainkey.example.com', $dkim['name'], 'Lowercase, as the screen has it' );
+		$this->assertSame( 'mh._domainkey', $dkim['host'] );
+		$this->assertSame( 'mh._domainkey.example.com', $dkim['hostname'] );
+		$this->assertSame( 'psrp', $dns['records'][1]['host'] );
+		$this->assertSame( 'psrp.example.com', $dns['records'][1]['hostname'] );
+		$this->assertSame( '@', $dns['records'][2]['host'] );
+		$this->assertSame( 'example.com', $dns['records'][2]['hostname'] );
 		$this->assertSame( 'v=DKIM1; p=abc', $dkim['value'] );
 		$this->assertTrue( $dkim['verified'] );
 
@@ -581,6 +587,51 @@ class Test_Abilities extends WP_UnitTestCase {
 		$this->assertNull( $dns['existing_spf_record'] );
 		$this->assertSame( [ 'domains/query' ], $this->endpoints() );
 		$this->assertSame( 'example.com', $this->calls[0]['body']['name'] );
+	}
+
+	public function test_the_dns_records_of_a_subdomain_say_the_host_and_the_full_hostname() {
+
+		$this->connect();
+
+		// As the MTA has it: the DKIM name relative to the domain, the return path in full
+		$domain                         = $this->domain( 'academy.example.com' );
+		$domain->dkim->dkim_record_name = 'postal-AbC123._domainkey';
+
+		$this->mta( [ 'domains/query' => $domain ] );
+
+		list( $dkim, $return_path, $spf ) = $this->ok( 'mailhawk/get-domain-dns', [ 'domain' => 'academy.example.com' ] )['records'];
+
+		$this->assertSame( 'postal-abc123._domainkey', $dkim['host'] );
+		$this->assertSame( 'postal-abc123._domainkey.academy.example.com', $dkim['hostname'] );
+		$this->assertSame( 'psrp', $return_path['host'] );
+		$this->assertSame( 'psrp.academy.example.com', $return_path['hostname'] );
+		$this->assertSame( '@', $spf['host'] );
+		$this->assertSame( 'academy.example.com', $spf['hostname'] );
+	}
+
+	public function test_the_dns_screen_shows_the_host_and_the_full_hostname_of_each_record() {
+
+		$this->connect();
+
+		$domain                         = $this->domain( 'academy.example.com' );
+		$domain->dkim->dkim_record_name = 'postal-AbC123._domainkey';
+
+		$this->mta( [ 'domains/query' => $domain ] );
+
+		$_GET['domain'] = 'academy.example.com';
+
+		ob_start();
+		include dirname( MAILHAWK__FILE__ ) . '/admin/views/dns-single.php';
+		$html = ob_get_clean();
+
+		unset( $_GET['domain'] );
+
+		foreach ( [ 'postal-abc123._domainkey', 'postal-abc123._domainkey.academy.example.com', 'psrp', 'psrp.academy.example.com', '@', 'academy.example.com' ] as $value ) {
+			$this->assertStringContainsString( 'value="' . $value . '"', $html, $value );
+		}
+
+		$this->assertStringContainsString( 'Full hostname', $html );
+		$this->assertStringContainsString( 'postal-abc._domainkey.academy', $html, 'The parent domain case is explained' );
 	}
 
 	public function test_a_domain_that_has_an_spf_record_gets_mailhawk_added_to_it() {

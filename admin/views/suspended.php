@@ -46,12 +46,15 @@ $since      = mailhawk_suspended_since();
             </ul>
 		<?php endif; ?>
 		<?php if ( $since ) : ?>
-            <p><?php printf( esc_html__( 'Suspended since %s.', 'mailhawk' ), esc_html( $since ) ); ?></p>
+            <p><?php
+				/* translators: %s: date and time the account was suspended */
+				printf( esc_html__( 'Suspended since %s.', 'mailhawk' ), esc_html( $since ) );
+				?></p>
 		<?php endif; ?>
 		<?php if ( 'organization' === $suspension['scope'] ) : ?>
             <p><?php _e( 'The whole MailHawk account is suspended, so none of its sites can send email.', 'mailhawk' ); ?></p>
 		<?php endif; ?>
-        <p><?php _e( 'Your MailHawk account page says what to do next, for example to renew the subscription or to send an incident report.', 'mailhawk' ); ?></p>
+        <p><?php _e( 'Your MailHawk account page says what to do next, for example, renewing your subscription or sending an incident report.', 'mailhawk' ); ?></p>
         <a class="button button-primary big-button mailhawk-cta" href="<?php echo esc_url( mailhawk_account_url() ); ?>" target="_blank" rel="noopener">
             <span class="dashicons dashicons-external" aria-hidden="true"></span>
             <span class="mailhawk-connect-label"><?php _e( 'See what to do next', 'mailhawk' ); ?></span>

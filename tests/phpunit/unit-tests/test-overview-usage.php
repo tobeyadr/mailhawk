@@ -132,7 +132,7 @@ class Test_Overview_Usage extends WP_UnitTestCase {
 		$html = $this->render_overview( 1000, 1000 );
 
 		$this->assertStringContainsString( 'mailhawk-throttle-notice', $html );
-		$this->assertStringContainsString( 'Email is being held back', $html );
+		$this->assertStringContainsString( 'Your monthly email limit is reached', $html );
 		$this->assertStringContainsString( 'status=failed', $html );
 
 		// More than the plan has is the same

@@ -869,6 +869,35 @@ function mailhawk_spf_is_set( $domain = '' ) {
 }
 
 /**
+ * A DNS record name as the two things a DNS provider may ask for: the host, which is the part before the sending
+ * domain, and the full hostname. The MTA gives the DKIM name relative to the domain (postal-abc._domainkey) and the
+ * return path as a full hostname (psrp.example.com), so both are turned into the same pair.
+ *
+ * @param string $name   the record name, relative to the domain or in full, @ for the domain itself
+ * @param string $domain the sending domain
+ *
+ * @return array host and hostname, both lower case
+ */
+function get_dns_record_names( $name, $domain ) {
+
+	$name   = strtolower( trim( (string) $name, " \t\n\r\0\x0B." ) );
+	$domain = strtolower( trim( (string) $domain, " \t\n\r\0\x0B." ) );
+
+	if ( '' === $name || '@' === $name || $name === $domain ) {
+		return [ 'host' => '@', 'hostname' => $domain ];
+	}
+
+	$suffix = '.' . $domain;
+
+	// Already the full hostname
+	if ( '' !== $domain && substr( $name, - strlen( $suffix ) ) === $suffix ) {
+		return [ 'host' => substr( $name, 0, - strlen( $suffix ) ), 'hostname' => $name ];
+	}
+
+	return [ 'host' => $name, 'hostname' => '' !== $domain ? $name . $suffix : $name ];
+}
+
+/**
  * Get the value of the SPF record or false if it doesn't exist.
  *
  * @param $hostname
@@ -1392,7 +1421,7 @@ function assess_risk( string $email_address ): int {
 	// The baseline risk is 0;
 	$risk = 0;
 
-	// Test quarantine system using + synatx
+	// Test quarantine system using + syntax
 	if ( str_contains( $email_address, '+test-quarantine@' ) ) {
 		return 999;
 	}

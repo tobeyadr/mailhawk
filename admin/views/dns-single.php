@@ -3,6 +3,7 @@
 // Todo get domains from API
 use MailHawk\Api\Postal\Domains;
 use function MailHawk\mailhawk_admin_page;
+use function MailHawk\get_dns_record_names;
 use function MailHawk\get_spf_record;
 use function MailHawk\get_url_var;
 use function MailHawk\mailhawk_spf_is_set;
@@ -46,11 +47,41 @@ if ( get_url_var( 'action' ) === 'is_verified' ) {
         </div>
 	<?php endif; ?>
 
+	<?php
+
+	// The same pair for every record: what goes in the Host or Name field, and the hostname it ends up as
+	$dkim_names        = get_dns_record_names( $domain->dkim->dkim_record_name, $domain->name );
+	$return_path_names = get_dns_record_names( $domain->return_path->return_path_domain, $domain->name );
+	$spf_names         = get_dns_record_names( '@', $domain->name );
+
+	/**
+	 * The Host field, then the full hostname under it, so it is clear which one each copy field holds
+	 *
+	 * @param array $names
+	 */
+	$name_fields = function ( $names ) {
+		?>
+        <input class="code" onfocus="this.select()" type="text" value="<?php echo esc_attr( $names['host'] ); ?>" readonly
+               aria-label="<?php esc_attr_e( 'Host', 'mailhawk' ); ?>">
+        <p class="description"><?php _e( 'Full hostname:', 'mailhawk' ); ?></p>
+        <input class="code" onfocus="this.select()" type="text" value="<?php echo esc_attr( $names['hostname'] ); ?>" readonly
+               aria-label="<?php esc_attr_e( 'Full hostname', 'mailhawk' ); ?>">
+		<?php
+	};
+
+	?>
+    <p class="description"><?php printf(
+			/* translators: %s: the sending domain */
+			__( 'Most DNS providers ask for the <b>Host</b>, the part before <code>%s</code>. Some ask for the <b>full hostname</b> instead. If yours adds the domain by itself, use the Host, or the domain ends up in the name twice.', 'mailhawk' ),
+			esc_html( $domain->name )
+		); ?></p>
+    <p class="description"><?php _e( 'For a subdomain whose records you add in the DNS of its parent domain, add the subdomain to the Host. For example, for <code>academy.example.com</code> in the DNS of <code>example.com</code>, the host <code>postal-abc._domainkey</code> becomes <code>postal-abc._domainkey.academy</code>. The full hostname is the same either way.', 'mailhawk' ); ?></p>
+
     <table class="wp-list-table widefat fixed striped dns-list">
         <thead>
         <tr>
             <th class="type"><?php _e( 'Type', 'mailhawk' ) ?></th>
-            <th class="name"><?php _e( 'Name', 'mailhawk' ) ?></th>
+            <th class="name"><?php _e( 'Host', 'mailhawk' ) ?></th>
             <th class="ttl"><?php _e( 'TTL', 'mailhawk' ) ?></th>
             <th class="value"><?php _e( 'Value', 'mailhawk' ) ?></th>
             <th class="status"><?php _e( 'Status', 'mailhawk' ) ?></th>
@@ -59,9 +90,7 @@ if ( get_url_var( 'action' ) === 'is_verified' ) {
         <tbody>
         <tr>
             <td><?php _e( '<code>TXT</code> (DKIM)' ) ?></td>
-            <td><input class="code" onfocus="this.select()" type="text"
-                       value="<?php esc_attr_e( strtolower( $domain->dkim->dkim_record_name ) ); ?>"
-                       readonly></td>
+            <td><?php $name_fields( $dkim_names ); ?></td>
             <td><input class="code" onfocus="this.select()" type="text"
                        value="3600"
                        readonly></td>
@@ -73,9 +102,7 @@ if ( get_url_var( 'action' ) === 'is_verified' ) {
         </tr>
         <tr>
             <td><?php _e( '<code>CNAME</code>' ) ?></td>
-            <td><input class="code" onfocus="this.select()" type="text"
-                       value="<?php esc_attr_e( strtolower( $domain->return_path->return_path_domain ) ); ?>"
-                       readonly></td>
+            <td><?php $name_fields( $return_path_names ); ?></td>
             <td><input class="code" onfocus="this.select()" type="text"
                        value="3600"
                        readonly></td>
@@ -87,9 +114,7 @@ if ( get_url_var( 'action' ) === 'is_verified' ) {
         </tr>
         <tr>
             <td><?php _e( '<code>TXT</code> (SPF)' ) ?></td>
-            <td><input class="code" onfocus="this.select()" type="text"
-                       value="@"
-                       readonly></td>
+            <td><?php $name_fields( $spf_names ); ?></td>
             <td><input class="code" onfocus="this.select()" type="text"
                        value="3600"
                        readonly></td>

@@ -6,15 +6,15 @@ namespace MailHawk;
  *
  * @package     MailHawk
  * @subpackage  Uninstall
- * @copyright   Copyright (c) 2015, Pippin Williamson
- * @license     http://opensource.org/licenses/gpl-2.0.php GNU Public License
- * @since       1.4.3
+ * @copyright   Copyright (c) MailHawk Inc.
+ * @license     https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3 or later
+ * @since       1.0.0
  */
 
 // Exit if accessed directly.
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) exit;
 
-// Load WPGH file.
+// Load the plugin so its tables can be dropped.
 include_once __DIR__ . '/mailhawk.php';
 
 /** Cleanup Cron Events, whether or not the data is deleted, nothing is left to run them */
