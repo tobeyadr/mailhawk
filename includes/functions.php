@@ -1229,10 +1229,11 @@ function get_email_usage() {
 		return false;
 	}
 
-	$monthly_send_limit = $limits[ array_search( 'monthly_send_limit', wp_list_pluck( $limits, 'type' ) ) ];
+	// An MTA that does not report the monthly allowance leaves these at nothing, instead of reading some other limit
+	$monthly_send_limit = \MailHawk\Abilities\Formatter::usage( $limits );
 
-	$usage = $monthly_send_limit->usage;
-	$limit = $monthly_send_limit->limit;
+	$usage = $monthly_send_limit['used'] ?? 0;
+	$limit = $monthly_send_limit['limit'] ?? 0;
 
 	$percent_usage = $limit > 0 ? floor( ( $usage / $limit ) * 100 ) : 0;
 
@@ -1243,7 +1244,6 @@ function get_email_usage() {
 		'remaining' => $limit - $usage
 	];
 
-	update_core_option( 'mailhawk_monthly_email_limit', $limit );
 	set_transient( 'mailhawk_email_usage', $result, MINUTE_IN_SECONDS );
 
 	return $result;

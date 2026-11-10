@@ -76,6 +76,21 @@ class Test_Email_Usage extends WP_UnitTestCase {
 		$this->assertEquals( 100, get_email_usage()['percent'] );
 	}
 
+	public function test_almost_all_of_the_limit_is_not_a_hundred_percent() {
+		$this->mta( 999, 1000 );
+
+		$this->assertEquals( 99, get_email_usage()['percent'] );
+	}
+
+	public function test_the_limit_is_not_kept_as_an_option() {
+		delete_option( 'mailhawk_monthly_email_limit' );
+		$this->mta( 10, 1000 );
+
+		get_email_usage();
+
+		$this->assertFalse( get_option( 'mailhawk_monthly_email_limit' ) );
+	}
+
 	public function test_a_limit_of_zero_does_not_divide_by_zero() {
 		$this->mta( 5, 0 );
 

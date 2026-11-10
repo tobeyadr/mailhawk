@@ -26,21 +26,22 @@ if ( is_wp_error( $limits ) || is_wp_error( $data ) ) {
 	wp_die( $error );
 }
 
-/** @var array $limits */
-$monthly_send_limit = $limits[ array_search( 'monthly_send_limit', wp_list_pluck( $limits, 'type' ) ) ];
+// An MTA that does not report the monthly allowance leaves these at nothing, instead of reading some other limit
+$monthly_send_limit = \MailHawk\Abilities\Formatter::usage( $limits );
 
-$usage = $monthly_send_limit->usage;
-$limit = $monthly_send_limit->limit;
+$usage = $monthly_send_limit['used'] ?? 0;
+$limit = $monthly_send_limit['limit'] ?? 0;
 
-$percent_usage = $limit > 0 ? min( 100, ceil( ( $usage / $limit ) * 100 ) ) : 0;
+// Rounded down, so the box never says 100% before the allowance is gone
+$percent_usage = $limit > 0 ? min( 100, floor( ( $usage / $limit ) * 100 ) ) : 0;
 $used_up       = $limit > 0 && $usage >= $limit;
 
 // The MTA resets the usage on the monthly anniversary of the server's creation, at midnight UTC. Older MTA builds
 // don't say when, in which case nothing is shown.
-$resets_at = ! empty( $monthly_send_limit->resets_at ) ? strtotime( $monthly_send_limit->resets_at ) : false;
+$resets_at = ! empty( $monthly_send_limit['resets_at'] ) ? strtotime( $monthly_send_limit['resets_at'] ) : false;
 
-// Nudge towards a bigger plan once more than 80% of the month's emails are used
-$show_upgrade = $percent_usage > 80;
+// Nudge towards a bigger plan once more than 80% of the month's emails are used, the same rule as Site Health
+$show_upgrade = $limit > 0 && $usage / $limit > \MailHawk\Site_Health::USAGE_WARNING;
 
 /**
  * Where the upgrade buttons on the overview lead

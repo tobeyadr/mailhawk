@@ -9,6 +9,15 @@ use function MailHawk\set_mailhawk_is_throttled;
 class Send extends Postal {
 
 	/**
+	 * Whether the last call to raw() was turned away by the MTA with a 429
+	 *
+	 * @since 1.5.1
+	 *
+	 * @var bool
+	 */
+	public static $last_rate_limited = false;
+
+	/**
 	 * Return dummy WP error
 	 *
 	 * @param string $mail_from
@@ -48,6 +57,8 @@ class Send extends Postal {
 	 */
 	public static function raw( $mail_from = '', $to = [], $data = '' ) {
 
+		self::$last_rate_limited = false;
+
 		$args = [
 			'mail_from' => $mail_from,
 			'rcpt_to'   => array_filter( array_values( $to ) ),
@@ -60,6 +71,7 @@ class Send extends Postal {
 
 			// Throttled. The email is not sent, and what is sent after it should know to leave the MTA alone for a while.
 			if ( 'mailhawk_rate_limited' === $response->get_error_code() ) {
+				self::$last_rate_limited = true;
 				$data = (array) $response->get_error_data();
 				set_mailhawk_is_throttled( $data['retry_after'] ?? 0 );
 			}

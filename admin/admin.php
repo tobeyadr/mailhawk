@@ -970,6 +970,7 @@ class Admin {
 				}
 
 				break;
+			case 'retry':
 			case 'resend':
 
 				foreach ( $log_items as $log_item ) {
@@ -1028,8 +1029,6 @@ class Admin {
 				}
 
 				add_action( 'mailhawk_notices', [ $this, 'show_email_rejected_notice' ] );
-				break;
-
 				break;
 		}
 	}

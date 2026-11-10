@@ -25,6 +25,7 @@ class Updater extends \MailHawk\Utils\Updater{
 			'1.1.1',
 			'1.3.1',
 			'1.4.0',
+			'1.5.0',
 		];
 	}
 
@@ -69,6 +70,26 @@ class Updater extends \MailHawk\Utils\Updater{
 		$wpdb->query( "DROP TABLE IF EXISTS `{$table}`" );
 
 		delete_option( $table . '_db_version' );
+	}
+
+	/**
+	 * Remove what the usage telemetry left behind. The site no longer counts or reports its usage, and the warnings
+	 * about nearing the monthly limit come from MailHawk itself.
+	 */
+	public function version_1_5_0(){
+
+		// Scheduled per site, so cleared on each site as it updates
+		wp_clear_scheduled_hook( 'mailhawk/monthly' );
+
+		// The telemetry kept these with update_core_option(), which is the main site on a network
+		foreach ( [ 'mailhawk_sent_this_month', 'mailhawk_warnings_this_month', 'mailhawk_monthly_email_limit' ] as $option ) {
+
+			if ( is_mailhawk_network_active() ) {
+				delete_blog_option( get_main_site_id(), $option );
+			} else {
+				delete_option( $option );
+			}
+		}
 	}
 }
 

@@ -24,4 +24,19 @@ class Test_Usage_Alerts extends WP_UnitTestCase {
 		$this->assertFalse( class_exists( 'MailHawk\Telemetry' ) );
 		$this->assertFalse( has_action( 'mailhawk/monthly' ) );
 	}
+
+	public function test_the_update_to_1_5_0_removes_what_the_usage_telemetry_left_behind() {
+
+		update_option( 'mailhawk_sent_this_month', 42 );
+		update_option( 'mailhawk_warnings_this_month', [ 80 ] );
+		update_option( 'mailhawk_monthly_email_limit', 1000 );
+		wp_schedule_single_event( time() + HOUR_IN_SECONDS, 'mailhawk/monthly' );
+
+		( new \MailHawk\Updater() )->version_1_5_0();
+
+		$this->assertFalse( get_option( 'mailhawk_sent_this_month' ) );
+		$this->assertFalse( get_option( 'mailhawk_warnings_this_month' ) );
+		$this->assertFalse( get_option( 'mailhawk_monthly_email_limit' ) );
+		$this->assertFalse( wp_next_scheduled( 'mailhawk/monthly' ) );
+	}
 }

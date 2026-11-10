@@ -178,6 +178,34 @@ class Test_Throttling extends WP_UnitTestCase {
 		$this->assertSame( 1, (int) $this->entry( $id )->retries );
 	}
 
+	public function test_a_retry_that_fails_for_another_reason_counts_even_after_an_earlier_429() {
+
+		$id = $this->add_failed_email();
+
+		// An earlier 429 left the flag set, the wait is over
+		set_transient( 'mailhawk_is_throttled', time() - 10, DAY_IN_SECONDS );
+		$this->mta( 500, [], 'Nope' );
+
+		$this->assertFalse( ( new Email_Log_Item( $id ) )->retry() );
+		$this->assertSame( 1, (int) $this->entry( $id )->retries );
+	}
+
+	public function test_a_retry_that_fails_before_the_mta_is_reached_counts_even_after_an_earlier_429() {
+
+		$id = $this->add_failed_email();
+
+		// The last send to the MTA was turned away, this one never gets that far
+		$this->mta( 429, [ 'retry-after' => '60' ] );
+		Send::raw( 'info@example.com', [ 'bob@example.net' ], 'The email' );
+		$this->assertTrue( Send::$last_rate_limited );
+
+		$this->mta( 500, [], 'Nope' );
+
+		$this->assertFalse( ( new Email_Log_Item( $id ) )->retry() );
+		$this->assertFalse( Send::$last_rate_limited );
+		$this->assertSame( 1, (int) $this->entry( $id )->retries );
+	}
+
 	public function test_failed_emails_are_not_retried_while_the_mta_says_to_wait() {
 
 		update_option( 'mailhawk_retry_failed_emails', 1 );

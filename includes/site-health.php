@@ -193,7 +193,9 @@ class Site_Health {
 
 		$test = 'mailhawk_throttled';
 
-		if ( mailhawk_is_throttled() ) {
+		// Only while the wait MailHawk asked for is still running. After it, the flag stays until an email goes through,
+		// which says nothing about whether sending works again.
+		if ( time() < mailhawk_throttled_until() ) {
 			return $this->result(
 				$test,
 				'critical',
@@ -221,12 +223,42 @@ class Site_Health {
 
 		$test = 'mailhawk_delivery_sync';
 
-		if ( ! wp_next_scheduled( Delivery_Sync::HOOK ) ) {
+		// Nothing to bring up to date when the log is off
+		if ( get_option( 'mailhawk_disable_email_logging' ) ) {
+			return $this->result(
+				$test,
+				'good',
+				__( 'MailHawk email logging is turned off', 'mailhawk' ),
+				__( 'The email log is turned off, so there is nothing to update.', 'mailhawk' )
+			);
+		}
+
+		$next = wp_next_scheduled( Delivery_Sync::HOOK );
+
+		// The event runs every 15 minutes and is scheduled again on every load, so it always exists. Overdue by more than
+		// 30 minutes means nothing is running WP-Cron.
+		if ( ! $next || $next < time() - 30 * MINUTE_IN_SECONDS ) {
 			return $this->result(
 				$test,
 				'recommended',
-				__( 'MailHawk can not update the email log by itself', 'mailhawk' ),
-				__( 'The scheduled task that brings the email log up to date is not scheduled. That happens when WP-Cron is turned off and nothing else runs it. Emails are still sent, but the log may show them as sent when they were delivered, or bounced.', 'mailhawk' )
+				__( 'MailHawk cannot update the email log by itself', 'mailhawk' ),
+				__( 'The scheduled task that updates the email log has not run on time. This usually means WP-Cron is turned off and nothing else runs it. Emails are still sent, but the log may still show them as Sent after they were delivered or bounced.', 'mailhawk' )
+			);
+		}
+
+		// The MTA could not be asked lately, and the sync is leaving it alone for a while
+		$paused = get_transient( Delivery_Sync::PAUSE );
+
+		if ( false !== $paused ) {
+			return $this->result(
+				$test,
+				'recommended',
+				__( 'MailHawk could not update the email log lately', 'mailhawk' ),
+				sprintf(
+					/* translators: %s: reason the update of the email log is paused */
+					__( 'The update of the email log is paused for a while. Emails are still sent, but the log may still show them as Sent after they were delivered or bounced. Reason: %s', 'mailhawk' ),
+					esc_html( (string) $paused )
+				)
 			);
 		}
 

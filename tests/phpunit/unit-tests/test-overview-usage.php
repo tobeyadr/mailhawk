@@ -83,7 +83,7 @@ class Test_Overview_Usage extends WP_UnitTestCase {
 		$html = $this->render_overview( 801, 1000 );
 
 		$this->assertStringContainsString( 'usage-upgrade', $html );
-		$this->assertStringContainsString( "You've used 81% of this month's emails.", $html );
+		$this->assertStringContainsString( "You've used 80% of this month's emails.", $html );
 		$this->assertStringContainsString( 'href="https://mailhawk.io/pricing/"', $html );
 	}
 
@@ -97,10 +97,33 @@ class Test_Overview_Usage extends WP_UnitTestCase {
 
 	public function test_almost_all_is_not_all() {
 
-		$html = $this->render_overview( 995, 1000 );
+		$html = $this->render_overview( 999, 1000 );
 
-		$this->assertStringContainsString( "You've used 100% of this month's emails.", $html );
+		$this->assertStringContainsString( "You've used 99% of this month's emails.", $html );
+		$this->assertStringContainsString( 'style="width:99%"', $html );
 		$this->assertStringNotContainsString( "used all of this month's emails", $html );
+	}
+
+	public function test_an_mta_that_does_not_report_the_allowance_shows_nothing_used() {
+
+		add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
+
+			if ( false !== strpos( $url, 'reporting/limits' ) ) {
+				return $this->envelope( [ [ 'type' => 'something_else', 'usage' => 900, 'limit' => 1000 ] ] );
+			}
+
+			return $this->envelope( [
+				'last_date'  => gmdate( 'Y-m-d' ),
+				'graph_data' => [ [ 'outgoing' => 10, 'bounces' => 1, 'complaints' => 0 ] ],
+			] );
+		}, 10, 3 );
+
+		ob_start();
+		include dirname( MAILHAWK__FILE__ ) . '/admin/views/overview.php';
+		$html = ob_get_clean();
+
+		$this->assertStringNotContainsString( 'usage-upgrade', $html );
+		$this->assertStringNotContainsString( "of this month's emails", $html );
 	}
 
 	public function test_notice_when_the_month_is_used_up_and_the_mta_is_turning_email_away() {

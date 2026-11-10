@@ -178,6 +178,14 @@ class Test_Site_Health extends WP_UnitTestCase {
 		$this->assertSame( 'good', $this->health->test_throttled()['status'] );
 	}
 
+	public function test_email_is_not_turned_away_once_the_wait_is_over_even_if_nothing_was_sent_since() {
+
+		// Remembered until an email goes through, but past
+		set_transient( 'mailhawk_is_throttled', time() - 10, DAY_IN_SECONDS );
+
+		$this->assertSame( 'good', $this->health->test_throttled()['status'] );
+	}
+
 	public function test_the_log_update_that_is_not_scheduled_is_recommended_to_fix() {
 
 		wp_clear_scheduled_hook( Delivery_Sync::HOOK );
@@ -193,6 +201,48 @@ class Test_Site_Health extends WP_UnitTestCase {
 		wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', Delivery_Sync::HOOK );
 
 		$this->assertSame( 'good', $this->health->test_delivery_sync()['status'] );
+	}
+
+	public function test_the_log_update_that_is_scheduled_but_long_overdue_is_recommended_to_fix() {
+
+		// Scheduled, but nothing runs WP-Cron
+		wp_schedule_event( time() - 2 * HOUR_IN_SECONDS, 'hourly', Delivery_Sync::HOOK );
+
+		$result = $this->health->test_delivery_sync();
+
+		$this->assertIsResult( $result );
+		$this->assertSame( 'recommended', $result['status'] );
+	}
+
+	public function test_the_log_update_that_is_a_little_late_is_good() {
+
+		wp_schedule_event( time() - 5 * MINUTE_IN_SECONDS, 'hourly', Delivery_Sync::HOOK );
+
+		$this->assertSame( 'good', $this->health->test_delivery_sync()['status'] );
+	}
+
+	public function test_the_log_update_has_nothing_to_do_when_logging_is_off() {
+
+		update_option( 'mailhawk_disable_email_logging', 1 );
+		wp_clear_scheduled_hook( Delivery_Sync::HOOK );
+
+		$this->assertSame( 'good', $this->health->test_delivery_sync()['status'] );
+
+		delete_option( 'mailhawk_disable_email_logging' );
+	}
+
+	public function test_a_log_update_that_is_paused_says_why() {
+
+		wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', Delivery_Sync::HOOK );
+		set_transient( Delivery_Sync::PAUSE, 'mailhawk_unsupported', HOUR_IN_SECONDS );
+
+		$result = $this->health->test_delivery_sync();
+
+		delete_transient( Delivery_Sync::PAUSE );
+
+		$this->assertIsResult( $result );
+		$this->assertSame( 'recommended', $result['status'] );
+		$this->assertStringContainsString( 'mailhawk_unsupported', $result['description'] );
 	}
 
 	public function test_usage_is_good_up_to_eighty_percent() {

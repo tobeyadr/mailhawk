@@ -2,6 +2,7 @@
 
 namespace MailHawk\Classes;
 
+use MailHawk\Api\Postal\Send;
 use MailHawk\DB\DB;
 use MailHawk\Hawk_Mailer;
 use MailHawk\Plugin;
@@ -120,12 +121,14 @@ class Email_Log_Item extends Base_Object {
 
 		try {
 
+			// Reset first, a failure before the MTA is reached must not look like a 429
+			Send::$last_rate_limited = false;
+
 			// Mail this thing!
 			$result = mailhawk_mail( $this->recipients, $this->subject, $this->content, $headers );
 
-			if ( ! $result && ! \MailHawk\mailhawk_is_throttled() ) { // a throttled email never had its try, so it keeps its attempt // a throttled email never had its try, so it keeps its attempt
-				// update retries
-
+			// A throttled email never had its try, so it keeps its attempt
+			if ( ! $result && ! Send::$last_rate_limited ) {
 				$this->update( [
 					'retries' => $this->retries + 1,
 				] );
