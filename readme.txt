@@ -169,6 +169,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 = 1.5.1 (2026-11-10) =
 * IMPROVED Only an email the recipient's mail server turned down counts as a bounce against the address. Failures on MailHawk's side, like timeouts, rate limits or a cancelled hold, no longer do, so an outage can't put good addresses in quarantine.
+* TWEAKED Updating removes the settings and the scheduled event the old usage counter left behind.
 * FIXED The Retry bulk action in the email log did nothing.
 * FIXED For up to a day after MailHawk asked the site to slow down, a retry that failed for another reason did not use up a retry attempt.
 * FIXED Site Health kept saying MailHawk was turning email away after the wait was over, until the next email went through.
@@ -177,7 +178,6 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * FIXED The Recipients screen could remove an address that reported spam, after which it could be trusted again. That record is now kept, as the abilities and the privacy tools already did.
 * FIXED The same spam complaint delivered twice was listed twice in the digest to the site owner.
 * FIXED When the update to 1.4.0 could not subscribe the site to spam complaints, nothing said so. Updating now shows the webhook notice with a Try again button, and sites that already updated are checked again.
-* TWEAKED Updating removes the settings and the scheduled event the old usage counter left behind.
 
 = 1.5.0 (2026-11-09) =
 * IMPROVED When MailHawk suspends an account, the suspended screen and the admin notice show the reason MailHawk gave, since when, and whether the whole account is affected, with a "See what to do next" link to your MailHawk account page.
