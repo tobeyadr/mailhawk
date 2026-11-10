@@ -4,7 +4,7 @@ Donate link: https://mailhawk.io/pricing/
 Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
 Requires at least: 6.9
 Tested up to: 7.1
-Stable tag: 1.5.1
+Stable tag: 1.5.2
 Requires PHP: 7.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -166,6 +166,14 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 5. Protect your sender reputation by quarantining risky emails before they are sent.
 
 == Changelog ==
+
+= 1.5.2 (2026-11-10) =
+* ADDED A "Copy instructions" button on the DNS screen copies everything someone else needs to add the records, like an agency, a developer or an AI assistant: every record with its host, full hostname, value and TTL, what to do with an SPF record that is already there, and where to verify.
+* IMPROVED Record names on the DNS screen copy with one click: the highlighted host copies just the host, anywhere else copies the full hostname. The screen also explains what to enter when the records of a subdomain go in the DNS of its parent domain, and the host of the return path no longer includes your domain, so DNS providers that add it themselves don't end up with it twice.
+* TWEAKED Clearer wording on the overview, in Site Health, and on the suspended screen and notice. When the monthly limit is reached, the notice on the overview is titled "Your monthly email limit is reached".
+* FIXED Some error messages and the usage line on the overview could not be translated.
+* DEV The `mailhawk/get-domain-dns` ability returns the `host` and the full `hostname` of each record.
+* DEV New filter `mailhawk/second_level_suffixes` lists the suffixes like co.uk that domains are registered under, so the DNS screen does not take example.co.uk for a subdomain.
 
 = 1.5.1 (2026-11-10) =
 * IMPROVED Only an email the recipient's mail server turned down counts as a bounce against the address. Failures on MailHawk's side, like timeouts, rate limits or a cancelled hold, no longer do, so an outage can't put good addresses in quarantine.
