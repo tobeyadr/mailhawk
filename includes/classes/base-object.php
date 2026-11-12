@@ -182,11 +182,41 @@ abstract class Base_Object implements \Serializable, \ArrayAccess {
 			return $this->data[ $name ];
 		}
 
-		if ( method_exists( $this, $name ) && is_callable( [ $this, $name ] ) ) {
-			return call_user_func( [ $this, $name ] );
-		}
+		$this->method_read_as_property( $name );
 
 		return false;
+	}
+
+	/**
+	 * Reading a property used to call the method by the same name, which could run methods like delete() or
+	 * release() by accident. It no longer does, so flag code that still reads a method as a property, once per
+	 * class and name.
+	 *
+	 * @param string $name
+	 *
+	 * @return void
+	 */
+	protected function method_read_as_property( $name ) {
+
+		static $warned = [];
+
+		if ( ! is_string( $name ) || ! method_exists( $this, $name ) ) {
+			return;
+		}
+
+		$key = static::class . '::' . $name;
+
+		if ( isset( $warned[ $key ] ) ) {
+			return;
+		}
+
+		$warned[ $key ] = true;
+
+		_doing_it_wrong(
+			esc_html( static::class . '::__get' ),
+			sprintf( 'Reading $%1$s as a property no longer calls %1$s(). Call the method instead.', esc_html( $name ) ),
+			'1.5.3'
+		);
 	}
 
 	/**
