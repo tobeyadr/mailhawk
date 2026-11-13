@@ -167,6 +167,13 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 == Changelog ==
 
+= 1.5.3 (2026-11-13) =
+* ADDED The DNS screen shows a DMARC record next to DKIM, the return path and SPF, with the record MailHawk recommends, `v=DMARC1; p=none;`, which only asks for reports and never stops any email. DMARC is recommended rather than required: a domain is verified without it, but Apple, Gmail and Yahoo expect it, and Apple turns away most email from a domain that has none. A domain that already has a DMARC record, or whose parent domain has one, is shown as verified and keeps its own record.
+* ADDED The Domains screen has a DMARC column next to SPF, DKIM and Return-Path.
+* IMPROVED "Copy instructions" on the DNS screen includes the DMARC record, and says to keep a DMARC record that is already there instead of adding a second one.
+* DEV The `mailhawk/get-domain-dns` ability returns a `dmarc` record, marked `recommended`, and the domain's `dmarc` status. New filter `mailhawk/abilities/existing_dmarc_record` for the DMARC record a domain has now.
+* DEV Reading a property with the name of a method, like `$item->reject` on a quarantined email, no longer calls that method. It returns false and reports a `_doing_it_wrong` notice once.
+
 = 1.5.2 (2026-11-10) =
 * ADDED The test email can be sent from any address. A dropdown suggests the default from address and the same name at each of your domains, and a warning says when the domain of the address you pick is not verified, or not one of your MailHawk domains.
 * IMPROVED The test email is now a branded email that says what it means for where it landed: the inbox, Gmail's Updates or Promotions tabs, Outlook's Other folder, or spam. The Test screen has the same tips, and what to do when it did not arrive at all.
