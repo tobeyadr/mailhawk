@@ -678,6 +678,40 @@ class Test_Abilities extends WP_UnitTestCase {
 		$this->assertSame( 'academy.example.com', $spf['hostname'] );
 	}
 
+	public function test_the_domains_table_has_a_dmarc_column() {
+
+		$this->connect();
+
+		$missing        = $this->domain( 'example.com' );
+		$missing->dmarc = (object) [ 'dmarc_record_name' => '_dmarc.example.com', 'dmarc_record' => 'v=DMARC1; p=none;', 'dmarc_status' => 'Missing' ];
+		$ok             = $this->domain( 'ok.example.com' );
+		$ok->dmarc      = (object) [ 'dmarc_record_name' => '_dmarc.ok.example.com', 'dmarc_record' => 'v=DMARC1; p=none;', 'dmarc_status' => 'OK' ];
+
+		$this->mta( [ 'domains/query' => [ $missing, $ok, $this->domain( 'old.example.com' ) ] ] );
+
+		ob_start();
+		include dirname( MAILHAWK__FILE__ ) . '/admin/views/domains.php';
+		$html = ob_get_clean();
+
+		$this->assertStringContainsString( '<th>DMARC</th>', $html );
+
+		$rows = explode( '<tr>', $html );
+		$row  = function ( $name ) use ( $rows ) {
+			foreach ( $rows as $row ) {
+				if ( strpos( $row, '<code>' . $name . '</code>' ) !== false ) {
+					return $row;
+				}
+			}
+
+			return '';
+		};
+
+		$this->assertStringContainsString( 'Recommended', $row( 'example.com' ) );
+		$this->assertStringNotContainsString( 'Recommended', $row( 'ok.example.com' ) );
+		$this->assertSame( 4, substr_count( $row( 'ok.example.com' ), 'Verified' ), 'SPF, DKIM, return path and DMARC' );
+		$this->assertStringNotContainsString( 'Recommended', $row( 'old.example.com' ), 'An older answer without DMARC shows nothing' );
+	}
+
 	public function test_the_dns_screen_shows_the_host_and_the_full_hostname_of_each_record() {
 
 		$this->connect();

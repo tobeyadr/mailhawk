@@ -30,7 +30,7 @@ endif;
 ?>
 <div class="mailhawk-content-box domains">
     <h2><b><?php _e( 'Your Domains:', 'mailhawk' ); ?></b></h2>
-    <p><?php _e( 'These are the domains which you have registered with MailHawk. You can improve your email deliverability by verifying <code>SPF</code> and <code>DKIM</code> for each domain.', 'mailhawk' ); ?></p>
+    <p><?php _e( 'These are the domains which you have registered with MailHawk. You can improve your email deliverability by verifying <code>SPF</code> and <code>DKIM</code> for each domain, and adding a <code>DMARC</code> record, which Apple, Gmail and Yahoo expect.', 'mailhawk' ); ?></p>
     <table class="wp-list-table widefat fixed striped">
         <thead>
         <tr>
@@ -38,6 +38,7 @@ endif;
             <th><?php _e( 'SPF', 'mailhawk' ); ?></th>
             <th><?php _e( 'DKIM', 'mailhawk' ); ?></th>
             <th><?php _e( 'Return-Path', 'mailhawk' ); ?></th>
+            <th><?php _e( 'DMARC', 'mailhawk' ); ?></th>
             <th><?php _e( 'DNS', 'mailhawk' ); ?></th>
         </tr>
         </thead>
@@ -48,12 +49,16 @@ endif;
 				<td><?php echo $domain->spf->spf_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>" ; ?></td>
 				<td><?php echo $domain->dkim->dkim_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>" ; ?></td>
 				<td><?php echo $domain->return_path->return_path_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>" ; ?></td>
+				<?php // Recommended, not needed to verify the domain. Older MTA answers have no DMARC, so the cell stays empty. ?>
+				<td><?php if ( isset( $domain->dmarc ) ) {
+						echo ( $domain->dmarc->dmarc_status ?? '' ) === 'OK' ? "<span class='tag yes'>" . __( 'Verified', 'mailhawk' ) . "</span>" : "<span class='tag no'>" . __( 'Recommended', 'mailhawk' ) . "</span>";
+					} ?></td>
 				<td><a href="<?php echo esc_url( mailhawk_admin_page( [ 'view' => 'domains', 'domain' => $domain->name ] ) ); ?>" class="button button-secondary"><?php _e( 'Configure', 'mailhawk' ); ?></a></td>
             </tr>
 		<?php endforeach; ?>
         <?php if ( empty( $domains ) ): ?>
         <tr>
-            <td colspan="4"><?php _e( 'You do not have any registered domains.', 'mailhawk' ); ?></td>
+            <td colspan="6"><?php _e( 'You do not have any registered domains.', 'mailhawk' ); ?></td>
         </tr>
         <?php endif; ?>
         </tbody>
