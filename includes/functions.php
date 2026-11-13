@@ -954,6 +954,7 @@ function get_dns_instructions( $domain ) {
 		'dkim'        => __( 'DKIM, which signs the email so receivers can tell it really came from this domain', 'mailhawk' ),
 		'return_path' => __( 'Return path, where bounces go', 'mailhawk' ),
 		'spf'         => __( 'SPF, which says MailHawk may send email for this domain', 'mailhawk' ),
+		'dmarc'       => __( 'DMARC (recommended), which tells receivers how to treat email that fails SPF and DKIM. Apple, Gmail and Yahoo expect it, and Apple turns away most email from a domain without it.', 'mailhawk' ),
 	];
 
 	$to_add = array_filter( $records, function ( $record ) {
@@ -1005,6 +1006,10 @@ function get_dns_instructions( $domain ) {
 			$lines[] = '   ' . __( 'A CNAME can not share its name with any other record. If the provider proxies DNS records (like Cloudflare), set this one to DNS only.', 'mailhawk' );
 		}
 
+		if ( 'dmarc' === $record['purpose'] && ! $record['verified'] ) {
+			$lines[] = '   ' . __( 'A name can only have one DMARC record. If a TXT record starting with v=DMARC1 is there already, keep it and do not add this one. p=none only asks for reports, so it never stops any email.', 'mailhawk' );
+		}
+
 		if ( 'spf' === $record['purpose'] && ! $record['verified'] ) {
 
 			if ( $dns['existing_spf_record'] ) {
@@ -1044,6 +1049,29 @@ function get_spf_record( $hostname ) {
 			if ( strpos( $record['txt'], 'v=spf1' ) !== false ) {
 				return $record['txt'];
 			}
+		}
+	}
+
+	return false;
+}
+
+/**
+ * The DMARC record at a name, like _dmarc.example.com, or false if there is none.
+ *
+ * @param string $hostname
+ *
+ * @return bool|string
+ */
+function get_dmarc_record( $hostname ) {
+	$txt_records = @dns_get_record( $hostname, DNS_TXT );
+
+	if ( empty( $txt_records ) ) {
+		return false;
+	}
+
+	foreach ( $txt_records as $record ) {
+		if ( isset( $record['txt'] ) && stripos( $record['txt'], 'v=DMARC1' ) === 0 ) {
+			return $record['txt'];
 		}
 	}
 

@@ -589,6 +589,75 @@ class Test_Abilities extends WP_UnitTestCase {
 		$this->assertSame( 'example.com', $this->calls[0]['body']['name'] );
 	}
 
+	public function test_dmarc_is_a_recommended_record_when_the_mta_checks_it() {
+
+		$this->connect();
+
+		$domain        = $this->domain( 'example.com' );
+		$domain->dmarc = (object) [
+			'dmarc_record_name' => '_dmarc.example.com',
+			'dmarc_record'      => 'v=DMARC1; p=none;',
+			'dmarc_status'      => 'Missing',
+			'dmarc_error'       => 'No DMARC record exists for this domain',
+		];
+
+		$this->mta( [ 'domains/query' => $domain ] );
+
+		$dns = $this->ok( 'mailhawk/get-domain-dns', [ 'domain' => 'example.com' ] );
+
+		$this->assertTrue( $dns['domain']['authenticated'], 'DMARC is not needed to be authenticated' );
+		$this->assertSame( 'Missing', $dns['domain']['dmarc'] );
+		$this->assertSame( [ 'dkim', 'return_path', 'spf', 'dmarc' ], wp_list_pluck( $dns['records'], 'purpose' ) );
+
+		$dmarc = $dns['records'][3];
+
+		$this->assertSame( 'TXT', $dmarc['type'] );
+		$this->assertSame( '_dmarc', $dmarc['host'] );
+		$this->assertSame( '_dmarc.example.com', $dmarc['hostname'] );
+		$this->assertSame( 'v=DMARC1; p=none;', $dmarc['value'] );
+		$this->assertFalse( $dmarc['verified'] );
+		$this->assertTrue( $dmarc['recommended'] );
+
+		$instructions = \MailHawk\get_dns_instructions( $domain );
+		$this->assertStringContainsString( 'DMARC (recommended)', $instructions );
+		$this->assertStringContainsString( 'v=DMARC1; p=none;', $instructions );
+		$this->assertStringContainsString( 'keep it and do not add this one', $instructions );
+	}
+
+	public function test_a_domain_with_its_own_dmarc_record_is_shown_with_it() {
+
+		$this->connect();
+
+		$domain        = $this->domain( 'example.com' );
+		$domain->dmarc = (object) [
+			'dmarc_record_name' => '_dmarc.example.com',
+			'dmarc_record'      => 'v=DMARC1; p=none;',
+			'dmarc_status'      => 'OK',
+		];
+
+		$this->mta( [ 'domains/query' => $domain ] );
+
+		add_filter( 'mailhawk/abilities/existing_dmarc_record', function () {
+			return 'v=DMARC1; p=reject; rua=mailto:dmarc@example.com';
+		} );
+
+		$dmarc = $this->ok( 'mailhawk/get-domain-dns', [ 'domain' => 'example.com' ] )['records'][3];
+
+		$this->assertTrue( $dmarc['verified'] );
+		$this->assertSame( 'v=DMARC1; p=reject; rua=mailto:dmarc@example.com', $dmarc['value'] );
+	}
+
+	public function test_an_older_mta_answer_without_dmarc_has_no_dmarc_record() {
+
+		$this->connect();
+		$this->mta( [ 'domains/query' => $this->domain( 'example.com' ) ] );
+
+		$dns = $this->ok( 'mailhawk/get-domain-dns', [ 'domain' => 'example.com' ] );
+
+		$this->assertArrayNotHasKey( 'dmarc', $dns['domain'] );
+		$this->assertCount( 3, $dns['records'] );
+	}
+
 	public function test_the_dns_records_of_a_subdomain_say_the_host_and_the_full_hostname() {
 
 		$this->connect();

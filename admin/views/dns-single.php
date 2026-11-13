@@ -170,8 +170,26 @@ if ( get_url_var( 'action' ) === 'is_verified' ) {
             <td><?php echo $domain->spf->spf_status === 'OK' ? "<span class='tag yes'>" . __( 'Verified', 'mailhawk' ) . "</span>" : "<span class='tag no'>" . __( 'Unverified' ) . "</span>"; ?>
             </td>
         </tr>
+		<?php
+		// Recommended, not needed to verify the domain. The MTA checks it since November 2026.
+		$dmarc = \MailHawk\Abilities\Formatter::dmarc_record( $domain );
+		if ( $dmarc ) : ?>
+            <tr>
+                <td><?php _e( '<code>TXT</code> (DMARC)', 'mailhawk' ) ?></td>
+                <td><?php $name_fields( get_dns_record_names( $dmarc['hostname'], $domain->name ) ); ?></td>
+                <td><?php $copy_field( '3600', $ttl_label ); ?></td>
+                <td><?php $copy_field( $dmarc['value'], $value_label ); ?></td>
+                <td><?php echo $dmarc['verified'] ? "<span class='tag yes'>" . __( 'Verified', 'mailhawk' ) . "</span>" : "<span class='tag no'>" . __( 'Recommended', 'mailhawk' ) . "</span>"; ?>
+                </td>
+            </tr>
+		<?php endif; ?>
         </tbody>
     </table>
+	<?php if ( isset( $dmarc ) && $dmarc && ! $dmarc['verified'] ) : ?>
+        <p class="description">
+			<?php _e( '<b>DMARC is recommended.</b> Your domain is verified without it, but Apple, Gmail and Yahoo expect it, and Apple turns away most email from a domain that has none. <code>p=none</code> only asks for reports, it never stops any email. A domain can only have one DMARC record: if a TXT record starting with <code>v=DMARC1</code> is there already, keep it.', 'mailhawk' ); ?>
+        </p>
+	<?php endif; ?>
     <div class="not-sure-dns">
         <p>
             <span class="dashicons dashicons-sos"></span> <?php _e( "Don't know how to configure DNS records?", 'mailhawk' ) ?>

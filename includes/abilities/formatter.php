@@ -3,6 +3,7 @@
 namespace MailHawk\Abilities;
 
 use MailHawk\DB\Recipients;
+use function MailHawk\get_dmarc_record;
 use function MailHawk\get_dns_record_names;
 use function MailHawk\get_email_status_pretty_name;
 use function MailHawk\get_spf_record;
@@ -31,13 +32,20 @@ class Formatter {
 	 * @return array
 	 */
 	public static function domain( $domain ): array {
-		return [
+		$formatted = [
 			'name'          => (string) ( $domain->name ?? '' ),
 			'authenticated' => is_domain_authenticated( $domain ),
 			'spf'           => isset( $domain->spf->spf_status ) ? (string) $domain->spf->spf_status : null,
 			'dkim'          => isset( $domain->dkim->dkim_status ) ? (string) $domain->dkim->dkim_status : null,
 			'return_path'   => isset( $domain->return_path->return_path_status ) ? (string) $domain->return_path->return_path_status : null,
 		];
+
+		// The MTA checks DMARC since November 2026, older answers have no such group
+		if ( isset( $domain->dmarc ) ) {
+			$formatted['dmarc'] = isset( $domain->dmarc->dmarc_status ) ? (string) $domain->dmarc->dmarc_status : null;
+		}
+
+		return $formatted;
 	}
 
 	/**
@@ -63,6 +71,10 @@ class Formatter {
 				'return_path'   => [
 					'type'        => [ 'string', 'null' ],
 					'description' => __( 'The state of the return path CNAME, "OK" when verified.', 'mailhawk' ),
+				],
+				'dmarc'         => [
+					'type'        => [ 'string', 'null' ],
+					'description' => __( 'The state of the DMARC record, "OK" when the domain or its parent domain has one. Recommended, not needed for the domain to be authenticated, but Apple, Gmail and Yahoo expect it.', 'mailhawk' ),
 				],
 			],
 			'required'   => [ 'name', 'authenticated', 'spf', 'dkim', 'return_path' ],
@@ -192,43 +204,99 @@ class Formatter {
 		$return_path_names = get_dns_record_names( $domain->return_path->return_path_domain ?? '', (string) $domain->name );
 		$spf_names         = get_dns_record_names( '@', (string) $domain->name );
 
-		return [
-			'records'             => [
-				[
-					'purpose'  => 'dkim',
-					'type'     => 'TXT',
-					'host'     => $dkim_names['host'],
-					'hostname' => $dkim_names['hostname'],
-					'name'     => strtolower( (string) ( $domain->dkim->dkim_record_name ?? '' ) ),
-					'value'    => (string) ( $domain->dkim->dkim_record ?? '' ),
-					'ttl'      => 3600,
-					'status'   => isset( $domain->dkim->dkim_status ) ? (string) $domain->dkim->dkim_status : null,
-					'verified' => ( $domain->dkim->dkim_status ?? '' ) === 'OK',
-				],
-				[
-					'purpose'  => 'return_path',
-					'type'     => 'CNAME',
-					'host'     => $return_path_names['host'],
-					'hostname' => $return_path_names['hostname'],
-					'name'     => strtolower( (string) ( $domain->return_path->return_path_domain ?? '' ) ),
-					'value'    => self::RETURN_PATH_TARGET,
-					'ttl'      => 3600,
-					'status'   => isset( $domain->return_path->return_path_status ) ? (string) $domain->return_path->return_path_status : null,
-					'verified' => ( $domain->return_path->return_path_status ?? '' ) === 'OK',
-				],
-				[
-					'purpose'  => 'spf',
-					'type'     => 'TXT',
-					'host'     => $spf_names['host'],
-					'hostname' => $spf_names['hostname'],
-					'name'     => '@',
-					'value'    => $spf_record,
-					'ttl'      => 3600,
-					'status'   => '' !== $spf_status ? $spf_status : null,
-					'verified' => 'OK' === $spf_status,
-				],
+		$records = [
+			[
+				'purpose'  => 'dkim',
+				'type'     => 'TXT',
+				'host'     => $dkim_names['host'],
+				'hostname' => $dkim_names['hostname'],
+				'name'     => strtolower( (string) ( $domain->dkim->dkim_record_name ?? '' ) ),
+				'value'    => (string) ( $domain->dkim->dkim_record ?? '' ),
+				'ttl'      => 3600,
+				'status'   => isset( $domain->dkim->dkim_status ) ? (string) $domain->dkim->dkim_status : null,
+				'verified' => ( $domain->dkim->dkim_status ?? '' ) === 'OK',
 			],
+			[
+				'purpose'  => 'return_path',
+				'type'     => 'CNAME',
+				'host'     => $return_path_names['host'],
+				'hostname' => $return_path_names['hostname'],
+				'name'     => strtolower( (string) ( $domain->return_path->return_path_domain ?? '' ) ),
+				'value'    => self::RETURN_PATH_TARGET,
+				'ttl'      => 3600,
+				'status'   => isset( $domain->return_path->return_path_status ) ? (string) $domain->return_path->return_path_status : null,
+				'verified' => ( $domain->return_path->return_path_status ?? '' ) === 'OK',
+			],
+			[
+				'purpose'  => 'spf',
+				'type'     => 'TXT',
+				'host'     => $spf_names['host'],
+				'hostname' => $spf_names['hostname'],
+				'name'     => '@',
+				'value'    => $spf_record,
+				'ttl'      => 3600,
+				'status'   => '' !== $spf_status ? $spf_status : null,
+				'verified' => 'OK' === $spf_status,
+			],
+		];
+
+		$dmarc = self::dmarc_record( $domain );
+
+		if ( $dmarc ) {
+			$records[] = $dmarc;
+		}
+
+		return [
+			'records'             => $records,
 			'existing_spf_record' => $existing,
+		];
+	}
+
+	/**
+	 * The DMARC record, when the MTA checks it (since November 2026). It is recommended rather than needed: a domain
+	 * is authenticated without it, but Apple turns away nearly all email from a domain that has none. A domain with a
+	 * record of its own keeps it, so that one is shown instead of the one MailHawk recommends.
+	 *
+	 * @param object $domain a domain from the MTA
+	 *
+	 * @return array|null null when the MTA did not send DMARC
+	 */
+	public static function dmarc_record( $domain ): ?array {
+
+		if ( ! isset( $domain->dmarc ) ) {
+			return null;
+		}
+
+		$status = (string) ( $domain->dmarc->dmarc_status ?? '' );
+		$names  = get_dns_record_names( $domain->dmarc->dmarc_record_name ?? '_dmarc', (string) $domain->name );
+		$value  = (string) ( $domain->dmarc->dmarc_record ?? '' );
+
+		if ( 'OK' === $status ) {
+
+			/**
+			 * The DMARC record the domain has now, from DNS
+			 *
+			 * @param string|false $record
+			 * @param string       $hostname
+			 */
+			$found = apply_filters( 'mailhawk/abilities/existing_dmarc_record', get_dmarc_record( $names['hostname'] ), $names['hostname'] );
+
+			if ( ! empty( $found ) ) {
+				$value = (string) $found;
+			}
+		}
+
+		return [
+			'purpose'     => 'dmarc',
+			'type'        => 'TXT',
+			'host'        => $names['host'],
+			'hostname'    => $names['hostname'],
+			'name'        => $names['hostname'],
+			'value'       => $value,
+			'ttl'         => 3600,
+			'status'      => '' !== $status ? $status : null,
+			'verified'    => 'OK' === $status,
+			'recommended' => true,
 		];
 	}
 
@@ -246,21 +314,25 @@ class Formatter {
 					'items'       => [
 						'type'       => 'object',
 						'properties' => [
-							'purpose'  => [
+							'purpose'     => [
 								'type' => 'string',
-								'enum' => [ 'dkim', 'return_path', 'spf' ],
+								'enum' => [ 'dkim', 'return_path', 'spf', 'dmarc' ],
 							],
-							'type'     => [
+							'type'        => [
 								'type' => 'string',
 								'enum' => [ 'TXT', 'CNAME' ],
 							],
-							'host'     => [ 'type' => 'string' ],
-							'hostname' => [ 'type' => 'string' ],
-							'name'     => [ 'type' => 'string' ],
-							'value'    => [ 'type' => 'string' ],
-							'ttl'      => [ 'type' => 'integer' ],
-							'status'   => [ 'type' => [ 'string', 'null' ] ],
-							'verified' => [ 'type' => 'boolean' ],
+							'host'        => [ 'type' => 'string' ],
+							'hostname'    => [ 'type' => 'string' ],
+							'name'        => [ 'type' => 'string' ],
+							'value'       => [ 'type' => 'string' ],
+							'ttl'         => [ 'type' => 'integer' ],
+							'status'      => [ 'type' => [ 'string', 'null' ] ],
+							'verified'    => [ 'type' => 'boolean' ],
+							'recommended' => [
+								'type'        => 'boolean',
+								'description' => __( 'True for DMARC: recommended, not needed for the domain to be authenticated. A domain that has a DMARC record of its own should keep it, and must not get a second one.', 'mailhawk' ),
+							],
 						],
 						'required'   => [ 'purpose', 'type', 'host', 'hostname', 'name', 'value', 'ttl', 'status', 'verified' ],
 					],
