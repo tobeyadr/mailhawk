@@ -4,7 +4,7 @@ Donate link: https://mailhawk.io/pricing/
 Tags: email, smtp, wordpress smtp, smtp plugin, wp mail smtp
 Requires at least: 6.9
 Tested up to: 7.1
-Stable tag: 1.5.3
+Stable tag: 1.5.4
 Requires PHP: 7.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -166,6 +166,10 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 5. Protect your sender reputation by quarantining risky emails before they are sent.
 
 == Changelog ==
+
+= 1.5.4 (2026-11-15) =
+* FIXED Contacts that earlier versions marked as bounced after a MailHawk delivery delay are put back. When MailHawk can't deliver an email for a day for reasons of its own, it gives up on it. Up to 1.5.0 the plugin took that for a bounce: the address counted towards quarantine, and Groundhogg marked the contact Hard Bounced, which stops its marketing email. After the update, MailHawk asks once which emails of your server it gave up on, takes those bounces back off, and sets a contact Groundhogg marked Hard Bounced at that moment back to Unconfirmed (or Unsubscribed if it had unsubscribed), with a note on the contact saying why. Contacts that bounced for real are left alone.
+* DEV New action `mailhawk/give_up_repair/done` with what the repair did. `MailHawk\Api\Postal\Messages::given_up()` lists the emails the MTA gave up on since a time.
 
 = 1.5.3 (2026-11-13) =
 * ADDED The DNS screen shows a DMARC record next to DKIM, the return path and SPF, with the record MailHawk recommends, `v=DMARC1; p=none;`, which only asks for reports and never stops any email. DMARC is recommended rather than required: a domain is verified without it, but Apple, Gmail and Yahoo expect it, and Apple turns away most email from a domain that has none. A domain that already has a DMARC record, or whose parent domain has one, is shown as verified and keeps its own record.

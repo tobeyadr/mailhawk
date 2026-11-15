@@ -26,6 +26,7 @@ class Updater extends \MailHawk\Utils\Updater{
 			'1.3.1',
 			'1.4.0',
 			'1.5.0',
+			'1.5.4',
 		];
 	}
 
@@ -117,6 +118,14 @@ class Updater extends \MailHawk\Utils\Updater{
 				delete_option( $option );
 			}
 		}
+	}
+
+	/**
+	 * Undo, once and in the background, the bounces that earlier versions recorded for emails the MTA gave up on for
+	 * reasons of its own, and put back the Groundhogg contacts they marked Hard Bounced (see Give_Up_Repair)
+	 */
+	public function version_1_5_4(){
+		Give_Up_Repair::schedule();
 	}
 }
 

@@ -142,6 +142,7 @@ class Plugin {
 		$this->recipients = new Recipients();
 		new Cron_Events();
 		new Delivery_Sync();
+		new Give_Up_Repair();
 
 		if ( is_admin() ) {
 			new Admin();

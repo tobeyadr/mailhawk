@@ -56,6 +56,69 @@ class Messages extends Postal {
 			return new \WP_Error( 'mailhawk_bad_request', 'Between 1 and ' . self::MAX_IDS . ' message IDs are needed.' );
 		}
 
+		$data = self::call( 'messages/statuses', [ 'message_ids' => $ids ], 'This MTA can not report the status of emails.' );
+
+		if ( is_wp_error( $data ) ) {
+			return $data;
+		}
+
+		return self::normalize( $data['messages'] ?? null, $ids );
+	}
+
+	/**
+	 * The emails the MTA gave up on after a day of temporary failures that were not about the recipient (no answer, a
+	 * fault at the provider, a rate limit, its own IP turned away), since a time. Versions of this plugin before 1.5.1
+	 * counted those as bounces, and Give_Up_Repair undoes that with this list. Errors are those of statuses().
+	 *
+	 * @param int $since unix time, at most 45 days ago
+	 *
+	 * @return array|\WP_Error a list of [ rcpt_to, message_id, time ], oldest first
+	 */
+	public static function given_up( $since ) {
+
+		$data = self::call( 'messages/given_up', [ 'since' => absint( $since ) ], 'This MTA can not list the emails it gave up on.', 20 );
+
+		if ( is_wp_error( $data ) ) {
+			return $data;
+		}
+
+		if ( ! is_array( $data['given_up'] ?? null ) ) {
+			return new \WP_Error( 'mailhawk_unavailable', 'The MTA did not answer with the emails.' );
+		}
+
+		$result = [];
+
+		foreach ( $data['given_up'] as $entry ) {
+
+			$address = is_array( $entry ) ? strtolower( trim( sanitize_email( (string) ( $entry['rcpt_to'] ?? '' ) ) ) ) : '';
+
+			if ( ! $address ) {
+				continue;
+			}
+
+			$result[] = [
+				'rcpt_to'    => $address,
+				'message_id' => sanitize_text_field( (string) ( $entry['message_id'] ?? '' ) ),
+				'time'       => absint( $entry['time'] ?? 0 ),
+			];
+		}
+
+		return $result;
+	}
+
+	/**
+	 * POST to an action of the MTA's API with the server key, and turn what comes back into the data of a success or an
+	 * error with one of the codes statuses() lists.
+	 *
+	 * @param string $action      e.g. messages/statuses
+	 * @param array  $body
+	 * @param string $unsupported the message of the error for an MTA that does not have the action
+	 * @param int    $timeout     seconds
+	 *
+	 * @return array|\WP_Error
+	 */
+	protected static function call( $action, array $body, $unsupported, $timeout = 8 ) {
+
 		if ( empty( self::$api_key ) ) {
 
 			$api_key = get_mailhawk_api_key();
@@ -68,14 +131,14 @@ class Messages extends Postal {
 		}
 
 		// Short, this runs in the background and the MTA answers it from one query
-		$response = wp_remote_post( self::$server_url . '/api/v1/messages/statuses', [
-			'timeout'     => 8,
+		$response = wp_remote_post( self::$server_url . '/api/v1/' . $action, [
+			'timeout'     => $timeout,
 			'method'      => 'POST',
 			'headers'     => [
 				'Content-Type'     => 'application/json; charset=utf-8',
 				'X-Server-API-Key' => self::$api_key,
 			],
-			'body'        => wp_json_encode( [ 'message_ids' => $ids ] ),
+			'body'        => wp_json_encode( $body ),
 			'data_format' => 'body',
 			'sslverify'   => true,
 		] );
@@ -101,7 +164,7 @@ class Messages extends Postal {
 
 		// An MTA that does not know the action
 		if ( 404 === $http ) {
-			return new \WP_Error( 'mailhawk_unsupported', 'This MTA can not report the status of emails.' );
+			return new \WP_Error( 'mailhawk_unsupported', $unsupported );
 		}
 
 		if ( $http >= 400 || ! is_array( $json ) ) {
@@ -111,7 +174,7 @@ class Messages extends Postal {
 		switch ( $json['status'] ?? '' ) {
 
 			case 'success':
-				return self::normalize( $data['messages'] ?? null, $ids );
+				return $data;
 
 			case 'parameter-error':
 				return new \WP_Error( 'mailhawk_bad_request', sanitize_text_field( (string) ( $data['message'] ?? 'The MTA did not accept the request.' ) ) );
@@ -121,7 +184,7 @@ class Messages extends Postal {
 				$code = sanitize_text_field( (string) ( $data['code'] ?? '' ) );
 
 				if ( 'InvalidAPIRequest' === $code ) {
-					return new \WP_Error( 'mailhawk_unsupported', 'This MTA can not report the status of emails.' );
+					return new \WP_Error( 'mailhawk_unsupported', $unsupported );
 				}
 
 				if ( 'RateLimitExceeded' === $code ) {
